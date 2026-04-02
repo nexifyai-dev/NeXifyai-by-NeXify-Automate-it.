@@ -3,35 +3,29 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, MeshDistortMaterial, Sphere, Box, Torus, Icosahedron } from '@react-three/drei';
 import * as THREE from 'three';
 
-/* ═══════════ HERO PARTICLES (Neural Network) ═══════════ */
-const NODE_COUNT = 60;
-const EDGE_COUNT = 80;
+/* ═══════════ HERO — Neural Network Constellation ═══════════ */
+const NODE_COUNT = 80;
+const EDGE_COUNT = 100;
 
 function NetworkNodes() {
   const meshRef = useRef();
   const positions = useMemo(() => {
     const pos = new Float32Array(NODE_COUNT * 3);
     for (let i = 0; i < NODE_COUNT; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 8;
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 6;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 4;
+      pos[i * 3] = (Math.random() - 0.5) * 10;
+      pos[i * 3 + 1] = (Math.random() - 0.5) * 7;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 5;
     }
     return pos;
   }, []);
 
-  const sizes = useMemo(() => {
-    const s = new Float32Array(NODE_COUNT);
-    for (let i = 0; i < NODE_COUNT; i++) s[i] = 0.3 + Math.random() * 0.7;
-    return s;
-  }, []);
-
   useFrame(({ clock }) => {
     if (!meshRef.current) return;
-    const t = clock.getElapsedTime() * 0.15;
+    const t = clock.getElapsedTime() * 0.12;
     const posArr = meshRef.current.geometry.attributes.position.array;
     for (let i = 0; i < NODE_COUNT; i++) {
-      posArr[i * 3] += Math.sin(t + i * 0.5) * 0.001;
-      posArr[i * 3 + 1] += Math.cos(t + i * 0.3) * 0.001;
+      posArr[i * 3] += Math.sin(t + i * 0.4) * 0.0008;
+      posArr[i * 3 + 1] += Math.cos(t + i * 0.25) * 0.0008;
     }
     meshRef.current.geometry.attributes.position.needsUpdate = true;
   });
@@ -40,9 +34,8 @@ function NetworkNodes() {
     <points ref={meshRef}>
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" count={NODE_COUNT} array={positions} itemSize={3} />
-        <bufferAttribute attach="attributes-size" count={NODE_COUNT} array={sizes} itemSize={1} />
       </bufferGeometry>
-      <pointsMaterial size={0.06} color="#ff9b7a" transparent opacity={0.8} sizeAttenuation />
+      <pointsMaterial size={0.05} color="#ff9b7a" transparent opacity={0.7} sizeAttenuation />
     </points>
   );
 }
@@ -52,8 +45,8 @@ function NetworkEdges() {
   const positions = useMemo(() => {
     const pos = [];
     for (let i = 0; i < EDGE_COUNT; i++) {
-      const x1 = (Math.random() - 0.5) * 8, y1 = (Math.random() - 0.5) * 6, z1 = (Math.random() - 0.5) * 4;
-      const x2 = x1 + (Math.random() - 0.5) * 3, y2 = y1 + (Math.random() - 0.5) * 2, z2 = z1 + (Math.random() - 0.5) * 2;
+      const x1 = (Math.random() - 0.5) * 10, y1 = (Math.random() - 0.5) * 7, z1 = (Math.random() - 0.5) * 5;
+      const x2 = x1 + (Math.random() - 0.5) * 2.5, y2 = y1 + (Math.random() - 0.5) * 1.8, z2 = z1 + (Math.random() - 0.5) * 1.5;
       pos.push(x1, y1, z1, x2, y2, z2);
     }
     return new Float32Array(pos);
@@ -61,8 +54,8 @@ function NetworkEdges() {
 
   useFrame(({ clock }) => {
     if (linesRef.current) {
-      linesRef.current.rotation.y = clock.getElapsedTime() * 0.02;
-      linesRef.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.01) * 0.05;
+      linesRef.current.rotation.y = clock.getElapsedTime() * 0.015;
+      linesRef.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.008) * 0.03;
     }
   });
 
@@ -71,41 +64,55 @@ function NetworkEdges() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" count={EDGE_COUNT * 2} array={positions} itemSize={3} />
       </bufferGeometry>
-      <lineBasicMaterial color="#ff9b7a" transparent opacity={0.08} />
+      <lineBasicMaterial color="#ff9b7a" transparent opacity={0.06} />
     </lineSegments>
   );
 }
 
 function FloatingCore() {
   const ref = useRef();
+  const innerRef = useRef();
   useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
     if (ref.current) {
-      ref.current.rotation.x = clock.getElapsedTime() * 0.1;
-      ref.current.rotation.y = clock.getElapsedTime() * 0.15;
+      ref.current.rotation.x = t * 0.08;
+      ref.current.rotation.y = t * 0.12;
+    }
+    if (innerRef.current) {
+      innerRef.current.rotation.x = t * -0.05;
+      innerRef.current.rotation.z = t * 0.07;
     }
   });
   return (
-    <group ref={ref}>
-      <Icosahedron args={[1.2, 1]}>
-        <meshBasicMaterial color="#ff9b7a" wireframe transparent opacity={0.15} />
-      </Icosahedron>
-      <Icosahedron args={[0.8, 0]}>
-        <MeshDistortMaterial color="#ff9b7a" transparent opacity={0.06} distort={0.3} speed={2} />
-      </Icosahedron>
+    <group position={[1.5, 0, 0]}>
+      <group ref={ref}>
+        <Icosahedron args={[1.4, 1]}>
+          <meshBasicMaterial color="#ff9b7a" wireframe transparent opacity={0.1} />
+        </Icosahedron>
+      </group>
+      <group ref={innerRef}>
+        <Icosahedron args={[1.0, 0]}>
+          <MeshDistortMaterial color="#ff9b7a" transparent opacity={0.04} distort={0.25} speed={1.5} />
+        </Icosahedron>
+      </group>
+      {/* Central glow sphere */}
+      <Sphere args={[0.2, 16, 16]}>
+        <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={0.8} transparent opacity={0.15} />
+      </Sphere>
     </group>
   );
 }
 
 function DataStreams() {
   const ref = useRef();
-  const count = 200;
+  const count = 300;
   const positions = useMemo(() => {
     const p = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
-      const angle = (i / count) * Math.PI * 8;
-      const radius = 2 + Math.random() * 3;
+      const angle = (i / count) * Math.PI * 10;
+      const radius = 1.5 + Math.random() * 4;
       p[i * 3] = Math.cos(angle) * radius;
-      p[i * 3 + 1] = (Math.random() - 0.5) * 6;
+      p[i * 3 + 1] = (Math.random() - 0.5) * 7;
       p[i * 3 + 2] = Math.sin(angle) * radius;
     }
     return p;
@@ -113,7 +120,7 @@ function DataStreams() {
 
   useFrame(({ clock }) => {
     if (ref.current) {
-      ref.current.rotation.y = clock.getElapsedTime() * 0.05;
+      ref.current.rotation.y = clock.getElapsedTime() * 0.03;
     }
   });
 
@@ -122,73 +129,101 @@ function DataStreams() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial size={0.02} color="#ffb59e" transparent opacity={0.4} sizeAttenuation />
+      <pointsMaterial size={0.015} color="#ffb59e" transparent opacity={0.3} sizeAttenuation />
     </points>
+  );
+}
+
+/* Ambient floating accent geometries */
+function AccentGeometries() {
+  return (
+    <>
+      <Float speed={0.5} rotationIntensity={0.2} floatIntensity={0.3}>
+        <Sphere args={[0.12, 16, 16]} position={[4, 2.5, -1.5]}>
+          <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={0.6} transparent opacity={0.5} />
+        </Sphere>
+      </Float>
+      <Float speed={0.8} rotationIntensity={0.3} floatIntensity={0.4}>
+        <Box args={[0.18, 0.18, 0.18]} position={[-4, -2, 0.5]} rotation={[0.5, 0.5, 0]}>
+          <meshBasicMaterial color="#ff9b7a" transparent opacity={0.08} wireframe />
+        </Box>
+      </Float>
+      <Float speed={0.6} rotationIntensity={0.15} floatIntensity={0.2}>
+        <Torus args={[0.25, 0.06, 8, 24]} position={[4.5, -2.5, -1]} rotation={[1, 0.5, 0]}>
+          <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={0.2} transparent opacity={0.2} />
+        </Torus>
+      </Float>
+      <Float speed={0.4} rotationIntensity={0.1} floatIntensity={0.15}>
+        <Icosahedron args={[0.1, 0]} position={[-3, 2, -1]}>
+          <meshBasicMaterial color="#ff9b7a" wireframe transparent opacity={0.12} />
+        </Icosahedron>
+      </Float>
+      <Float speed={0.7} rotationIntensity={0.2} floatIntensity={0.25}>
+        <Sphere args={[0.06, 8, 8]} position={[2, -3, 0]}>
+          <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={1} transparent opacity={0.4} />
+        </Sphere>
+      </Float>
+    </>
   );
 }
 
 export function HeroScene() {
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-      <Canvas camera={{ position: [0, 0, 6], fov: 60 }} dpr={[1, 1.5]} gl={{ antialias: true, alpha: true }}>
-        <ambientLight intensity={0.3} />
-        <pointLight position={[5, 5, 5]} intensity={0.5} color="#ff9b7a" />
+      <Canvas
+        camera={{ position: [0, 0, 6], fov: 60 }}
+        dpr={[1, 1.5]}
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+      >
+        <ambientLight intensity={0.2} />
+        <pointLight position={[5, 5, 5]} intensity={0.4} color="#ff9b7a" distance={20} decay={2} />
+        <pointLight position={[-4, -3, 3]} intensity={0.15} color="#ff9b7a" distance={15} decay={2} />
         <Suspense fallback={null}>
           <FloatingCore />
           <NetworkNodes />
           <NetworkEdges />
           <DataStreams />
-          <Float speed={0.5} rotationIntensity={0.2} floatIntensity={0.3}>
-            <Sphere args={[0.15, 16, 16]} position={[3, 2, -1]}>
-              <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={0.5} transparent opacity={0.6} />
-            </Sphere>
-          </Float>
-          <Float speed={0.8} rotationIntensity={0.3} floatIntensity={0.4}>
-            <Box args={[0.2, 0.2, 0.2]} position={[-3, -1.5, 0.5]} rotation={[0.5, 0.5, 0]}>
-              <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={0.3} transparent opacity={0.4} wireframe />
-            </Box>
-          </Float>
-          <Float speed={0.6} rotationIntensity={0.15} floatIntensity={0.2}>
-            <Torus args={[0.3, 0.08, 8, 20]} position={[3.5, -2, -0.5]} rotation={[1, 0.5, 0]}>
-              <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={0.3} transparent opacity={0.3} />
-            </Torus>
-          </Float>
+          <AccentGeometries />
         </Suspense>
       </Canvas>
     </div>
   );
 }
 
-/* ═══════════ INTEGRATIONS GLOBE ═══════════ */
+/* ═══════════ INTEGRATIONS GLOBE — Premium Wireframe ═══════════ */
 function GlobeWireframe() {
   const ref = useRef();
   useFrame(({ clock }) => {
     if (ref.current) {
-      ref.current.rotation.y = clock.getElapsedTime() * 0.08;
-      ref.current.rotation.x = 0.2;
+      ref.current.rotation.y = clock.getElapsedTime() * 0.06;
+      ref.current.rotation.x = 0.25;
     }
   });
   return (
     <group ref={ref}>
-      <Sphere args={[2, 24, 24]}>
-        <meshBasicMaterial color="#ff9b7a" wireframe transparent opacity={0.08} />
+      <Sphere args={[2, 28, 28]}>
+        <meshBasicMaterial color="#ff9b7a" wireframe transparent opacity={0.06} />
       </Sphere>
-      <Sphere args={[2.05, 16, 16]}>
-        <meshBasicMaterial color="#ff9b7a" wireframe transparent opacity={0.04} />
+      <Sphere args={[2.08, 18, 18]}>
+        <meshBasicMaterial color="#ff9b7a" wireframe transparent opacity={0.03} />
       </Sphere>
+      {/* Equatorial ring */}
+      <Torus args={[2.04, 0.008, 8, 64]} rotation={[Math.PI / 2, 0, 0]}>
+        <meshBasicMaterial color="#ff9b7a" transparent opacity={0.15} />
+      </Torus>
     </group>
   );
 }
 
 function GlobeNodes() {
   const ref = useRef();
-  const count = 40;
+  const count = 50;
   const positions = useMemo(() => {
     const p = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       const phi = Math.acos(2 * Math.random() - 1);
       const theta = Math.random() * Math.PI * 2;
-      const r = 2.02;
+      const r = 2.04;
       p[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       p[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       p[i * 3 + 2] = r * Math.cos(phi);
@@ -198,8 +233,8 @@ function GlobeNodes() {
 
   useFrame(({ clock }) => {
     if (ref.current) {
-      ref.current.rotation.y = clock.getElapsedTime() * 0.08;
-      ref.current.rotation.x = 0.2;
+      ref.current.rotation.y = clock.getElapsedTime() * 0.06;
+      ref.current.rotation.x = 0.25;
     }
   });
 
@@ -208,7 +243,7 @@ function GlobeNodes() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial size={0.08} color="#ff9b7a" transparent opacity={0.9} sizeAttenuation />
+      <pointsMaterial size={0.07} color="#ff9b7a" transparent opacity={0.85} sizeAttenuation />
     </points>
   );
 }
@@ -217,15 +252,15 @@ function ConnectionArcs() {
   const ref = useRef();
   const arcs = useMemo(() => {
     const lines = [];
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 16; i++) {
       const phi1 = Math.acos(2 * Math.random() - 1);
       const theta1 = Math.random() * Math.PI * 2;
       const phi2 = Math.acos(2 * Math.random() - 1);
       const theta2 = Math.random() * Math.PI * 2;
-      const r = 2.02;
-      for (let t = 0; t <= 10; t++) {
-        const f = t / 10;
-        const p = 1 + 0.3 * Math.sin(f * Math.PI);
+      const r = 2.04;
+      for (let t = 0; t <= 12; t++) {
+        const f = t / 12;
+        const p = 1 + 0.25 * Math.sin(f * Math.PI);
         const ph = phi1 + (phi2 - phi1) * f;
         const th = theta1 + (theta2 - theta1) * f;
         lines.push(p * r * Math.sin(ph) * Math.cos(th), p * r * Math.sin(ph) * Math.sin(th), p * r * Math.cos(ph));
@@ -236,8 +271,8 @@ function ConnectionArcs() {
 
   useFrame(({ clock }) => {
     if (ref.current) {
-      ref.current.rotation.y = clock.getElapsedTime() * 0.08;
-      ref.current.rotation.x = 0.2;
+      ref.current.rotation.y = clock.getElapsedTime() * 0.06;
+      ref.current.rotation.x = 0.25;
     }
   });
 
@@ -246,17 +281,21 @@ function ConnectionArcs() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" count={arcs.length / 3} array={arcs} itemSize={3} />
       </bufferGeometry>
-      <lineBasicMaterial color="#ff9b7a" transparent opacity={0.15} />
+      <lineBasicMaterial color="#ff9b7a" transparent opacity={0.12} />
     </line>
   );
 }
 
 export function IntegrationsGlobe() {
   return (
-    <div style={{ width: '100%', height: '400px', position: 'relative' }}>
-      <Canvas camera={{ position: [0, 0, 5], fov: 50 }} dpr={[1, 1.5]} gl={{ antialias: true, alpha: true }}>
-        <ambientLight intensity={0.2} />
-        <pointLight position={[5, 3, 5]} intensity={0.3} color="#ff9b7a" />
+    <div style={{ width: '100%', height: '380px', position: 'relative' }}>
+      <Canvas
+        camera={{ position: [0, 0, 5], fov: 50 }}
+        dpr={[1, 1.5]}
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+      >
+        <ambientLight intensity={0.15} />
+        <pointLight position={[5, 3, 5]} intensity={0.25} color="#ff9b7a" distance={15} decay={2} />
         <Suspense fallback={null}>
           <GlobeWireframe />
           <GlobeNodes />
@@ -267,25 +306,29 @@ export function IntegrationsGlobe() {
   );
 }
 
-/* ═══════════ PROCESS PIPELINE 3D ═══════════ */
-function PipelineNode({ position, active, label }) {
+/* ═══════════ PROCESS PIPELINE — Enhanced ═══════════ */
+function PipelineNode({ position }) {
   const ref = useRef();
   useFrame(({ clock }) => {
     if (ref.current) {
-      ref.current.scale.setScalar(1 + Math.sin(clock.getElapsedTime() * 2 + position[0]) * 0.05);
+      ref.current.scale.setScalar(1 + Math.sin(clock.getElapsedTime() * 1.5 + position[0]) * 0.06);
     }
   });
   return (
     <group position={position}>
-      <Icosahedron ref={ref} args={[0.3, 0]}>
+      <Icosahedron ref={ref} args={[0.35, 0]}>
         <meshStandardMaterial
-          color={active ? '#ff9b7a' : '#364050'}
-          emissive={active ? '#ff9b7a' : '#000'}
-          emissiveIntensity={active ? 0.4 : 0}
+          color="#ff9b7a"
+          emissive="#ff9b7a"
+          emissiveIntensity={0.35}
           transparent
-          opacity={active ? 0.9 : 0.5}
+          opacity={0.85}
         />
       </Icosahedron>
+      {/* Glow ring around node */}
+      <Torus args={[0.5, 0.006, 6, 32]} rotation={[Math.PI / 2, 0, 0]}>
+        <meshBasicMaterial color="#ff9b7a" transparent opacity={0.1} />
+      </Torus>
     </group>
   );
 }
@@ -297,7 +340,7 @@ function PipelineConnector({ from, to }) {
   const geo = useMemo(() => new THREE.BufferGeometry().setFromPoints(points), [points]);
   return (
     <line geometry={geo}>
-      <lineBasicMaterial color="#ff9b7a" transparent opacity={0.2} />
+      <lineBasicMaterial color="#ff9b7a" transparent opacity={0.15} />
     </line>
   );
 }
@@ -305,14 +348,18 @@ function PipelineConnector({ from, to }) {
 export function ProcessScene() {
   const nodes = [[-3, 0, 0], [-1, 0, 0], [1, 0, 0], [3, 0, 0]];
   return (
-    <div style={{ width: '100%', height: '200px' }}>
-      <Canvas camera={{ position: [0, 0, 5], fov: 50 }} dpr={[1, 1.5]} gl={{ antialias: true, alpha: true }}>
-        <ambientLight intensity={0.4} />
-        <pointLight position={[0, 3, 3]} intensity={0.5} color="#ff9b7a" />
+    <div style={{ width: '100%', height: '180px' }}>
+      <Canvas
+        camera={{ position: [0, 0, 5], fov: 50 }}
+        dpr={[1, 1.5]}
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+      >
+        <ambientLight intensity={0.3} />
+        <pointLight position={[0, 3, 3]} intensity={0.4} color="#ff9b7a" distance={12} decay={2} />
         <Suspense fallback={null}>
           {nodes.map((pos, i) => (
-            <Float key={i} speed={1 + i * 0.3} floatIntensity={0.15}>
-              <PipelineNode position={pos} active={true} />
+            <Float key={i} speed={1 + i * 0.2} floatIntensity={0.12}>
+              <PipelineNode position={pos} />
             </Float>
           ))}
           {nodes.slice(0, -1).map((from, i) => (
@@ -331,13 +378,13 @@ export function AccentShapes() {
       <Canvas camera={{ position: [0, 0, 5], fov: 60 }} dpr={[1, 1]} gl={{ antialias: false, alpha: true }}>
         <Suspense fallback={null}>
           <Float speed={0.4} rotationIntensity={0.5} floatIntensity={0.6}>
-            <Torus args={[1, 0.05, 8, 30]} position={[4, 2, -2]} rotation={[1, 0, 0.5]}>
-              <meshBasicMaterial color="#ff9b7a" transparent opacity={0.08} />
+            <Torus args={[1, 0.04, 8, 30]} position={[4, 2, -2]} rotation={[1, 0, 0.5]}>
+              <meshBasicMaterial color="#ff9b7a" transparent opacity={0.06} />
             </Torus>
           </Float>
           <Float speed={0.3} rotationIntensity={0.3} floatIntensity={0.4}>
-            <Box args={[0.5, 0.5, 0.5]} position={[-4, -1, -1]} rotation={[0.7, 0.3, 0]}>
-              <meshBasicMaterial color="#ff9b7a" transparent opacity={0.06} wireframe />
+            <Box args={[0.4, 0.4, 0.4]} position={[-4, -1, -1]} rotation={[0.7, 0.3, 0]}>
+              <meshBasicMaterial color="#ff9b7a" transparent opacity={0.04} wireframe />
             </Box>
           </Float>
         </Suspense>
