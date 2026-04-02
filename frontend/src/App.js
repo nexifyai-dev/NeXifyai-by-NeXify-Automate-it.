@@ -629,6 +629,7 @@ const FAQSection = () => {
               data-testid={`faq-item-${idx}`}
             >
               <button 
+                type="button"
                 className="faq-question"
                 onClick={() => setOpenIndex(openIndex === idx ? -1 : idx)}
                 aria-expanded={openIndex === idx}
