@@ -1,1 +1,32 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+
+:root {
+  --nx-bg: #0c1117;
+  --nx-s1: #131a22;
+  --nx-s2: #1a2230;
+  --nx-s3: #222b38;
+  --nx-s4: #2c3544;
+  --nx-s5: #364050;
+  --nx-text: #e2e8f0;
+  --nx-muted: #94a3b8;
+  --nx-dim: #64748b;
+  --nx-accent: #ff9b7a;
+  --nx-accent-h: #ffb59e;
+  --nx-accent-bg: rgba(255,155,122,0.07);
+  --nx-accent-b: rgba(255,155,122,0.18);
+  --nx-border: rgba(255,255,255,0.06);
+  --nx-border-h: rgba(255,255,255,0.12);
+  --nx-ok: #34d399;
+  --nx-err: #f87171;
+  --f-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --f-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --f-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  --pad: 20px;
+  --max-w: 1280px;
+  --nav-h: 72px;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur: 180ms;
+}
+@media(min-width:640px){:root{--pad:32px}}
+@media(min-width:1024px){:root{--pad:48px}}
+@media(min-width:1440px){:root{--pad:64px}}
