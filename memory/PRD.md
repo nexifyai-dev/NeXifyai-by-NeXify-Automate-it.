@@ -1,62 +1,23 @@
 # NeXifyAI — Product Requirements Document
 
 ## Product Vision
-NeXifyAI by NeXify Automate: B2B-first KI-Agenten-Platform fuer DACH/Benelux. 
-Landing Page + CRM + Commercial Engine + AI Chat Discovery.
+NeXifyAI by NeXify Automate: B2B-first KI-Agenten-Platform fuer DACH/Benelux.
+Landing Page + CRM + Commercial Engine + AI Chat Discovery + Service-Katalog + Trust/Compliance.
 
-## Core Requirements
-- **Brand**: NeXifyAI (AI in CI-Farbe)
-- **Languages**: DE (primary), NL, EN
-- **Target**: Mittelstand B2B, DACH/Benelux
-- **Authentication**: JWT Admin Login
-- **3D UI**: Three.js Hero, Integrations Globe, Process Scene
-
----
-
-## TARIFF MODEL (Single Source of Truth)
-
-### 1. Starter AI Agenten AG (NXA-SAA-24-499)
-- Tarifpreis: 499 EUR/Monat (netto)
-- Vertragslaufzeit: 24 Monate
-- Gesamtvertragswert: 11.976 EUR
-- Aktivierungsanzahlung (30%): 3.592,80 EUR
-- Monatliche Folgerate: 349,30 EUR (24 Raten)
-- 2 KI-Agenten, Shared Cloud, E-Mail-Support (48h)
-
-### 2. Growth AI Agenten AG (NXA-GAA-24-1299)
-- Tarifpreis: 1.299 EUR/Monat (netto)
-- Vertragslaufzeit: 24 Monate
-- Gesamtvertragswert: 31.176 EUR
-- Aktivierungsanzahlung (30%): 9.352,80 EUR
-- Monatliche Folgerate: 909,30 EUR (24 Raten)
-- 10 KI-Agenten, Private Cloud, Priority Support (24h), CRM/ERP-Kit
-
----
-
-## Company Data
-- Name: NeXify Automate
-- KvK: 90483944
-- USt-ID: NL865786276B01
-- IBAN: NL66 REVO 3601 4304 36
-- BIC: REVONL22
-- Intermediary BIC: CHASDEFX
-
----
-
-## Architecture
+## Core Architecture
 ```
 /app/
 ├── backend/
-│   ├── server.py (FastAPI, MongoDB, JWT, LLM Chat, Admin, Commercial Routes)
-│   ├── commercial.py (Tariff Config, PDF Engine, Revolut API, Magic Links, FAQ)
+│   ├── server.py (FastAPI, MongoDB, JWT, LLM Chat, Admin, Commercial, Security Headers)
+│   ├── commercial.py (TARIFF_CONFIG, SERVICE_CATALOG, BUNDLE_CATALOG, COMPLIANCE_STATUS, ISO_GAP_ANALYSIS, PDF, Revolut, Magic Links, FAQ)
 │   ├── requirements.txt
 │   └── .env
 ├── frontend/
 │   ├── src/
-│   │   ├── App.js (Landing Page, 3D, Chat with AI Discovery)
+│   │   ├── App.js (Landing, 3D, Chat Discovery, Pricing, Services, Trust, FAQ, Contact)
 │   │   ├── App.css
-│   │   ├── index.js (Routing: /, /de, /nl, /en, /admin, /angebot)
-│   │   ├── i18n/ (LanguageContext.js, translations.js)
+│   │   ├── index.js (Routes: /, /de, /nl, /en, /admin, /angebot, /datenschutz, /impressum, /agb)
+│   │   ├── i18n/ (LanguageContext.js, translations.js — DE/NL/EN)
 │   │   └── pages/ (Admin.js, LegalPages.js, QuotePortal.js)
 │   └── package.json
 └── memory/ (PRD.md, test_credentials.md)
@@ -64,69 +25,81 @@ Landing Page + CRM + Commercial Engine + AI Chat Discovery.
 
 ---
 
-## Implemented Features
+## TARIFF MODEL (Single Source of Truth — commercial.py)
 
-### Phase 1: Landing Page & Brand (DONE)
-- 3D Hero, Integrations Globe, Process Scene
-- Multi-language (DE/NL/EN)
-- Responsive Design, SEO, Cookie Consent
-- Legal Pages (Impressum, Datenschutz, AGB, KI-Hinweise)
+### Starter AI Agenten AG (NXA-SAA-24-499)
+- 499 EUR/Mo (netto), 24 Monate, 30% Aktivierungsanzahlung
+- Gesamt: 11.976 EUR | Anzahlung: 3.592,80 EUR | Rate: 349,30 EUR (24x)
+- 2 KI-Agenten, Shared Cloud, E-Mail-Support (48h)
 
-### Phase 2: AI Chat & Lead System (DONE)
-- Emergent LLM Chat with booking flow
-- Lead capture, qualification, analytics tracking
-- Contact form with validation
-- Email notifications via Resend
+### Growth AI Agenten AG (NXA-GAA-24-1299)
+- 1.299 EUR/Mo (netto), 24 Monate, 30% Aktivierungsanzahlung
+- Gesamt: 31.176 EUR | Anzahlung: 9.352,80 EUR | Rate: 909,30 EUR (24x)
+- 10 KI-Agenten, Private Cloud, Priority Support (24h), CRM/ERP-Kit
 
-### Phase 3: Admin CRM (DONE)
-- Admin login (JWT)
-- Dashboard with stats
-- Leads management (CRUD, status updates)
-- Calendar (bookings, blocked slots)
-- Customer database
+---
 
-### Phase 4: Commercial Engine v2.0 (DONE — Current Session)
-- Central Tariff Config (Single Source of Truth)
-- Quote management (create, send, PDF, magic links)
-- Invoice engine (deposit, monthly, PDF generation)
-- Customer Quote Portal (/angebot) with accept/decline/revision
-- AI Chat Discovery flow (auto-generates quotes)
-- Revolut integration (orders, webhooks, fallback to bank transfer)
-- Admin Commercial Dashboard (quotes, invoices, stats, revenue)
-- FAQ with 15 entries (tariffs, payment, bank details, DSGVO)
-- All translations updated (DE/NL/EN)
-- 100% test coverage (23/23 backend, all frontend verified)
+## SERVICE CATALOG
+
+### Websites
+- Starter: 2.990 EUR | Professional: 7.490 EUR | Enterprise: 14.900 EUR
+
+### Apps
+- MVP: 9.900 EUR | Professional: 24.900 EUR
+
+### KI Add-ons
+- Chatbot: 249 EUR/Mo | Automation: 499 EUR/Mo
+
+### Bundles
+- Digital Starter: 3.990 EUR | Growth Digital: 17.490 EUR | Enterprise Digital: 39.900 EUR
+
+---
+
+## COMPLIANCE & TRUST
+- DSGVO (EU) 2016/679 — implementiert
+- EU AI Act (EU) 2024/1689 — implementiert
+- ISO/IEC 27001 — orientiert (nicht zertifiziert)
+- ISO/IEC 27701 — orientiert (nicht zertifiziert)
+- EU-Hosting (Frankfurt, Amsterdam)
+- Security Headers (X-Frame, CSP, HSTS, Referrer-Policy)
+- Argon2 Passwort-Hashing, JWT, Rate Limiting
+- Audit-Logs fuer alle kommerziellen Events
+- EU-Emblem korrekt eingebunden (keine falsche Zertifizierung)
+
+---
+
+## COMPANY DATA
+- NeXify Automate | KvK: 90483944 | USt-ID: NL865786276B01
+- IBAN: NL66 REVO 3601 4304 36 | BIC: REVONL22 | Intermediary: CHASDEFX
+
+---
+
+## Implemented Features (all tested, all passing)
+
+### Phase 1: Landing Page & Brand — DONE
+### Phase 2: AI Chat & Lead System — DONE
+### Phase 3: Admin CRM — DONE
+### Phase 4: Commercial Engine v2.0 — DONE
+### Phase 5: Service Catalog, Trust, Compliance, Security Hardening — DONE
+
+**Test Results:**
+- Iteration 13: 23/23 passed
+- Iteration 14: 20/20 passed
+- Iteration 15: 22/22 passed + all frontend verified
 
 ---
 
 ## Pending / Backlog
 
-### P1 — Upcoming
-- E-Mail delivery: Connect Resend to all commercial events (currently backend-ready, needs live Resend key)
-- Secure Customer Portal refinement: add document list view, invoice download
-- SMTP fallback (Hostinger: nexifyai@nexifyai.de)
+### P1
+- Live Resend Key aktivieren fuer produktiven E-Mail-Versand
+- SMTP-Fallback (Hostinger: nexifyai@nexifyai.de)
+- Revolut Production Keys einsetzen
 
-### P2 — Future
-- DeepSeek/Mem0 integration for persistent chat memory
-- Monthly recurring invoice auto-generation (cron/scheduler)
-- Revolut Subscription API for recurring payments
-- Admin CSV export
-- App.js refactoring (>740 lines)
-- Lighthouse performance optimization
-- A/B testing framework
-
----
-
-## 3rd Party Integrations
-| Service | Status | Key Location |
-|---------|--------|-------------|
-| Emergent LLM | Active | backend/.env |
-| Resend | Active | backend/.env |
-| Revolut Merchant API | Test keys | backend/.env |
-| MongoDB | Active | backend/.env |
-
----
-
-## Test Reports
-- Iteration 13: 100% tests PASSED (23/23 backend, all frontend verified)
-- Test file: /app/backend/tests/test_commercial_engine.py
+### P2
+- DeepSeek/Mem0 Integration fuer persistente Chat-Memory
+- Monatliche Folgerechnungen Auto-Generierung (Scheduler/Cron)
+- Revolut Subscription API fuer wiederkehrende Zahlungen
+- Dunning-Logik (Zahlungserinnerungen nach 7/14 Tagen)
+- Admin CSV Export
+- App.js Refactoring (>840 Zeilen)
