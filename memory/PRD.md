@@ -11,68 +11,47 @@ Premium DACH B2B landing page for "NeXifyAI by NeXify" — enterprise AI automat
 ## Architecture
 - Frontend: React 18 (CRA, port 3000) with Three.js 3D animations
 - Backend: FastAPI (port 8001), MongoDB (motor), JWT+Argon2 auth
-- 3D: @react-three/fiber v8.18.0, @react-three/drei v9.122.0, three v0.170.0
+- 3D: @react-three/fiber v8, @react-three/drei v9, three v0.170
 - LLM: GPT-4o-mini via Emergent LLM Key (emergentintegrations)
 - Email: Resend API
 - i18n: Custom React Context + translations.js (DE/NL/EN)
 - SEO: react-helmet-async, JSON-LD, hreflang, Open Graph
-- Chat Markdown: react-markdown + remark-gfm
+- Chat: react-markdown + remark-gfm for formatted responses
 
 ## Implemented Features
 
-### Form Label Bug Fix + i18n Completion — April 2026
-- **Fixed duplicate labels**: Contact & Booking forms previously showed "Name" twice, now correctly show "Vorname/Nachname" (DE), "First Name/Last Name" (EN), "Voornaam/Achternaam" (NL)
-- **Fixed hardcoded "Telefon"**: Phone label now translated across all 3 languages
-- **Added separate validation messages**: firstName and lastName get individual error messages
-- **Complete i18n coverage**: All form fields (firstName, lastName, email, phone, company, message) fully translated DE/EN/NL
+### Chat Icon Fix + LLM Quality Upgrade — April 2026 (Iteration 10)
+- **Replaced Material Symbols**: chat_bubble icon replaced with inline SVG arrows (no external font dependency)
+- **System Prompt v2**: Added GESPRÄCHSSTIL UND TONALITÄT — conversational, proactive but not pushy
+- **Restored booking instructions**: TERMINBUCHUNG section was accidentally deleted, now restored
+- **Welcome messages**: More engaging, proactive in all 3 languages
 
-### AI Chat Optimization — April 2026
-- **Markdown Rendering**: ReactMarkdown + remark-gfm for structured chat responses (bold, lists, headings, code)
-- **Upgraded System Prompt**: 7 core services, 400+ integrations, professional formatting, proactive consulting
-- **Enhanced Fallback Responses**: All 8+ paths use structured markdown
+### Form Label Fix + i18n Completion — April 2026 (Iteration 9)
+- Fixed duplicate "Name" labels → proper Vorname/Nachname separation
+- Fixed hardcoded "Telefon" → translated phone labels
+- Complete i18n coverage for all form fields
 
-### Premium 3D Graphics v2.0 — April 2026
-- **Process Pipeline**: Hub nodes with wireframe icosahedrons, orbiting rings, animated particle streams
-- **Orchestration Visual**: Hub-spoke with 4 satellite nodes (SAP/HubSpot, ERP/CRM, API, KI)
-- **Integrations Globe**: 70 nodes, 22 connection arcs, 3 orbital rings, 120 ambient particles
+### AI Chat Markdown + 3D Graphics — April 2026 (Iteration 8)
+- ReactMarkdown rendering for bold, lists, headings
+- Process Pipeline v2, Orchestration Hub-Spoke, Enhanced Globe
 
-### Admin CRM Calendar & Customer Management — April 2026
-- Calendar with monthly grid, booking badges, slot blocking
-- Customer CRM: aggregated list, detail view
-- Lead management: 6 statuses, notes, search
+### Admin CRM + Calendar — April 2026 (Iteration 7)
+- Monthly calendar, slot blocking, customer management
 
-### Multilingual System (DE/NL/EN)
-- IP-based auto-detection, Language Switcher, complete translations
-- Chat welcome messages in 3 languages, LLM language-aware
-
-### Other Features
-- SEO (JSON-LD, hreflang, OG), 400+ Integrations messaging, Legal pages (4 pages, 3 languages)
-- Booking flow (date/time/form), Contact form with honeypot
-- Analytics tracking, Cookie consent, Rate limiting
+### Multilingual + SEO + 400+ Integrations (Iterations 5-6)
+- IP-based language detection, 3 language translations, JSON-LD, hreflang
 
 ## Testing History
-- Iteration 7: 28/28 (Admin Calendar, CRM, Chat translations)
-- Iteration 8: 40/40 (Chat markdown, 3D graphics v2.0, orchestration visual)
-- Iteration 9: 40/40 (Form labels fix, i18n completion, NL translation fix)
+- Iteration 7: 28/28 — Admin Calendar, CRM
+- Iteration 8: 40/40 — Chat markdown, 3D graphics
+- Iteration 9: 40/40 — Form labels, i18n completion
+- Iteration 10: 40/40 — Chat icons, LLM quality, booking flow
 
-## File Structure
-```
-/app/frontend/src/
-├── App.js (Main landing - translation-aware, markdown chat)
-├── App.css (Premium CSS v5.0 + chat markdown + orchestration hub)
-├── i18n/ (translations.js, LanguageContext.js)
-├── components/ (Scene3D.js, LanguageSwitcher.js, SEOHead.js)
-└── pages/ (Admin.js, Admin.css, LegalPages.js)
-/app/backend/
-├── server.py (FastAPI, MongoDB, JWT, LLM, Admin)
-└── tests/ (test_admin_calendar.py, test_chat_markdown.py)
-```
-
-## Upcoming Tasks (Prioritized)
+## Upcoming Tasks
 - P1: Automated email sequences (booking confirmation, 24h reminder, 48h follow-up)
-- P1: Lighthouse Performance Optimization (3D lazy-loading, font preloading, code-splitting)
-- P2: Analytics Dashboard in Admin area (conversion funnel, lead trends)
-- P2: App.js Refactoring (>740 lines → split into components)
+- P1: Lighthouse Performance Optimization (3D lazy-loading, font preloading)
+- P2: Analytics Dashboard in Admin area
+- P2: App.js Refactoring (>740 lines)
 
 ## Backlog
 - Cookie settings granular page
@@ -80,4 +59,4 @@ Premium DACH B2B landing page for "NeXifyAI by NeXify" — enterprise AI automat
 - A/B testing framework
 
 ---
-*Last updated: 02.04.2026 — Form labels fix, i18n completion, NL translation fix. Iteration 9: 40/40 tests PASSED.*
+*Last updated: 02.04.2026 — Chat icon fix, LLM quality upgrade, booking flow restored. Iteration 10: 40/40 tests PASSED.*
