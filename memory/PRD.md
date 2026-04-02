@@ -1,105 +1,97 @@
 # NeXifyAI — Product Requirements Document
 
-## Product Vision
-NeXifyAI by NeXify Automate: B2B-first KI-Agenten-Platform fuer DACH/Benelux.
-Landing Page + CRM + Commercial Engine + AI Chat Discovery + Service-Katalog + Trust/Compliance.
+## Original Problem Statement
+B2B-first commercial system "Starter/Growth AI Agenten AG" for NeXifyAI. Full-stack platform with React frontend, FastAPI backend, MongoDB. Multi-language (DE/NL/EN). Revolut Merchant API for payments. Enterprise-grade compliance (DSGVO, EU AI Act).
 
-## Core Architecture
+## User Persona
+Pascal Courbois — CEO, NeXify Automate. DACH/Benelux markets. B2B customers seeking KI-Agenten, Websites, Apps, SEO.
+
+## Core Requirements (Static)
+1. Landing page with 3D, multi-language, Trust/Compliance, Chat Discovery
+2. Commercial Engine: Quotes, Invoices, PDF generation, Revolut payment
+3. Magic Link customer portal for quote acceptance
+4. Admin Dashboard for commercial management
+5. Premium Integrations section (categorized, SEO-linked)
+6. Dedicated SEO landing pages per integration (/integrationen/:slug)
+7. KI-gesteuertes SEO as standalone product with pricing, FAQ, bundles
+8. Full Services + Bundles pricing architecture
+9. PDF tariff comparison sheets (CI-branded)
+10. Legal compliance (AGB, Datenschutz, KI-Hinweise, Impressum) — trilingual
+11. Trust section with operational security visibility
+12. AI advisor with full product matrix mapping
+
+## Architecture
 ```
 /app/
 ├── backend/
-│   ├── server.py (FastAPI, MongoDB, JWT, LLM Chat, Admin, Commercial, Security Headers)
-│   ├── commercial.py (TARIFF_CONFIG, SERVICE_CATALOG, BUNDLE_CATALOG, COMPLIANCE_STATUS, ISO_GAP_ANALYSIS, PDF, Revolut, Magic Links, FAQ)
-│   ├── requirements.txt
-│   └── .env
+│   ├── server.py (FastAPI, MongoDB, JWT, LLM, Security Headers, Chat)
+│   ├── commercial.py (Quotes, Invoices, PDF generation, Revolut, Tariff Sheets)
+│   └── .env (MONGO_URL, Revolut keys, Resend key, LLM key)
 ├── frontend/
 │   ├── src/
-│   │   ├── App.js (Landing, 3D, Chat Discovery, Pricing, Services, Trust, FAQ, Contact)
-│   │   ├── App.css
-│   │   ├── index.js (Routes: /, /de, /nl, /en, /admin, /angebot, /datenschutz, /impressum, /agb)
-│   │   ├── i18n/ (LanguageContext.js, translations.js — DE/NL/EN)
-│   │   └── pages/ (Admin.js, LegalPages.js, QuotePortal.js)
-│   └── package.json
-└── memory/ (PRD.md, test_credentials.md)
+│   │   ├── App.js (Landing page, Integrations, Pricing, SEO, Services, Trust, FAQ, Contact)
+│   │   ├── App.css (Full design system)
+│   │   ├── data/integrations.js (Integration categories + featured data)
+│   │   ├── data/products.js (SEO product, Full Services, Bundles)
+│   │   ├── i18n/ (LanguageContext.js, translations.js)
+│   │   ├── components/ (LanguageSwitcher, SEOHead, Scene3D)
+│   │   └── pages/ (Admin.js, LegalPages.js, QuotePortal.js, IntegrationDetail.js)
 ```
 
----
+## What's Been Implemented
+### Phase 1 (Previous forks)
+- FastAPI backend with MongoDB, JWT auth, security headers
+- Commercial engine (quotes, invoices, PDF generation via reportlab)
+- Revolut Merchant API integration (production keys)
+- Magic Link / Quote Portal
+- Chat Discovery Flow with LLM
+- Admin Dashboard
+- 3D landing page with multi-language support
+- EU Compliance Trust UI
 
-## TARIFF MODEL (Single Source of Truth — commercial.py)
+### Phase 2 (Current session — April 2, 2026)
+- **BLOCK 1**: Integrations UI Overhaul — premium categorized layout (12 categories, 100+ systems, popular grid, category cards, CTAs)
+- **BLOCK 2**: SEO Landing Pages — /integrationen/:slug for Salesforce, HubSpot, SAP, DATEV, Slack, AWS, Shopify, OpenAI, Stripe (with use cases, FAQ, process, combined-with, CTA)
+- **BLOCK 3**: KI-gesteuertes SEO as standalone product (benefits, process, 3 pricing tiers, FAQ, bundle integration)
+- **BLOCK 4**: Full Services pricing (Websites 3 tiers, Apps 2 tiers, SEO 3 tiers, AI Agents 2 tiers, Add-ons 2)
+- **BLOCK 5**: Bundles & Cross-sell (Digital Starter 3.990 EUR, Growth Digital 17.490 EUR, Enterprise Digital ab 39.900 EUR)
+- **BLOCK 6**: PDF Tariff Comparison Sheets (CI-branded, per category or all, via /api/product/tariff-sheet)
+- **BLOCK 7**: Legal updates (Privacy/AGB updated with Revolut, Magic Links, quote/invoice sections in all 3 languages)
+- **BLOCK 8**: Trust section with operational security cards (Magic Links, Audit Trail, Data Lifecycle, RBAC)
+- **BLOCK 9**: AI advisor system prompt updated with full product matrix, SEO products, bundle logic, cross-sell triggers
 
-### Starter AI Agenten AG (NXA-SAA-24-499)
-- 499 EUR/Mo (netto), 24 Monate, 30% Aktivierungsanzahlung
-- Gesamt: 11.976 EUR | Anzahlung: 3.592,80 EUR | Rate: 349,30 EUR (24x)
-- 2 KI-Agenten, Shared Cloud, E-Mail-Support (48h)
+## Testing Status
+- Iteration 16: 100% (23/23 backend, all frontend UI verified)
+- Previous iterations 13-15: 100% (65/65 tests)
 
-### Growth AI Agenten AG (NXA-GAA-24-1299)
-- 1.299 EUR/Mo (netto), 24 Monate, 30% Aktivierungsanzahlung
-- Gesamt: 31.176 EUR | Anzahlung: 9.352,80 EUR | Rate: 909,30 EUR (24x)
-- 10 KI-Agenten, Private Cloud, Priority Support (24h), CRM/ERP-Kit
+## Key Endpoints
+- POST /api/commercial/quote — Create quote
+- GET /api/commercial/portal/{token} — Magic Link portal
+- GET /api/product/tariff-sheet?category=all|agents|websites|seo|bundles — PDF download
+- GET /api/product/tariffs — Tariff data
+- GET /api/product/services — Services catalog
+- GET /api/product/compliance — Compliance status
+- POST /api/chat — AI advisor
 
----
+## 3rd Party Integrations
+- Resend (Email) — User API key
+- Emergent LLM Key (Chat) — Universal key
+- Revolut Merchant API (Payments) — Production keys in .env
 
-## SERVICE CATALOG
+## Prioritized Backlog
+### P0 (Done)
+- All blocks 1-9 completed and tested
 
-### Websites
-- Starter: 2.990 EUR | Professional: 7.490 EUR | Enterprise: 14.900 EUR
+### P1 (Remaining)
+- Resend live API key activation (currently placeholder)
+- App.js refactoring (>1000 lines → split into components)
+- Dunning logic for overdue invoices
+- Admin CSV export for quotes/invoices
+- Subscription API for recurring billing
 
-### Apps
-- MVP: 9.900 EUR | Professional: 24.900 EUR
-
-### KI Add-ons
-- Chatbot: 249 EUR/Mo | Automation: 499 EUR/Mo
-
-### Bundles
-- Digital Starter: 3.990 EUR | Growth Digital: 17.490 EUR | Enterprise Digital: 39.900 EUR
-
----
-
-## COMPLIANCE & TRUST
-- DSGVO (EU) 2016/679 — implementiert
-- EU AI Act (EU) 2024/1689 — implementiert
-- ISO/IEC 27001 — orientiert (nicht zertifiziert)
-- ISO/IEC 27701 — orientiert (nicht zertifiziert)
-- EU-Hosting (Frankfurt, Amsterdam)
-- Security Headers (X-Frame, CSP, HSTS, Referrer-Policy)
-- Argon2 Passwort-Hashing, JWT, Rate Limiting
-- Audit-Logs fuer alle kommerziellen Events
-- EU-Emblem korrekt eingebunden (keine falsche Zertifizierung)
-
----
-
-## COMPANY DATA
-- NeXify Automate | KvK: 90483944 | USt-ID: NL865786276B01
-- IBAN: NL66 REVO 3601 4304 36 | BIC: REVONL22 | Intermediary: CHASDEFX
-
----
-
-## Implemented Features (all tested, all passing)
-
-### Phase 1: Landing Page & Brand — DONE
-### Phase 2: AI Chat & Lead System — DONE
-### Phase 3: Admin CRM — DONE
-### Phase 4: Commercial Engine v2.0 — DONE
-### Phase 5: Service Catalog, Trust, Compliance, Security Hardening — DONE
-
-**Test Results:**
-- Iteration 13: 23/23 passed
-- Iteration 14: 20/20 passed
-- Iteration 15: 22/22 passed + all frontend verified
-
----
-
-## Pending / Backlog
-
-### P1
-- Live Resend Key aktivieren fuer produktiven E-Mail-Versand
-- SMTP-Fallback (Hostinger: nexifyai@nexifyai.de)
-- Revolut Production Keys einsetzen
-
-### P2
-- DeepSeek/Mem0 Integration fuer persistente Chat-Memory
-- Monatliche Folgerechnungen Auto-Generierung (Scheduler/Cron)
-- Revolut Subscription API fuer wiederkehrende Zahlungen
-- Dunning-Logik (Zahlungserinnerungen nach 7/14 Tagen)
-- Admin CSV Export
-- App.js Refactoring (>840 Zeilen)
+### P2 (Future)
+- A/B testing for CTA variants
+- Customer dashboard beyond quote portal
+- Multi-tenant support
+- API documentation (Swagger/OpenAPI)
+- Performance optimization (lazy loading, code splitting)
