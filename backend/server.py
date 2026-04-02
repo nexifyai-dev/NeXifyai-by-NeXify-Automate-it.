@@ -964,6 +964,500 @@ async def admin_calendar_data(user = Depends(get_current_admin), month: str = No
     
     return {"bookings": bookings, "blocked_slots": blocked, "month": month}
 
+
+# ═══════════════════════════════════════════════════════════════════
+# COMMERCIAL ENGINE — Starter AI Agenten AG
+# ═══════════════════════════════════════════════════════════════════
+from commercial import (
+    COMPANY_DATA, STARTER_PRODUCT, calc_contract,
+    get_next_number, create_revolut_order, get_revolut_order,
+    generate_access_token, verify_access_token,
+    generate_quote_pdf, generate_invoice_pdf
+)
+from fastapi.responses import StreamingResponse
+
+
+class QuoteRequest(BaseModel):
+    tier: str
+    customer_name: str
+    customer_email: EmailStr
+    customer_company: str = ""
+    customer_phone: str = ""
+    notes: str = ""
+    custom_monthly_net: Optional[int] = None
+
+
+class InvoiceCreateRequest(BaseModel):
+    quote_id: str
+    type: str = "deposit"
+
+
+# --- Product Info (Public) ---
+
+@app.get("/api/product/starter")
+async def get_starter_product():
+    """Public endpoint: Starter AI Agenten AG product info"""
+    tiers = {}
+    for key, tier in STARTER_PRODUCT["tiers"].items():
+        t = {**tier}
+        if t.get("monthly_net"):
+            calc = calc_contract(key)
+            t["calculation"] = {k: v for k, v in calc.items() if k != "tier"}
+        tiers[key] = t
+    return {
+        "product": STARTER_PRODUCT["name"],
+        "contract_months": STARTER_PRODUCT["contract_months"],
+        "deposit_percent": STARTER_PRODUCT["deposit_percent"],
+        "tiers": tiers,
+        "company": COMPANY_DATA,
+        "currency": "EUR"
+    }
+
+
+@app.get("/api/product/faq")
+async def get_product_faq():
+    """Public FAQ for Starter AI Agenten AG"""
+    return {"faq": [
+        {"q": "Was ist Starter AI Agenten AG?",
+         "a": "Starter AI Agenten AG ist das Kernprodukt von NeXifyAI — ein vollständig verwaltetes KI-Agenten-System, das Ihre Geschäftsprozesse automatisiert. Je nach Tarif erhalten Sie 2 bis unlimitierte KI-Agenten, die nahtlos in Ihre bestehenden Systeme integriert werden."},
+        {"q": "Für wen ist das Produkt geeignet?",
+         "a": "Für mittelständische Unternehmen und Konzerne im DACH- und Benelux-Raum, die repetitive Prozesse in Vertrieb, Kundenservice, HR, Finanzen oder Operations automatisieren möchten."},
+        {"q": "Welche Leistungen sind im Starter-Tarif enthalten?",
+         "a": "2 KI-Agenten, Shared Cloud Infrastructure, E-Mail-Support (48h), Basis-Integrationen (REST API), Standard-Monitoring und monatliches Reporting."},
+        {"q": "Wie funktioniert die 24-Monats-Laufzeit?",
+         "a": "Der Vertrag läuft über 24 Monate ab Beauftragung. Dies ermöglicht eine nachhaltige Implementierung, Optimierung und kontinuierliche Weiterentwicklung Ihrer KI-Agenten."},
+        {"q": "Wie funktioniert die 30-%-Anzahlung?",
+         "a": "Bei Beauftragung wird eine Anzahlung von 30 % des Gesamtvertragswerts fällig. Diese deckt die Initialisierung, Kapazitätsreservierung und das strategische Onboarding ab. Der Restbetrag wird in 23 gleichen monatlichen Raten abgerechnet."},
+        {"q": "Wann ist die Anzahlung fällig?",
+         "a": "Die Anzahlung ist sofort nach Angebotsannahme bzw. Beauftragung fällig. Sie erhalten umgehend eine Anzahlungsrechnung."},
+        {"q": "Wie erfolgt die Rechnungsstellung?",
+         "a": "Sie erhalten eine Anzahlungsrechnung bei Beauftragung und danach monatliche Rechnungen für den Restbetrag. Alle Rechnungen werden per E-Mail zugestellt und sind im Kundencenter abrufbar."},
+        {"q": "Kann per Überweisung bezahlt werden?",
+         "a": "Ja. Zusätzlich zur Online-Zahlung via Revolut akzeptieren wir klassische Banküberweisung."},
+        {"q": "Bankdaten für Zahlungen innerhalb des EWR",
+         "a": f"IBAN: {COMPANY_DATA['bank']['iban']}\nBIC: {COMPANY_DATA['bank']['bic']}\nKontoinhaber: {COMPANY_DATA['name']}"},
+        {"q": "Bankdaten für Zahlungen außerhalb des EWR",
+         "a": f"IBAN: {COMPANY_DATA['bank']['iban']}\nBIC: {COMPANY_DATA['bank']['bic']}\nBIC der zwischengeschalteten Bank: {COMPANY_DATA['bank']['intermediary_bic']}\nKontoinhaber: {COMPANY_DATA['name']}"},
+        {"q": "Wie funktioniert die Angebotsannahme?",
+         "a": "Nach dem Beratungsgespräch erhalten Sie ein individuelles Angebot per E-Mail. Dieses können Sie online annehmen oder per Rückbestätigung beauftragen. Nach Annahme wird die Anzahlungsrechnung erstellt."},
+        {"q": "Wie funktioniert die Zustellung von Angebot und Rechnung?",
+         "a": "Alle Dokumente werden digital per E-Mail zugestellt. Zusätzlich können Sie Ihre Dokumente jederzeit über einen sicheren, zeitlich begrenzten Zugangslink abrufen."},
+        {"q": "Wie erfolgt DSGVO-konformer Dokumentenzugriff?",
+         "a": "Über zeitlich begrenzte Magic-Links mit 24-Stunden-Gültigkeit. Es werden keine Passwörter per E-Mail versendet. Alle Zugriffe werden protokolliert."},
+        {"q": "Wie funktioniert Support?",
+         "a": f"Per E-Mail an {COMPANY_DATA['email']} oder telefonisch unter {COMPANY_DATA['phone']}. Im Growth-Tarif mit Priority-Response (24h), im Enterprise-Tarif mit SLA-gesichertem Support (4h)."},
+        {"q": "Was passiert nach Beauftragung?",
+         "a": "1. Anzahlungsrechnung wird erstellt und versendet\n2. Nach Zahlungseingang: Kickoff-Termin und Onboarding-Start\n3. Technische Integration und Agent-Konfiguration\n4. Testphase und Go-Live\n5. Laufende Optimierung und monatliches Reporting"}
+    ]}
+
+
+# --- Quote Management (Admin) ---
+
+@app.post("/api/admin/quotes")
+async def create_quote(req: QuoteRequest, current_user: dict = Depends(get_current_admin)):
+    """Create a new quote"""
+    calc = calc_contract(req.tier, req.custom_monthly_net)
+    if not calc or calc.get("requires_custom_quote"):
+        raise HTTPException(400, "Enterprise-Tarif erfordert individuelle Kalkulation")
+
+    quote_number = await get_next_number(db, "quote")
+    now = datetime.now(timezone.utc)
+
+    quote = {
+        "quote_id": f"q_{secrets.token_hex(8)}",
+        "quote_number": quote_number,
+        "status": "draft",
+        "tier": req.tier,
+        "customer": {
+            "name": req.customer_name,
+            "email": req.customer_email,
+            "company": req.customer_company,
+            "phone": req.customer_phone
+        },
+        "calculation": calc,
+        "notes": req.notes,
+        "valid_until": (now + timedelta(days=30)).isoformat(),
+        "created_at": now.isoformat(),
+        "created_by": current_user["email"],
+        "history": [{"action": "created", "at": now.isoformat(), "by": current_user["email"]}]
+    }
+
+    await db.quotes.insert_one(quote)
+    del quote["_id"]
+
+    # Generate PDF
+    pdf_bytes = generate_quote_pdf(quote)
+    await db.documents.insert_one({
+        "doc_id": f"doc_{secrets.token_hex(8)}",
+        "type": "quote",
+        "ref_id": quote["quote_id"],
+        "number": quote_number,
+        "pdf_data": pdf_bytes,
+        "created_at": now.isoformat()
+    })
+
+    return {"quote": quote, "pdf_available": True}
+
+
+@app.get("/api/admin/quotes")
+async def list_quotes(current_user: dict = Depends(get_current_admin)):
+    """List all quotes"""
+    quotes = await db.quotes.find({}, {"_id": 0, "history": 0}).sort("created_at", -1).to_list(200)
+    return {"quotes": quotes}
+
+
+@app.post("/api/admin/quotes/{quote_id}/send")
+async def send_quote(quote_id: str, current_user: dict = Depends(get_current_admin)):
+    """Send quote to customer via email"""
+    quote = await db.quotes.find_one({"quote_id": quote_id}, {"_id": 0})
+    if not quote:
+        raise HTTPException(404, "Angebot nicht gefunden")
+
+    doc = await db.documents.find_one({"ref_id": quote_id, "type": "quote"})
+    if not doc:
+        raise HTTPException(404, "PDF nicht gefunden")
+
+    now = datetime.now(timezone.utc)
+    customer_email = quote["customer"]["email"]
+    customer_name = quote["customer"].get("name", "")
+    calc = quote.get("calculation", {})
+    tier_name = calc.get("tier_name", "")
+
+    if RESEND_API_KEY:
+        try:
+            import base64
+            pdf_b64 = base64.b64encode(doc["pdf_data"]).decode()
+            resend.Emails.send({
+                "from": SENDER_EMAIL,
+                "to": customer_email,
+                "subject": f"Ihr Angebot von NeXifyAI — Starter AI Agenten AG ({tier_name})",
+                "html": f"""
+                <div style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a2e;">
+                    <div style="border-bottom: 2px solid #ff9b7a; padding-bottom: 16px; margin-bottom: 24px;">
+                        <h1 style="margin: 0; font-size: 20px;">NeXify<span style="color: #ff9b7a;">AI</span></h1>
+                    </div>
+                    <p>Sehr geehrte/r {customer_name},</p>
+                    <p>vielen Dank für Ihr Interesse an <strong>NeXify<span style="color: #ff9b7a;">AI</span></strong>. Anbei erhalten Sie Ihr persönliches Angebot für das Produkt <strong>Starter AI Agenten AG</strong> im Tarif <strong>{tier_name}</strong>.</p>
+                    <p>Das Angebot ist 30 Tage gültig. Bei Fragen stehen wir Ihnen jederzeit zur Verfügung.</p>
+                    <p>Mit freundlichen Grüßen,<br/><strong>Pascal Courbois</strong><br/>Geschäftsführer, NeXifyAI<br/>{COMPANY_DATA['phone']}</p>
+                </div>
+                """,
+                "attachments": [{
+                    "filename": f"Angebot_{quote['quote_number'].replace('.', '_')}.pdf",
+                    "content": pdf_b64,
+                    "content_type": "application/pdf"
+                }]
+            })
+            logger.info(f"Quote {quote_id} sent to {customer_email}")
+        except Exception as e:
+            logger.error(f"Email send error: {e}")
+            raise HTTPException(500, f"E-Mail-Versand fehlgeschlagen: {str(e)}")
+
+    await db.quotes.update_one(
+        {"quote_id": quote_id},
+        {"$set": {"status": "sent", "sent_at": now.isoformat()},
+         "$push": {"history": {"action": "sent", "at": now.isoformat(), "by": current_user["email"]}}}
+    )
+    return {"sent": True, "to": customer_email}
+
+
+@app.post("/api/admin/quotes/{quote_id}/accept")
+async def accept_quote(quote_id: str, current_user: dict = Depends(get_current_admin)):
+    """Mark quote as accepted and create deposit invoice"""
+    quote = await db.quotes.find_one({"quote_id": quote_id}, {"_id": 0})
+    if not quote:
+        raise HTTPException(404, "Angebot nicht gefunden")
+
+    now = datetime.now(timezone.utc)
+    calc = quote.get("calculation", {})
+
+    # Create deposit invoice
+    invoice_number = await get_next_number(db, "invoice")
+    due_date = (now + timedelta(days=14)).strftime("%d.%m.%Y")
+    deposit_net = calc.get("deposit_net", 0)
+    vat_rate = calc.get("vat_rate", 21)
+    deposit_vat = int(deposit_net * vat_rate / 100)
+    deposit_gross = deposit_net + deposit_vat
+
+    invoice = {
+        "invoice_id": f"inv_{secrets.token_hex(8)}",
+        "invoice_number": invoice_number,
+        "type": "deposit",
+        "status": "open",
+        "quote_id": quote_id,
+        "customer": quote["customer"],
+        "items": [{
+            "description": f"Anzahlung (30 %) — Starter AI Agenten AG, Tarif {calc.get('tier_name', '')}",
+            "amount_net": deposit_net
+        }],
+        "totals": {
+            "net": deposit_net,
+            "vat_rate": vat_rate,
+            "vat": deposit_vat,
+            "gross": deposit_gross
+        },
+        "date": now.strftime("%d.%m.%Y"),
+        "due_date": due_date,
+        "payment_reference": invoice_number,
+        "payment_status": "pending",
+        "revolut_order_id": None,
+        "created_at": now.isoformat(),
+        "history": [{"action": "created", "at": now.isoformat(), "by": current_user["email"]}]
+    }
+
+    # Generate invoice PDF
+    pdf_bytes = generate_invoice_pdf(invoice)
+    await db.invoices.insert_one(invoice)
+    await db.documents.insert_one({
+        "doc_id": f"doc_{secrets.token_hex(8)}",
+        "type": "invoice",
+        "ref_id": invoice["invoice_id"],
+        "number": invoice_number,
+        "pdf_data": pdf_bytes,
+        "created_at": now.isoformat()
+    })
+
+    # Update quote status
+    await db.quotes.update_one(
+        {"quote_id": quote_id},
+        {"$set": {"status": "accepted", "accepted_at": now.isoformat(), "invoice_id": invoice["invoice_id"]},
+         "$push": {"history": {"action": "accepted", "at": now.isoformat(), "by": current_user["email"]}}}
+    )
+
+    # Create Revolut payment order
+    revolut_result = await create_revolut_order(
+        amount_cents=deposit_gross,
+        currency="EUR",
+        customer_email=quote["customer"]["email"],
+        description=f"NeXifyAI Anzahlung — {calc.get('tier_name', '')} ({invoice_number})",
+        merchant_order_id=invoice["invoice_id"]
+    )
+
+    if revolut_result.get("order_id"):
+        await db.invoices.update_one(
+            {"invoice_id": invoice["invoice_id"]},
+            {"$set": {
+                "revolut_order_id": revolut_result["order_id"],
+                "revolut_token": revolut_result.get("token"),
+                "checkout_url": revolut_result.get("checkout_url")
+            }}
+        )
+        invoice["revolut_order_id"] = revolut_result["order_id"]
+        invoice["checkout_url"] = revolut_result.get("checkout_url")
+
+    del invoice["_id"]
+    return {"invoice": invoice, "revolut": revolut_result, "pdf_available": True}
+
+
+# --- Invoice Management (Admin) ---
+
+@app.get("/api/admin/invoices")
+async def list_invoices(current_user: dict = Depends(get_current_admin)):
+    """List all invoices"""
+    invoices = await db.invoices.find({}, {"_id": 0, "history": 0}).sort("created_at", -1).to_list(200)
+    return {"invoices": invoices}
+
+
+@app.post("/api/admin/invoices/{invoice_id}/send")
+async def send_invoice(invoice_id: str, current_user: dict = Depends(get_current_admin)):
+    """Send invoice to customer via email"""
+    invoice = await db.invoices.find_one({"invoice_id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(404, "Rechnung nicht gefunden")
+
+    doc = await db.documents.find_one({"ref_id": invoice_id, "type": "invoice"})
+    if not doc:
+        raise HTTPException(404, "PDF nicht gefunden")
+
+    now = datetime.now(timezone.utc)
+    customer_email = invoice["customer"]["email"]
+    customer_name = invoice["customer"].get("name", "")
+
+    type_labels = {"deposit": "Anzahlungsrechnung", "monthly": "Monatsrechnung", "final": "Schlussrechnung"}
+    inv_label = type_labels.get(invoice.get("type", "deposit"), "Rechnung")
+
+    if RESEND_API_KEY:
+        try:
+            import base64
+            pdf_b64 = base64.b64encode(doc["pdf_data"]).decode()
+            checkout_url = invoice.get("checkout_url", "")
+            payment_html = ""
+            if checkout_url:
+                payment_html = f'<p><a href="{checkout_url}" style="display:inline-block;padding:12px 24px;background:#ff9b7a;color:#0c1117;text-decoration:none;font-weight:bold;border-radius:6px;">Jetzt online bezahlen</a></p>'
+
+            resend.Emails.send({
+                "from": SENDER_EMAIL,
+                "to": customer_email,
+                "subject": f"{inv_label} {invoice['invoice_number']} — NeXifyAI",
+                "html": f"""
+                <div style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a2e;">
+                    <div style="border-bottom: 2px solid #ff9b7a; padding-bottom: 16px; margin-bottom: 24px;">
+                        <h1 style="margin: 0; font-size: 20px;">NeXify<span style="color: #ff9b7a;">AI</span></h1>
+                    </div>
+                    <p>Sehr geehrte/r {customer_name},</p>
+                    <p>anbei erhalten Sie Ihre <strong>{inv_label}</strong> Nr. <strong>{invoice['invoice_number']}</strong>.</p>
+                    <p><strong>Betrag:</strong> {invoice['totals']['gross'] / 100:,.2f} EUR (brutto)<br/>
+                    <strong>Fällig am:</strong> {invoice.get('due_date', '—')}</p>
+                    {payment_html}
+                    <p>Alternativ per Überweisung:<br/>
+                    IBAN: {COMPANY_DATA['bank']['iban']}<br/>
+                    BIC: {COMPANY_DATA['bank']['bic']}<br/>
+                    Verwendungszweck: {invoice['invoice_number']}</p>
+                    <p>Mit freundlichen Grüßen,<br/><strong>NeXifyAI</strong></p>
+                </div>
+                """,
+                "attachments": [{
+                    "filename": f"Rechnung_{invoice['invoice_number'].replace('.', '_')}.pdf",
+                    "content": pdf_b64,
+                    "content_type": "application/pdf"
+                }]
+            })
+        except Exception as e:
+            logger.error(f"Invoice email error: {e}")
+            raise HTTPException(500, f"E-Mail-Versand fehlgeschlagen: {str(e)}")
+
+    await db.invoices.update_one(
+        {"invoice_id": invoice_id},
+        {"$set": {"status": "sent", "sent_at": now.isoformat()},
+         "$push": {"history": {"action": "sent", "at": now.isoformat(), "by": current_user["email"]}}}
+    )
+    return {"sent": True, "to": customer_email}
+
+
+@app.post("/api/admin/invoices/{invoice_id}/mark-paid")
+async def mark_invoice_paid(invoice_id: str, current_user: dict = Depends(get_current_admin)):
+    """Manually mark invoice as paid (for bank transfers)"""
+    now = datetime.now(timezone.utc)
+    result = await db.invoices.update_one(
+        {"invoice_id": invoice_id},
+        {"$set": {"payment_status": "paid", "paid_at": now.isoformat(), "status": "paid"},
+         "$push": {"history": {"action": "marked_paid", "at": now.isoformat(), "by": current_user["email"]}}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(404, "Rechnung nicht gefunden")
+
+    # Update related quote
+    invoice = await db.invoices.find_one({"invoice_id": invoice_id})
+    if invoice and invoice.get("quote_id"):
+        await db.quotes.update_one(
+            {"quote_id": invoice["quote_id"]},
+            {"$set": {"payment_status": "deposit_paid"},
+             "$push": {"history": {"action": "deposit_paid", "at": now.isoformat(), "by": current_user["email"]}}}
+        )
+
+    return {"paid": True}
+
+
+# --- Document Downloads ---
+
+@app.get("/api/documents/{doc_type}/{ref_id}/pdf")
+async def download_document(doc_type: str, ref_id: str, token: str = None):
+    """Download document PDF (admin or magic-link access)"""
+    doc = await db.documents.find_one({"ref_id": ref_id, "type": doc_type})
+    if not doc:
+        raise HTTPException(404, "Dokument nicht gefunden")
+
+    # Access control: either admin token or magic link
+    if token:
+        link = await db.access_links.find_one({"token_hash": hashlib.sha256(token.encode()).hexdigest()})
+        if not link or not verify_access_token(token, link["token_hash"], link["expires_at"]):
+            raise HTTPException(403, "Zugangslink ungültig oder abgelaufen")
+        # Log access
+        await db.audit_log.insert_one({
+            "event": "document_access",
+            "doc_type": doc_type,
+            "ref_id": ref_id,
+            "method": "magic_link",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+
+    filename = f"{doc_type}_{doc.get('number', ref_id).replace('.', '_')}.pdf"
+    return StreamingResponse(
+        BytesIO(doc["pdf_data"]),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+
+# --- Customer Magic Link Access ---
+
+@app.post("/api/admin/access-link")
+async def create_access_link(customer_email: str = "", current_user: dict = Depends(get_current_admin)):
+    """Generate a magic link for customer document access"""
+    token_data = generate_access_token(customer_email)
+    await db.access_links.insert_one({
+        "token_hash": token_data["token_hash"],
+        "customer_email": customer_email,
+        "expires_at": token_data["expires_at"],
+        "created_at": token_data["created_at"],
+        "created_by": current_user["email"]
+    })
+    return {"magic_link_token": token_data["token"], "expires_at": token_data["expires_at"]}
+
+
+# --- Revolut Webhook ---
+
+@app.post("/api/webhooks/revolut")
+async def revolut_webhook(request: Request):
+    """Handle Revolut payment webhooks"""
+    body = await request.body()
+    raw_body = body.decode("utf-8")
+    timestamp = request.headers.get("Revolut-Request-Timestamp", "")
+    signature = request.headers.get("Revolut-Signature", "")
+
+    try:
+        data = json.loads(raw_body)
+    except Exception:
+        raise HTTPException(400, "Invalid JSON")
+
+    event = data.get("event", "")
+    order_id = data.get("order_id", "")
+
+    logger.info(f"Revolut webhook: {event} for order {order_id}")
+
+    # Store webhook event (idempotency check)
+    existing = await db.webhook_events.find_one({"order_id": order_id, "event": event})
+    if existing:
+        return {"status": "already_processed"}
+
+    await db.webhook_events.insert_one({
+        "order_id": order_id,
+        "event": event,
+        "data": data,
+        "processed_at": datetime.now(timezone.utc).isoformat()
+    })
+
+    if event == "ORDER_COMPLETED":
+        # Find invoice by revolut order ID
+        invoice = await db.invoices.find_one({"revolut_order_id": order_id})
+        if invoice:
+            now = datetime.now(timezone.utc)
+            await db.invoices.update_one(
+                {"invoice_id": invoice["invoice_id"]},
+                {"$set": {"payment_status": "paid", "paid_at": now.isoformat(), "status": "paid"},
+                 "$push": {"history": {"action": "payment_received_revolut", "at": now.isoformat(), "by": "system"}}}
+            )
+            # Update related quote
+            if invoice.get("quote_id"):
+                await db.quotes.update_one(
+                    {"quote_id": invoice["quote_id"]},
+                    {"$set": {"payment_status": "deposit_paid"},
+                     "$push": {"history": {"action": "deposit_paid_revolut", "at": now.isoformat(), "by": "system"}}}
+                )
+            logger.info(f"Invoice {invoice['invoice_id']} marked as paid via Revolut")
+
+    elif event == "ORDER_PAYMENT_FAILED":
+        invoice = await db.invoices.find_one({"revolut_order_id": order_id})
+        if invoice:
+            await db.invoices.update_one(
+                {"invoice_id": invoice["invoice_id"]},
+                {"$set": {"payment_status": "failed"},
+                 "$push": {"history": {"action": "payment_failed", "at": datetime.now(timezone.utc).isoformat(), "by": "system"}}}
+            )
+
+    return {"status": "ok"}
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
