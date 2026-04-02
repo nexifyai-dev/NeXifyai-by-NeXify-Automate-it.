@@ -54,6 +54,9 @@ function AnimSection({ children, className = '', id, ...props }) {
   );
 }
 
+/* ═══════════ BRAND NAME — CI-konforme Darstellung ═══════════ */
+const BrandName = ({ className }) => <span className={className}>NeXify<span className="brand-ai">AI</span></span>;
+
 /* ═══════════ LOGO ═══════════ */
 const Logo = ({ size = 'md' }) => {
   const s = size === 'sm' ? 24 : size === 'lg' ? 40 : 32;
@@ -62,7 +65,7 @@ const Logo = ({ size = 'md' }) => {
     <div style={{ display: 'flex', alignItems: 'center', gap: size === 'sm' ? 8 : 10 }}>
       <img src="/icon-mark.svg" alt="" width={s} height={s} style={{ display: 'block' }} />
       <span style={{ fontFamily: 'var(--f-display)', fontWeight: 800, fontSize: fs, color: '#fff', letterSpacing: '-.02em' }}>
-        NeXify<span style={{ color: 'var(--nx-accent)' }}>AI</span>
+        NeXify<span className="brand-ai">AI</span>
       </span>
     </div>
   );
@@ -114,7 +117,7 @@ const Hero = ({ onBook, t }) => {
       <div className="container hero-container">
         <div className="hero-inner">
           <motion.div className="hero-content" initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: [0.25, 0.4, 0, 1] }}>
-            <motion.span className="label hero-label" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>{t.hero.label}</motion.span>
+            <motion.span className="label hero-label" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>NEXIFY<span className="brand-ai">AI</span> BY NEXIFY</motion.span>
             <h1 id="hero-t">{t.hero.h1[0]} <span className="text-accent">{t.hero.h1[1]}</span><br />{t.hero.h1[2]}</h1>
             <p className="hero-desc">{t.hero.desc}</p>
             <motion.div className="hero-actions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
@@ -500,7 +503,7 @@ const LiveChat = ({ isOpen, onClose, initialQ, t, lang }) => {
         <button className="chat-close" onClick={onClose} aria-label="Close" data-testid="chat-close"><I n="close" /></button>
         <div className="chat-layout">
           <div className="chat-sidebar">
-            <h2 id="chat-t" className="chat-sidebar-title">{t.chat.sidebarTitle}</h2>
+            <h2 id="chat-t" className="chat-sidebar-title"><BrandName /> {t.chat.sidebarRole}</h2>
             <p className="chat-sidebar-desc">{t.chat.sidebarDesc}</p>
             <div className="chat-presets">
               {t.chat.presets.map((q, i) => (
@@ -618,7 +621,7 @@ const Ft = ({ onCookieSettings, t, lang }) => {
       <div className="container">
         <div className="footer-grid">
           <div className="footer-brand">
-            <div className="footer-logo"><img src="/icon-mark.svg" alt="" width="28" height="28" /><span>NeXify<em>AI</em></span></div>
+            <div className="footer-logo"><img src="/icon-mark.svg" alt="" width="28" height="28" /><span>NeXify<span className="brand-ai">AI</span></span></div>
             <div className="footer-tagline">{t.footer.tagline}</div>
             <div className="footer-legal-name">{COMPANY.legal}</div>
             <address className="footer-contact">

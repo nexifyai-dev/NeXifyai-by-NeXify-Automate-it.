@@ -135,11 +135,11 @@ de: {
     status:'Alle Systeme operativ'
   },
   chat: {
-    sidebarTitle:'NeXifyAI Berater', sidebarDesc:'Unser KI-Berater analysiert Ihre Anforderungen und erstellt eine erste Einschätzung.',
+    sidebarRole:'Advisor', sidebarDesc:'Ihr strategischer KI-Berater — analysiert Ihre Situation und zeigt konkrete Automatisierungspotenziale auf.',
     status:'KI-Berater', statusOn:'Online',
-    presets:['Welche KI-Lösungen bietet ihr an?','Wie funktioniert die Integration?','Was kostet eine Implementierung?','Ich möchte einen Termin buchen','Welche Branchen bedient ihr?','Wie sicher sind eure Agenten?'],
-    bookBtn:'Direkt Termin buchen', placeholder:'Ihre Frage eingeben...', topicLabel:'Enterprise KI',
-    welcome:'Guten Tag! Ich bin der NeXifyAI Advisor und unterstütze Sie bei der Analyse Ihrer Automatisierungspotenziale.\n\nWas beschäftigt Sie aktuell — gibt es einen konkreten Prozess oder eine Herausforderung, die Sie lösen möchten?'
+    presets:['Was kann KI in meiner Branche leisten?','Wie integriert ihr euch in unsere Systeme?','Welche Ergebnisse erzielen eure Kunden?','Ich möchte meine Prozesse analysieren lassen','Was unterscheidet euch von anderen Anbietern?'],
+    bookBtn:'Kostenloses Strategiegespräch', placeholder:'Stellen Sie Ihre Frage...', topicLabel:'Enterprise KI',
+    welcome:'Guten Tag! Ich bin Ihr strategischer Berater bei NeXifyAI und helfe Ihnen, **konkrete Automatisierungspotenziale** in Ihrem Unternehmen zu identifizieren.\n\nWomit kann ich Ihnen weiterhelfen?\n\n- **Prozessanalyse** — Wo steckt Potenzial in Ihren Abläufen?\n- **Systemintegration** — Wie verbinden wir Ihre bestehenden Tools?\n- **Use Cases** — Welche KI-Lösungen passen zu Ihrer Branche?'
   },
   booking: {
     title:'Strategiegespräch buchen',
@@ -289,11 +289,11 @@ nl: {
     status:'Alle systemen operationeel'
   },
   chat: {
-    sidebarTitle:'NeXifyAI Adviseur', sidebarDesc:'Onze AI-adviseur analyseert uw eisen en maakt een eerste inschatting.',
+    sidebarRole:'Adviseur', sidebarDesc:'Uw strategische AI-adviseur — analyseert uw situatie en toont concrete automatiseringsmogelijkheden.',
     status:'AI-Adviseur', statusOn:'Online',
-    presets:['Welke AI-oplossingen bieden jullie?','Hoe werkt de integratie?','Wat kost een implementatie?','Ik wil een afspraak maken','Welke branches bedienen jullie?','Hoe veilig zijn jullie agenten?'],
-    bookBtn:'Direct afspraak boeken', placeholder:'Uw vraag invoeren...', topicLabel:'Enterprise AI',
-    welcome:'Welkom bij NeXifyAI. Ik ben uw AI-adviseur en help u de optimale oplossing voor uw eisen te vinden. Hoe kan ik u helpen?'
+    presets:['Wat kan AI voor mijn branche betekenen?','Hoe integreren jullie met onze systemen?','Welke resultaten behalen jullie klanten?','Ik wil mijn processen laten analyseren','Wat onderscheidt jullie van andere aanbieders?'],
+    bookBtn:'Gratis strategiegesprek', placeholder:'Stel uw vraag...', topicLabel:'Enterprise AI',
+    welcome:'Welkom! Ik ben uw strategisch adviseur bij NeXifyAI en help u **concrete automatiseringsmogelijkheden** in uw organisatie te identificeren.\n\nWaarmee kan ik u helpen?\n\n- **Procesanalyse** — Waar zit potentieel in uw werkprocessen?\n- **Systeemintegratie** — Hoe verbinden we uw bestaande tools?\n- **Use cases** — Welke AI-oplossingen passen bij uw branche?'
   },
   booking: {
     title:'Strategiegesprek boeken',
@@ -443,11 +443,11 @@ en: {
     status:'All systems operational'
   },
   chat: {
-    sidebarTitle:'NeXifyAI Advisor', sidebarDesc:'Our AI advisor analyzes your requirements and provides an initial assessment.',
+    sidebarRole:'Advisor', sidebarDesc:'Your strategic AI consultant — analyzes your situation and identifies concrete automation potential.',
     status:'AI Advisor', statusOn:'Online',
-    presets:['What AI solutions do you offer?','How does the integration work?','What does implementation cost?','I\'d like to book a meeting','Which industries do you serve?','How secure are your agents?'],
-    bookBtn:'Book a meeting directly', placeholder:'Type your question...', topicLabel:'Enterprise AI',
-    welcome:'Welcome to NeXifyAI. I\'m your AI advisor and I\'m here to help you find the optimal solution for your requirements. How can I help you?'
+    presets:['What can AI achieve in my industry?','How do you integrate with our systems?','What results do your clients achieve?','I want my processes analyzed','What sets you apart from other providers?'],
+    bookBtn:'Free strategy call', placeholder:'Ask your question...', topicLabel:'Enterprise AI',
+    welcome:'Hello! I\'m your strategic advisor at NeXifyAI, helping you identify **concrete automation potential** in your organization.\n\nHow can I assist you?\n\n- **Process analysis** — Where is untapped potential in your workflows?\n- **System integration** — How do we connect your existing tools?\n- **Use cases** — Which AI solutions fit your industry?'
   },
   booking: {
     title:'Book Strategy Call',
