@@ -79,7 +79,7 @@ const Nav = ({ onBook, t }) => {
   const links = [
     { l: t.nav.leistungen, h: '#loesungen' }, { l: t.nav.usecases, h: '#use-cases' },
     { l: t.nav.appdev, h: '#app-dev' }, { l: t.nav.integrationen, h: '#integrationen' },
-    { l: t.nav.tarife, h: '#preise' }, { l: t.nav.faq, h: '#faq' }
+    { l: t.nav.tarife, h: '#preise' }, { l: t.lang === 'en' ? 'Services' : t.lang === 'nl' ? 'Diensten' : 'Services', h: '#services' }, { l: t.nav.faq, h: '#faq' }
   ];
   const go = (h) => { setMob(false); track('nav_click', { target: h }); };
   return (
@@ -382,6 +382,98 @@ const FAQ = ({ t }) => {
     </AnimSection>
   );
 };
+
+/* ═══════════ TRUST & COMPLIANCE ═══════════ */
+const TrustSection = ({ t }) => (
+  <AnimSection id="trust" className="section bg-dark" data-testid="trust-section">
+    <div className="container">
+      <motion.header className="section-header centered" variants={fadeUp}>
+        <span className="label">{t.lang === 'nl' ? 'VERTROUWEN & VEILIGHEID' : t.lang === 'en' ? 'TRUST & SECURITY' : 'VERTRAUEN & SICHERHEIT'}</span>
+        <h2>{t.lang === 'nl' ? 'Datascherming voor de Europese rechtsruimte' : t.lang === 'en' ? 'Data protection for the European legal framework' : 'Datenschutzorientiert fuer den europaeischen Rechtsraum entwickelt'}</h2>
+        <p className="section-subtitle">{t.lang === 'nl' ? 'Uw data, uw controle. Privacy by Design, gehost in de EU.' : t.lang === 'en' ? 'Your data, your control. Privacy by Design, hosted in the EU.' : 'Ihre Daten, Ihre Kontrolle. Privacy by Design, gehostet in der EU.'}</p>
+      </motion.header>
+      <div className="trust-grid" role="list">
+        {[
+          { icon: 'shield', title: 'DSGVO / AVG', desc: t.lang === 'en' ? 'Full compliance with EU General Data Protection Regulation (2016/679)' : 'Vollstaendige Umsetzung der Datenschutz-Grundverordnung (EU) 2016/679' },
+          { icon: 'policy', title: 'EU AI Act', desc: t.lang === 'en' ? 'Transparency and labeling obligations under (EU) 2024/1689' : 'Transparenz- und Kennzeichnungspflichten gemaess (EU) 2024/1689' },
+          { icon: 'cloud_done', title: t.lang === 'en' ? 'EU Hosting' : 'EU-Hosting', desc: t.lang === 'en' ? 'Data processing exclusively in EU data centers (Frankfurt, Amsterdam)' : 'Datenverarbeitung ausschliesslich in EU-Rechenzentren (Frankfurt, Amsterdam)' },
+          { icon: 'lock', title: t.lang === 'en' ? 'Encryption' : 'Verschluesselung', desc: t.lang === 'en' ? 'TLS 1.3 in transit, AES-256 at rest, Argon2 password hashing' : 'TLS 1.3 bei Uebertragung, AES-256 bei Speicherung, Argon2-Passwort-Hashing' },
+          { icon: 'vpn_lock', title: 'Privacy by Design', desc: t.lang === 'en' ? 'Data minimization, purpose limitation, storage periods, RBAC' : 'Datenminimierung, Zweckbindung, Speicherfristen, rollenbasierte Zugriffe' },
+          { icon: 'verified_user', title: 'ISO 27001/27701', desc: t.lang === 'en' ? 'Aligned with ISO/IEC 27001 and 27701 standards (not certified)' : 'Orientiert an ISO/IEC 27001 und 27701 (keine Zertifizierung)' },
+        ].map((item, i) => (
+          <motion.div key={i} className="trust-card" role="listitem" variants={fadeUp}>
+            <I n={item.icon} c="trust-icon" />
+            <h3>{item.title}</h3>
+            <p>{item.desc}</p>
+          </motion.div>
+        ))}
+      </div>
+      <motion.div className="trust-eu-note" variants={fadeUp}>
+        <div className="eu-emblem-row">
+          <svg viewBox="0 0 810 540" width="48" height="32" className="eu-flag-svg" aria-label="EU Flag">
+            <rect width="810" height="540" fill="#003399"/>
+            {[...Array(12)].map((_, i) => {
+              const angle = (i * 30 - 90) * Math.PI / 180;
+              const cx = 405 + 160 * Math.cos(angle);
+              const cy = 270 + 160 * Math.sin(angle);
+              return <polygon key={i} points={`${cx},${cy-20} ${cx+6},${cy-6} ${cx+19},${cy-6} ${cx+8},${cy+4} ${cx+12},${cy+19} ${cx},${cy+10} ${cx-12},${cy+19} ${cx-8},${cy+4} ${cx-19},${cy-6} ${cx-6},${cy-6}`} fill="#FFCC00"/>;
+            })}
+          </svg>
+          <span>{t.lang === 'en' ? 'Developed in compliance with European data protection and AI legislation. This does not represent an official EU endorsement, certification or partnership.' : t.lang === 'nl' ? 'Ontwikkeld in overeenstemming met Europese gegevensbeschermings- en AI-wetgeving. Dit vertegenwoordigt geen officiële EU-goedkeuring, certificering of partnerschap.' : 'Datenschutzorientiert fuer den europaeischen Rechtsraum entwickelt. Dies stellt keine offizielle EU-Billigung, Zertifizierung oder Partnerschaft dar.'}</span>
+        </div>
+      </motion.div>
+    </div>
+  </AnimSection>
+);
+
+/* ═══════════ SERVICES (Apps, Websites) ═══════════ */
+const Services = ({ onBook, t }) => (
+  <AnimSection id="services" className="section bg-s1" data-testid="services-section">
+    <div className="container">
+      <motion.header className="section-header centered" variants={fadeUp}>
+        <span className="label">{t.lang === 'en' ? 'SERVICES' : t.lang === 'nl' ? 'DIENSTEN' : 'LEISTUNGEN'}</span>
+        <h2>{t.lang === 'en' ? 'Websites, Apps & AI Solutions' : t.lang === 'nl' ? 'Websites, Apps & AI-oplossingen' : 'Websites, Apps & KI-Loesungen'}</h2>
+        <p className="section-subtitle">{t.lang === 'en' ? 'End-to-end digital solutions — from website to AI-powered automation.' : t.lang === 'nl' ? 'End-to-end digitale oplossingen — van website tot AI-aangedreven automatisering.' : 'End-to-End digitale Loesungen — von der Website bis zur KI-Automation.'}</p>
+      </motion.header>
+      <div className="services-grid" role="list">
+        {[
+          { cat: t.lang === 'en' ? 'WEBSITES' : 'WEBSITES', items: [
+            { name: 'Website Starter', price: '2.990 EUR', desc: t.lang === 'en' ? 'Up to 5 pages, responsive, SEO basics' : 'Bis 5 Seiten, responsive, SEO-Basis', time: t.lang === 'en' ? '3 weeks' : '3 Wochen' },
+            { name: 'Website Professional', price: '7.490 EUR', desc: t.lang === 'en' ? 'Up to 15 pages, animations, blog, analytics' : 'Bis 15 Seiten, Animationen, Blog, Analytics', time: t.lang === 'en' ? '5 weeks' : '5 Wochen', hl: true },
+            { name: 'Website Enterprise', price: '14.900 EUR', desc: t.lang === 'en' ? 'Unlimited, headless CMS, e-commerce, WCAG' : 'Unbegrenzt, Headless CMS, E-Commerce, WCAG', time: t.lang === 'en' ? '8 weeks' : '8 Wochen' },
+          ]},
+          { cat: 'APPS', items: [
+            { name: 'App MVP', price: '9.900 EUR', desc: t.lang === 'en' ? 'iOS + Android, 5 core features, auth, push' : 'iOS + Android, 5 Kernfeatures, Auth, Push', time: t.lang === 'en' ? '8 weeks' : '8 Wochen' },
+            { name: 'App Professional', price: '24.900 EUR', desc: t.lang === 'en' ? 'Full-stack, admin dashboard, payment, CRM' : 'Full-Stack, Admin-Dashboard, Payment, CRM', time: t.lang === 'en' ? '14 weeks' : '14 Wochen', hl: true },
+          ]},
+          { cat: t.lang === 'en' ? 'AI ADD-ONS' : 'KI ADD-ONS', items: [
+            { name: t.lang === 'en' ? 'AI Chatbot' : 'KI-Chatbot', price: t.lang === 'en' ? '249 EUR/mo' : '249 EUR/Mo.', desc: t.lang === 'en' ? 'Website chatbot, lead qualification, booking' : 'Website-Chatbot, Lead-Qualifizierung, Buchung' },
+            { name: t.lang === 'en' ? 'AI Automation' : 'KI-Automation', price: t.lang === 'en' ? '499 EUR/mo' : '499 EUR/Mo.', desc: t.lang === 'en' ? 'Workflow automation, email, CRM sync' : 'Workflow-Automation, E-Mail, CRM-Sync', hl: true },
+          ]},
+        ].map((group, gi) => (
+          <motion.div key={gi} className="service-group" variants={fadeUp}>
+            <h3 className="service-cat">{group.cat}</h3>
+            <div className="service-items">
+              {group.items.map((s, si) => (
+                <div key={si} className={`service-item ${s.hl ? 'hl' : ''}`} data-testid={`service-${s.name.toLowerCase().replace(/\s/g,'-')}`}>
+                  <div className="service-name">{s.name}</div>
+                  <div className="service-price">{s.price}</div>
+                  <div className="service-desc">{s.desc}</div>
+                  {s.time && <div className="service-time"><I n="schedule" c="service-time-icon" /> {s.time}</div>}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+      <motion.div style={{textAlign:'center',marginTop:'40px'}} variants={fadeUp}>
+        <button className="btn btn-primary btn-glow" onClick={() => { onBook(); track('services_cta', {}); }} data-testid="services-cta">
+          {t.lang === 'en' ? 'Request a Quote' : t.lang === 'nl' ? 'Offerte aanvragen' : 'Angebot anfordern'}
+        </button>
+      </motion.div>
+    </div>
+  </AnimSection>
+);
 
 /* ═══════════ CONTACT ═══════════ */
 const Contact = ({ onBook, t }) => {
@@ -734,6 +826,8 @@ function App() {
         <Integrations t={t} />
         <Governance t={t} />
         <Pricing onBook={() => setBookOpen(true)} t={t} />
+        <Services onBook={() => setBookOpen(true)} t={t} />
+        <TrustSection t={t} />
         <FAQ t={t} />
         <Contact onBook={() => setBookOpen(true)} t={t} />
       </main>

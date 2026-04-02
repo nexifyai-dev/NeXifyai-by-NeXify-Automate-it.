@@ -145,6 +145,248 @@ TARIFF_CONFIG = {
 VAT_RATE = 21
 
 # ═══════════════════════════════════════════════════
+# SERVICE CATALOG — Apps, Websites, Bundles
+# ═══════════════════════════════════════════════════
+SERVICE_CATALOG = {
+    "web_starter": {
+        "tariff_number": "NXA-WEB-S-2990",
+        "slug": "website-starter",
+        "name": "Website Starter",
+        "category": "website",
+        "price_eur": 2990.00,
+        "billing_mode": "one_time",
+        "features": [
+            "Responsive Business Website (bis 5 Seiten)",
+            "CI-konformes Design",
+            "SEO-Grundoptimierung",
+            "Kontaktformular",
+            "SSL-Zertifikat",
+            "CMS-Integration (WordPress/Headless)",
+            "1 Monat Support inklusive",
+        ],
+        "delivery_weeks": 3,
+        "target": "KMU, Startups",
+        "status": "active",
+    },
+    "web_professional": {
+        "tariff_number": "NXA-WEB-P-7490",
+        "slug": "website-professional",
+        "name": "Website Professional",
+        "category": "website",
+        "price_eur": 7490.00,
+        "billing_mode": "one_time",
+        "features": [
+            "Responsive Business Website (bis 15 Seiten)",
+            "Custom Design mit Animationen",
+            "SEO-Volloptimierung",
+            "Blog/News-System",
+            "Kontakt- und Buchungsformulare",
+            "Performance-Optimierung (Lighthouse 90+)",
+            "Analytics-Integration",
+            "3 Monate Support inklusive",
+        ],
+        "delivery_weeks": 5,
+        "target": "Mittelstand",
+        "status": "active",
+    },
+    "web_enterprise": {
+        "tariff_number": "NXA-WEB-E-14900",
+        "slug": "website-enterprise",
+        "name": "Website Enterprise",
+        "category": "website",
+        "price_eur": 14900.00,
+        "billing_mode": "one_time",
+        "features": [
+            "Enterprise-Website (unbegrenzte Seiten)",
+            "Headless CMS (Strapi/Sanity)",
+            "Multi-Language-Support",
+            "E-Commerce-Integration",
+            "Custom API-Anbindungen",
+            "Performance-Optimierung (Lighthouse 95+)",
+            "Barrierefreiheit (WCAG 2.1 AA)",
+            "6 Monate Support inklusive",
+            "SLA-gesicherter Betrieb",
+        ],
+        "delivery_weeks": 8,
+        "target": "Enterprise, Konzerne",
+        "status": "active",
+    },
+    "app_mvp": {
+        "tariff_number": "NXA-APP-MVP-9900",
+        "slug": "app-mvp",
+        "name": "App MVP",
+        "category": "app",
+        "price_eur": 9900.00,
+        "billing_mode": "one_time",
+        "features": [
+            "Cross-Platform App (iOS + Android)",
+            "React Native / Flutter",
+            "Bis zu 5 Kernfeatures",
+            "Backend-API (FastAPI/Node)",
+            "User Authentication",
+            "Push Notifications",
+            "App Store Deployment",
+            "2 Monate Support inklusive",
+        ],
+        "delivery_weeks": 8,
+        "target": "Startups, Product Teams",
+        "status": "active",
+    },
+    "app_professional": {
+        "tariff_number": "NXA-APP-P-24900",
+        "slug": "app-professional",
+        "name": "App Professional",
+        "category": "app",
+        "price_eur": 24900.00,
+        "billing_mode": "one_time",
+        "features": [
+            "Cross-Platform App (iOS + Android + Web)",
+            "Unbegrenzte Features",
+            "Custom Backend mit Skalierung",
+            "Admin-Dashboard",
+            "Payment-Integration",
+            "CRM/ERP-Anbindung",
+            "Analytics & Monitoring",
+            "App Store Optimization (ASO)",
+            "6 Monate Support inklusive",
+        ],
+        "delivery_weeks": 14,
+        "target": "Mittelstand, Scale-ups",
+        "status": "active",
+    },
+    "ai_addon_chatbot": {
+        "tariff_number": "NXA-AI-CB-249",
+        "slug": "ai-chatbot-addon",
+        "name": "KI-Chatbot Add-on",
+        "category": "ai_addon",
+        "price_monthly_eur": 249.00,
+        "billing_mode": "monthly",
+        "features": [
+            "KI-gesteuerter Website-Chatbot",
+            "Training auf Unternehmensdaten",
+            "Lead-Qualifizierung",
+            "Terminbuchung",
+            "Mehrsprachig (DE/EN/NL)",
+            "Analyse-Dashboard",
+        ],
+        "target": "Alle Unternehmen",
+        "status": "active",
+    },
+    "ai_addon_automation": {
+        "tariff_number": "NXA-AI-AUTO-499",
+        "slug": "ai-automation-addon",
+        "name": "KI-Prozessautomation Add-on",
+        "category": "ai_addon",
+        "price_monthly_eur": 499.00,
+        "billing_mode": "monthly",
+        "features": [
+            "Workflow-Automation (Zapier/n8n/custom)",
+            "E-Mail-Automation",
+            "Dokumentenverarbeitung",
+            "CRM-Sync",
+            "API-Integrationen",
+            "Monitoring & Alerting",
+        ],
+        "target": "KMU, Mittelstand",
+        "status": "active",
+    },
+}
+
+BUNDLE_CATALOG = {
+    "digital_starter": {
+        "tariff_number": "NXA-BDL-DS-3990",
+        "slug": "digital-starter-bundle",
+        "name": "Digital Starter Bundle",
+        "description": "Website + KI-Chatbot",
+        "includes": ["web_starter", "ai_addon_chatbot"],
+        "bundle_price_eur": 3990.00,
+        "savings_eur": 1248.00,
+        "savings_desc": "Website Starter + 12 Monate KI-Chatbot",
+        "billing_mode": "one_time_plus_monthly",
+        "one_time_eur": 2990.00,
+        "monthly_eur": 199.00,
+        "monthly_months": 12,
+        "status": "active",
+    },
+    "growth_digital": {
+        "tariff_number": "NXA-BDL-GD-11900",
+        "slug": "growth-digital-bundle",
+        "name": "Growth Digital Bundle",
+        "description": "Website Professional + Starter AI Agenten AG (24 Mo.)",
+        "includes": ["web_professional", "starter"],
+        "bundle_price_eur": 17490.00,
+        "savings_eur": 1976.00,
+        "savings_desc": "Website + Starter AI Agenten AG (24 Monate)",
+        "billing_mode": "custom",
+        "one_time_website_eur": 5990.00,
+        "ai_monthly_eur": 479.00,
+        "ai_months": 24,
+        "status": "active",
+    },
+    "enterprise_digital": {
+        "tariff_number": "NXA-BDL-ED-39900",
+        "slug": "enterprise-digital-bundle",
+        "name": "Enterprise Digital Bundle",
+        "description": "Website Enterprise + Growth AI Agenten AG (24 Mo.)",
+        "includes": ["web_enterprise", "growth"],
+        "bundle_price_eur": 39900.00,
+        "savings_eur": 6176.00,
+        "savings_desc": "Website + Growth AI Agenten AG (24 Monate)",
+        "billing_mode": "custom",
+        "one_time_website_eur": 9900.00,
+        "ai_monthly_eur": 1249.00,
+        "ai_months": 24,
+        "status": "active",
+    },
+}
+
+# ═══════════════════════════════════════════════════
+# COMPLIANCE & TRUST METADATA
+# ═══════════════════════════════════════════════════
+COMPLIANCE_STATUS = {
+    "gdpr": {"status": "implemented", "label": "DSGVO / AVG", "detail": "Verordnung (EU) 2016/679 — vollstaendig umgesetzt"},
+    "eu_ai_act": {"status": "implemented", "label": "EU AI Act", "detail": "Verordnung (EU) 2024/1689 — Transparenz- und Kennzeichnungspflichten umgesetzt"},
+    "uavg": {"status": "implemented", "label": "UAVG (NL)", "detail": "Uitvoeringswet AVG — niederlaendische Datenschutz-Implementierung"},
+    "iso_27001": {"status": "aligned", "label": "ISO/IEC 27001", "detail": "Informationssicherheits-Managementsystem — orientiert, nicht zertifiziert"},
+    "iso_27701": {"status": "aligned", "label": "ISO/IEC 27701", "detail": "Privacy Information Management — orientiert, nicht zertifiziert"},
+    "pci_dss": {"status": "delegated", "label": "PCI DSS", "detail": "Zahlungssicherheit via Revolut (PCI DSS Level 1 zertifiziert)"},
+    "ssl_tls": {"status": "implemented", "label": "SSL/TLS", "detail": "Verschluesselte Uebertragung aller Daten"},
+    "eu_hosting": {"status": "implemented", "label": "EU-Hosting", "detail": "Datenverarbeitung ausschliesslich in EU-Rechenzentren"},
+}
+
+ISO_GAP_ANALYSIS = {
+    "iso_27001": {
+        "name": "ISO/IEC 27001:2022 — Informationssicherheit",
+        "controls": {
+            "A.5_Organizational": {"status": "fulfilled", "note": "Sicherheitsrichtlinien dokumentiert, Rollen definiert"},
+            "A.6_People": {"status": "fulfilled", "note": "Vertraulichkeitsvereinbarungen, Zugangskontrollen"},
+            "A.7_Physical": {"status": "delegated", "note": "Cloud-Hosting — physische Sicherheit beim Anbieter"},
+            "A.8_Technological": {"status": "fulfilled", "note": "Argon2 Hashing, JWT Token, Rate Limiting, HTTPS"},
+            "A.8_Access_Control": {"status": "fulfilled", "note": "RBAC, Admin-only Routen, Token-Expiry"},
+            "A.8_Cryptography": {"status": "fulfilled", "note": "AES-256 at rest, TLS 1.3 in transit"},
+            "A.8_Logging": {"status": "fulfilled", "note": "Audit-Logs fuer alle kommerziellen Events"},
+            "A.8_Network": {"status": "fulfilled", "note": "CORS-Konfiguration, API-Rate-Limiting"},
+            "A.8_Vulnerability": {"status": "partial", "note": "Regelmaessige Updates, kein formales Penetration-Testing"},
+            "A.8_Data_Classification": {"status": "partial", "note": "Kundendaten separiert, keine formale Klassifizierung"},
+            "A.8_Backup": {"status": "delegated", "note": "MongoDB Atlas automatische Backups"},
+        },
+    },
+    "iso_27701": {
+        "name": "ISO/IEC 27701:2019 — Privacy Information Management",
+        "controls": {
+            "Privacy_by_Design": {"status": "fulfilled", "note": "Datenminimierung, Zweckbindung, Speicherfristen"},
+            "Privacy_by_Default": {"status": "fulfilled", "note": "Minimale Datenerfassung, keine Tracking-Cookies"},
+            "Data_Subject_Rights": {"status": "fulfilled", "note": "Auskunft, Loeschung, Berichtigung implementiert"},
+            "Data_Processing_Records": {"status": "fulfilled", "note": "Audit-Logs, Event-Tracking"},
+            "Third_Party_Management": {"status": "fulfilled", "note": "SCC mit Auftragsverarbeitern (Resend, OpenAI)"},
+            "Data_Breach_Notification": {"status": "partial", "note": "Prozess definiert, kein automatisiertes Meldesystem"},
+            "DPIA": {"status": "partial", "note": "Risikobewertung durchgefuehrt, kein formales DPIA-Dokument"},
+            "DPO": {"status": "open", "note": "Kein benannter Datenschutzbeauftragter (bei KMU optional)"},
+        },
+    },
+}
+
+# ═══════════════════════════════════════════════════
 # OFFER & INVOICE STATES
 # ═══════════════════════════════════════════════════
 OFFER_STATES = [
@@ -542,6 +784,13 @@ def generate_quote_pdf(quote_data: dict) -> bytes:
         f"<b>{COMPANY_DATA['ceo']}</b><br/>{COMPANY_DATA['ceo_title']}, NeXifyAI",
         styles["BodyText2"],
     ))
+    elements.append(Spacer(1, 8 * mm))
+    elements.append(Paragraph(
+        "<font size='7' color='#78829a'>Datenschutzorientiert fuer den europaeischen Rechtsraum entwickelt. "
+        "DSGVO (EU) 2016/679 | EU AI Act (EU) 2024/1689 | ISO/IEC 27001 orientiert | EU-Hosting"
+        "</font>",
+        styles["SmallGray"],
+    ))
 
     def make_header(canvas, doc):
         _header_footer(canvas, doc, "Angebot", number, date_str)
@@ -798,6 +1047,27 @@ def get_commercial_faq() -> list:
                 "- Vollstaendige Audit-Logs aller Dokumentenzugriffe\n"
                 "- Verschluesselte Speicherung und Uebertragung\n"
                 "- EU-AI-Act-konforme Umsetzung"
+            ),
+        },
+        {
+            "q": "Bietet NeXifyAI auch Websites und Apps an?",
+            "a": (
+                "Ja. Neben unseren KI-Agenten-Tarifen bieten wir:\n\n"
+                "**Websites:** Starter (2.990 EUR), Professional (7.490 EUR), Enterprise (14.900 EUR)\n"
+                "**Apps:** MVP (9.900 EUR), Professional (24.900 EUR)\n"
+                "**KI Add-ons:** Chatbot (249 EUR/Mo.), Prozessautomation (499 EUR/Mo.)\n"
+                "**Bundles:** Kombinationsangebote mit Ersparnissen bis zu 6.176 EUR\n\n"
+                "Alle Preise zzgl. USt."
+            ),
+        },
+        {
+            "q": "Gibt es Kombiangebote / Bundles?",
+            "a": (
+                "Ja. Beispiele:\n"
+                "- **Digital Starter Bundle:** Website + KI-Chatbot (12 Mo.) ab 3.990 EUR\n"
+                "- **Growth Digital Bundle:** Website Pro + Starter AI Agenten AG (24 Mo.) ab 17.490 EUR\n"
+                "- **Enterprise Digital Bundle:** Website Enterprise + Growth AI Agenten AG (24 Mo.) ab 39.900 EUR\n\n"
+                "Individuelle Kombinationen auf Anfrage."
             ),
         },
     ]

@@ -520,5 +520,36 @@ h3{font-size:1.125rem;font-weight:700}
 .chat-md a{color:var(--nx-accent);text-decoration:underline;text-underline-offset:2px}
 .chat-md a:hover{color:var(--nx-accent-h)}
 
+
+/* ═══════════ TRUST & COMPLIANCE ═══════════ */
+.trust-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:32px}
+@media(min-width:768px){.trust-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1024px){.trust-grid{grid-template-columns:repeat(3,1fr)}}
+.trust-card{background:var(--nx-glass);border:1px solid var(--nx-border);border-radius:12px;padding:24px;transition:border-color .3s,transform .3s}
+.trust-card:hover{border-color:var(--nx-accent);transform:translateY(-2px)}
+.trust-card h3{color:var(--nx-text);font-size:15px;font-weight:600;margin:12px 0 6px}
+.trust-card p{color:var(--nx-muted);font-size:13px;line-height:1.5;margin:0}
+.trust-icon{font-size:28px;color:var(--nx-accent)}
+.trust-eu-note{margin-top:24px;text-align:center}
+.eu-emblem-row{display:inline-flex;align-items:center;gap:14px;padding:16px 28px;background:var(--nx-glass);border:1px solid var(--nx-border);border-radius:10px}
+.eu-emblem-row span{color:var(--nx-muted);font-size:12px;max-width:480px;text-align:left;line-height:1.5}
+.eu-flag-svg{flex-shrink:0;border-radius:3px}
+
+/* ═══════════ SERVICES ═══════════ */
+.services-grid{display:grid;grid-template-columns:1fr;gap:32px}
+@media(min-width:768px){.services-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1024px){.services-grid{grid-template-columns:repeat(3,1fr)}}
+.service-group{}
+.service-cat{color:var(--nx-accent);font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--nx-border)}
+.service-items{display:flex;flex-direction:column;gap:12px}
+.service-item{background:var(--nx-glass);border:1px solid var(--nx-border);border-radius:10px;padding:18px;transition:border-color .3s,transform .3s}
+.service-item.hl{border-color:var(--nx-accent);box-shadow:0 0 20px rgba(255,155,122,0.06)}
+.service-item:hover{border-color:var(--nx-accent);transform:translateY(-2px)}
+.service-name{color:var(--nx-text);font-weight:600;font-size:15px;margin-bottom:4px}
+.service-price{color:var(--nx-accent);font-weight:700;font-size:18px;margin-bottom:6px}
+.service-desc{color:var(--nx-muted);font-size:13px;line-height:1.5;margin-bottom:6px}
+.service-time{display:flex;align-items:center;gap:6px;color:var(--nx-muted);font-size:12px}
+.service-time-icon{font-size:14px;color:var(--nx-muted)}
+
 /* ═══════════ PRINT ═══════════ */
 @media print{.nav,.chat-trigger,.chat-overlay,.booking-overlay,.cookie-banner{display:none!important}body{background:#fff;color:#000}}

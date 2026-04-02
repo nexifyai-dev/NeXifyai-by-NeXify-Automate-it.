@@ -147,6 +147,18 @@ Wenn alle Pflichtfelder gesammelt sind, gib EXAKT dieses Format aus (eingebettet
 
 Danach bestätige: "Ich habe Ihr Angebot erstellt. Sie erhalten es in Kürze per E-Mail — inklusive PDF und sicherem Zugangslink zur Online-Annahme."
 
+ZUSÄTZLICHE SERVICES (Websites, Apps, Add-ons):
+- **Website Starter**: 2.990 EUR (einmalig), bis 5 Seiten, 3 Wochen
+- **Website Professional**: 7.490 EUR (einmalig), bis 15 Seiten, Animationen, Blog, 5 Wochen
+- **Website Enterprise**: 14.900 EUR (einmalig), unbegrenzt, Headless CMS, E-Commerce, 8 Wochen
+- **App MVP**: 9.900 EUR (einmalig), iOS + Android, 5 Features, 8 Wochen
+- **App Professional**: 24.900 EUR (einmalig), Full-Stack, Admin, Payment, CRM, 14 Wochen
+- **KI-Chatbot Add-on**: 249 EUR/Monat
+- **KI-Automation Add-on**: 499 EUR/Monat
+- **Bundles**: Digital Starter (3.990 EUR), Growth Digital (17.490 EUR), Enterprise Digital (39.900 EUR)
+
+Wenn ein Nutzer nach Website, App oder Add-on fragt, nenne die konkreten Preise und empfehle passende Bundles.
+
 GESPRÄCHSFÜHRUNG — PROAKTIV, EINLADEND, LEAD-ORIENTIERT:
 
 Dein Ziel: Den Besucher in eine natürliche, wertvolle Unterhaltung führen, die Vertrauen aufbaut und zu einem qualifizierten Strategiegespräch führt.
@@ -269,6 +281,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Security Headers Middleware
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+    if request.url.path.startswith("/api/portal/") or request.url.path.startswith("/api/documents/"):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+    return response
 
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/admin/login", auto_error=False)
@@ -1107,6 +1135,8 @@ from commercial import (
     generate_access_token, verify_access_token,
     generate_quote_pdf, generate_invoice_pdf,
     get_commercial_faq,
+    SERVICE_CATALOG, BUNDLE_CATALOG,
+    COMPLIANCE_STATUS, ISO_GAP_ANALYSIS,
 )
 from fastapi.responses import StreamingResponse
 
@@ -1183,6 +1213,50 @@ async def get_tariffs():
 async def get_product_faq():
     """FAQ derived from central TARIFF_CONFIG"""
     return {"faq": get_commercial_faq()}
+
+
+@app.get("/api/product/services")
+async def get_services():
+    """Public: all active services (websites, apps, add-ons)"""
+    services = {}
+    for key, svc in SERVICE_CATALOG.items():
+        if svc.get("status") != "active":
+            continue
+        services[key] = {k: v for k, v in svc.items() if k != "status"}
+    bundles = {}
+    for key, bdl in BUNDLE_CATALOG.items():
+        if bdl.get("status") != "active":
+            continue
+        bundles[key] = {k: v for k, v in bdl.items() if k != "status"}
+    return {"services": services, "bundles": bundles}
+
+
+@app.get("/api/product/compliance")
+async def get_compliance():
+    """Public: compliance and trust status"""
+    return {
+        "compliance": COMPLIANCE_STATUS,
+        "iso_gap_analysis": {
+            k: {
+                "name": v["name"],
+                "summary": {
+                    "fulfilled": sum(1 for c in v["controls"].values() if c["status"] == "fulfilled"),
+                    "partial": sum(1 for c in v["controls"].values() if c["status"] == "partial"),
+                    "delegated": sum(1 for c in v["controls"].values() if c["status"] == "delegated"),
+                    "open": sum(1 for c in v["controls"].values() if c["status"] == "open"),
+                    "total": len(v["controls"]),
+                },
+                "controls": v["controls"],
+            }
+            for k, v in ISO_GAP_ANALYSIS.items()
+        },
+        "company": {
+            "name": COMM_COMPANY["name"],
+            "kvk": COMM_COMPANY["kvk"],
+            "vat_id": COMM_COMPANY["vat_id"],
+            "hosting": "EU (Frankfurt, Amsterdam)",
+        },
+    }
 
 
 # --- Quote Management (Admin) ---
