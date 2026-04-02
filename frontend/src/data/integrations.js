@@ -8,7 +8,7 @@ export const INTEGRATION_CATEGORIES = [
     key: 'crm-sales',
     icon: 'handshake',
     name: { de: 'CRM & Sales', nl: 'CRM & Sales', en: 'CRM & Sales' },
-    desc: { de: 'Nahtlose Anbindung an fuehrende CRM-Systeme fuer automatisierte Lead-Qualifizierung, Pipeline-Management und Vertriebsoptimierung.', nl: 'Naadloze koppeling met toonaangevende CRM-systemen voor geautomatiseerde lead-kwalificatie, pipeline-management en verkoopoptimalisatie.', en: 'Seamless connection to leading CRM systems for automated lead qualification, pipeline management, and sales optimization.' },
+    desc: { de: 'Nahtlose Anbindung an führende CRM-Systeme für automatisierte Lead-Qualifizierung, Pipeline-Management und Vertriebsoptimierung.', nl: 'Naadloze koppeling met toonaangevende CRM-systemen voor geautomatiseerde lead-kwalificatie, pipeline-management en verkoopoptimalisatie.', en: 'Seamless connection to leading CRM systems for automated lead qualification, pipeline management, and sales optimization.' },
     items: [
       { slug: 'salesforce', name: 'Salesforce', popular: true },
       { slug: 'hubspot', name: 'HubSpot', popular: true },
@@ -26,7 +26,7 @@ export const INTEGRATION_CATEGORIES = [
     key: 'erp-finance',
     icon: 'account_balance',
     name: { de: 'ERP & Finanzen', nl: 'ERP & Financien', en: 'ERP & Finance' },
-    desc: { de: 'Direkte Integration in ERP- und Buchhaltungssysteme fuer automatisierte Rechnungsverarbeitung, Bestandsfuehrung und Finanzreporting.', nl: 'Directe integratie met ERP- en boekhoudsystemen voor geautomatiseerde factuurverwerking, voorraadbeheer en financiele rapportage.', en: 'Direct integration with ERP and accounting systems for automated invoice processing, inventory management, and financial reporting.' },
+    desc: { de: 'Direkte Integration in ERP- und Buchhaltungssysteme für automatisierte Rechnungsverarbeitung, Bestandsführung und Finanzreporting.', nl: 'Directe integratie met ERP- en boekhoudsystemen voor geautomatiseerde factuurverwerking, voorraadbeheer en financiele rapportage.', en: 'Direct integration with ERP and accounting systems for automated invoice processing, inventory management, and financial reporting.' },
     items: [
       { slug: 'sap', name: 'SAP S/4HANA', popular: true },
       { slug: 'oracle-netsuite', name: 'Oracle NetSuite' },
@@ -44,7 +44,7 @@ export const INTEGRATION_CATEGORIES = [
     key: 'communication',
     icon: 'forum',
     name: { de: 'Kommunikation', nl: 'Communicatie', en: 'Communication' },
-    desc: { de: 'Zentrale Steuerung aller Kommunikationskanaele — von E-Mail ueber Messaging bis hin zu Video-Conferencing.', nl: 'Centrale aansturing van alle communicatiekanalen — van e-mail tot messaging en videoconferencing.', en: 'Central control of all communication channels — from email to messaging and video conferencing.' },
+    desc: { de: 'Zentrale Steuerung aller Kommunikationskanaele — von E-Mail über Messaging bis hin zu Video-Conferencing.', nl: 'Centrale aansturing van alle communicatiekanalen — van e-mail tot messaging en videoconferencing.', en: 'Central control of all communication channels — from email to messaging and video conferencing.' },
     items: [
       { slug: 'slack', name: 'Slack', popular: true },
       { slug: 'microsoft-teams', name: 'Microsoft Teams', popular: true },
@@ -80,7 +80,7 @@ export const INTEGRATION_CATEGORIES = [
     key: 'analytics',
     icon: 'insights',
     name: { de: 'Daten & Analytics', nl: 'Data & Analytics', en: 'Data & Analytics' },
-    desc: { de: 'Echtzeit-Datenverarbeitung, BI-Dashboards und prädiktive Analysen fuer datengetriebene Entscheidungsfindung.', nl: 'Realtime dataverwerking, BI-dashboards en voorspellende analyses voor datagestuurde besluitvorming.', en: 'Real-time data processing, BI dashboards, and predictive analytics for data-driven decision-making.' },
+    desc: { de: 'Echtzeit-Datenverarbeitung, BI-Dashboards und prädiktive Analysen für datengetriebene Entscheidungsfindung.', nl: 'Realtime dataverwerking, BI-dashboards en voorspellende analyses voor datagestuurde besluitvorming.', en: 'Real-time data processing, BI dashboards, and predictive analytics for data-driven decision-making.' },
     items: [
       { slug: 'snowflake', name: 'Snowflake' },
       { slug: 'bigquery', name: 'BigQuery' },
@@ -98,7 +98,7 @@ export const INTEGRATION_CATEGORIES = [
     key: 'development',
     icon: 'code',
     name: { de: 'Entwicklung', nl: 'Ontwikkeling', en: 'Development' },
-    desc: { de: 'CI/CD-Pipelines, Code-Repositories und Projektmanagement-Tools fuer agile Entwicklungsprozesse.', nl: 'CI/CD-pipelines, code-repositories en projectmanagementtools voor agile ontwikkelprocessen.', en: 'CI/CD pipelines, code repositories, and project management tools for agile development processes.' },
+    desc: { de: 'CI/CD-Pipelines, Code-Repositories und Projektmanagement-Tools für agile Entwicklungsprozesse.', nl: 'CI/CD-pipelines, code-repositories en projectmanagementtools voor agile ontwikkelprocessen.', en: 'CI/CD pipelines, code repositories, and project management tools for agile development processes.' },
     items: [
       { slug: 'github', name: 'GitHub' },
       { slug: 'gitlab', name: 'GitLab' },
@@ -116,7 +116,7 @@ export const INTEGRATION_CATEGORIES = [
     key: 'ecommerce',
     icon: 'shopping_cart',
     name: { de: 'E-Commerce', nl: 'E-Commerce', en: 'E-Commerce' },
-    desc: { de: 'Vollstaendige Shop-Integration fuer automatisierte Bestellverarbeitung, Bestandssynchronisation und Payment-Flows.', nl: 'Volledige shop-integratie voor geautomatiseerde orderverwerking, voorraadsynchronisatie en betaalflows.', en: 'Complete shop integration for automated order processing, inventory synchronization, and payment flows.' },
+    desc: { de: 'Vollständige Shop-Integration für automatisierte Bestellverarbeitung, Bestandssynchronisation und Payment-Flows.', nl: 'Volledige shop-integratie voor geautomatiseerde orderverwerking, voorraadsynchronisatie en betaalflows.', en: 'Complete shop integration for automated order processing, inventory synchronization, and payment flows.' },
     items: [
       { slug: 'shopify', name: 'Shopify', popular: true },
       { slug: 'woocommerce', name: 'WooCommerce' },
@@ -151,7 +151,7 @@ export const INTEGRATION_CATEGORIES = [
     key: 'marketing',
     icon: 'campaign',
     name: { de: 'Marketing', nl: 'Marketing', en: 'Marketing' },
-    desc: { de: 'Kampagnen-Automatisierung, Lead-Nurturing und Performance-Tracking ueber alle Marketingkanaele hinweg.', nl: 'Campagne-automatisering, lead-nurturing en performance-tracking over alle marketingkanalen.', en: 'Campaign automation, lead nurturing, and performance tracking across all marketing channels.' },
+    desc: { de: 'Kampagnen-Automatisierung, Lead-Nurturing und Performance-Tracking über alle Marketingkanaele hinweg.', nl: 'Campagne-automatisering, lead-nurturing en performance-tracking over alle marketingkanalen.', en: 'Campaign automation, lead nurturing, and performance tracking across all marketing channels.' },
     items: [
       { slug: 'google-ads', name: 'Google Ads' },
       { slug: 'meta-ads', name: 'Meta Ads' },
@@ -169,7 +169,7 @@ export const INTEGRATION_CATEGORIES = [
     key: 'ai-ml',
     icon: 'psychology',
     name: { de: 'KI & Machine Learning', nl: 'AI & Machine Learning', en: 'AI & Machine Learning' },
-    desc: { de: 'Anbindung an fuehrende KI-Plattformen fuer LLM-Integration, Embedding-Generierung und ML-Inferenz.', nl: 'Koppeling met toonaangevende AI-platforms voor LLM-integratie, embedding-generatie en ML-inferentie.', en: 'Connection to leading AI platforms for LLM integration, embedding generation, and ML inference.' },
+    desc: { de: 'Anbindung an führende KI-Plattformen für LLM-Integration, Embedding-Generierung und ML-Inferenz.', nl: 'Koppeling met toonaangevende AI-platforms voor LLM-integratie, embedding-generatie en ML-inferentie.', en: 'Connection to leading AI platforms for LLM integration, embedding generation, and ML inference.' },
     items: [
       { slug: 'openai', name: 'OpenAI', popular: true },
       { slug: 'anthropic', name: 'Anthropic' },
@@ -200,7 +200,7 @@ export const INTEGRATION_CATEGORIES = [
     key: 'productivity',
     icon: 'task_alt',
     name: { de: 'Produktivitaet', nl: 'Productiviteit', en: 'Productivity' },
-    desc: { de: 'Aufgabenmanagement, Workflow-Automatisierung und Teamkollaboration fuer effizientere Ablaeufe.', nl: 'Taakbeheer, workflow-automatisering en teamsamenwerking voor efficientere processen.', en: 'Task management, workflow automation, and team collaboration for more efficient processes.' },
+    desc: { de: 'Aufgabenmanagement, Workflow-Automatisierung und Teamkollaboration für effizientere Abläufe.', nl: 'Taakbeheer, workflow-automatisering en teamsamenwerking voor efficientere processen.', en: 'Task management, workflow automation, and team collaboration for more efficient processes.' },
     items: [
       { slug: 'asana', name: 'Asana' },
       { slug: 'trello', name: 'Trello' },
@@ -219,12 +219,12 @@ export const FEATURED_INTEGRATIONS = {
     logo: 'cloud',
     color: '#00A1E0',
     title: { de: 'Salesforce KI-Integration', nl: 'Salesforce AI-Integratie', en: 'Salesforce AI Integration' },
-    meta: { de: 'NeXifyAI integriert KI-Agenten direkt in Salesforce — fuer automatisierte Lead-Qualifizierung, Pipeline-Optimierung und intelligenten Kundenservice.', nl: 'NeXifyAI integreert AI-agenten direct in Salesforce — voor geautomatiseerde lead-kwalificatie, pipeline-optimalisatie en intelligente klantenservice.', en: 'NeXifyAI integrates AI agents directly into Salesforce — for automated lead qualification, pipeline optimization, and intelligent customer service.' },
+    meta: { de: 'NeXifyAI integriert KI-Agenten direkt in Salesforce — für automatisierte Lead-Qualifizierung, Pipeline-Optimierung und intelligenten Kundenservice.', nl: 'NeXifyAI integreert AI-agenten direct in Salesforce — voor geautomatiseerde lead-kwalificatie, pipeline-optimalisatie en intelligente klantenservice.', en: 'NeXifyAI integrates AI agents directly into Salesforce — for automated lead qualification, pipeline optimization, and intelligent customer service.' },
     hero: { de: 'Ihre Salesforce-Daten. Unsere KI-Agenten. Maximale Vertriebsperformance.', nl: 'Uw Salesforce-data. Onze AI-agenten. Maximale verkoopprestaties.', en: 'Your Salesforce data. Our AI agents. Maximum sales performance.' },
     usecases: {
       de: [
-        { title: 'Automatische Lead-Qualifizierung', desc: 'KI-Agenten bewerten eingehende Leads in Echtzeit anhand von Scoring-Modellen und priorisieren fuer Ihr Sales-Team.' },
-        { title: 'Pipeline-Intelligence', desc: 'Praediktive Analyse Ihrer Sales-Pipeline mit Abschlusswahrscheinlichkeiten und Handlungsempfehlungen.' },
+        { title: 'Automatische Lead-Qualifizierung', desc: 'KI-Agenten bewerten eingehende Leads in Echtzeit anhand von Scoring-Modellen und priorisieren für Ihr Sales-Team.' },
+        { title: 'Pipeline-Intelligence', desc: 'Prädiktive Analyse Ihrer Sales-Pipeline mit Abschlusswahrscheinlichkeiten und Handlungsempfehlungen.' },
         { title: 'Kundenservice-Automation', desc: 'Autonome Bearbeitung von Service-Cases mit direktem Zugriff auf Salesforce-Kundendaten und Fallhistorie.' },
         { title: 'Reporting-Automation', desc: 'Automatisierte Erstellung von Sales-Reports, Forecasts und KPI-Dashboards aus Salesforce-Daten.' },
       ],
@@ -244,8 +244,8 @@ export const FEATURED_INTEGRATIONS = {
     combinedWith: ['hubspot', 'slack', 'datev', 'openai'],
     faq: {
       de: [
-        { q: 'Wie verbinden sich die KI-Agenten mit Salesforce?', a: 'Ueber die offizielle Salesforce REST/SOAP API mit OAuth 2.0-Authentifizierung. Kein Salesforce-Plugin erforderlich.' },
-        { q: 'Welche Salesforce-Editionen werden unterstuetzt?', a: 'Professional, Enterprise und Unlimited Edition. Fuer die Developer Edition gelten API-Limitierungen.' },
+        { q: 'Wie verbinden sich die KI-Agenten mit Salesforce?', a: 'Über die offizielle Salesforce REST/SOAP API mit OAuth 2.0-Authentifizierung. Kein Salesforce-Plugin erforderlich.' },
+        { q: 'Welche Salesforce-Editionen werden unterstützt?', a: 'Professional, Enterprise und Unlimited Edition. Für die Developer Edition gelten API-Limitierungen.' },
         { q: 'Wie lange dauert die Salesforce-Integration?', a: 'Standard-Integrationen sind in 2-4 Wochen produktiv. Komplexe Custom-Objekte und Workflows erfordern 4-8 Wochen.' },
       ],
       nl: [
@@ -266,7 +266,7 @@ export const FEATURED_INTEGRATIONS = {
     logo: 'hub',
     color: '#FF7A59',
     title: { de: 'HubSpot KI-Integration', nl: 'HubSpot AI-Integratie', en: 'HubSpot AI Integration' },
-    meta: { de: 'NeXifyAI integriert KI-Agenten in HubSpot — fuer automatisiertes Lead-Nurturing, Content-Optimierung und Sales-Automation.', nl: 'NeXifyAI integreert AI-agenten in HubSpot — voor geautomatiseerde lead-nurturing, content-optimalisatie en sales-automatisering.', en: 'NeXifyAI integrates AI agents into HubSpot — for automated lead nurturing, content optimization, and sales automation.' },
+    meta: { de: 'NeXifyAI integriert KI-Agenten in HubSpot — für automatisiertes Lead-Nurturing, Content-Optimierung und Sales-Automation.', nl: 'NeXifyAI integreert AI-agenten in HubSpot — voor geautomatiseerde lead-nurturing, content-optimalisatie en sales-automatisering.', en: 'NeXifyAI integrates AI agents into HubSpot — for automated lead nurturing, content optimization, and sales automation.' },
     hero: { de: 'HubSpot meets KI-Agenten. Marketing und Vertrieb auf Autopilot.', nl: 'HubSpot meets AI-agenten. Marketing en verkoop op autopilot.', en: 'HubSpot meets AI agents. Marketing and sales on autopilot.' },
     usecases: {
       de: [
@@ -291,8 +291,8 @@ export const FEATURED_INTEGRATIONS = {
     combinedWith: ['salesforce', 'google-ads', 'slack', 'mailchimp'],
     faq: {
       de: [
-        { q: 'Welche HubSpot-Hubs werden unterstuetzt?', a: 'Marketing Hub, Sales Hub, Service Hub und CMS Hub — alle mit voller API-Integration.' },
-        { q: 'Koennen bestehende HubSpot-Workflows erweitert werden?', a: 'Ja. Unsere KI-Agenten ergaenzen bestehende Workflows mit intelligenter Entscheidungslogik.' },
+        { q: 'Welche HubSpot-Hubs werden unterstützt?', a: 'Marketing Hub, Sales Hub, Service Hub und CMS Hub — alle mit voller API-Integration.' },
+        { q: 'Können bestehende HubSpot-Workflows erweitert werden?', a: 'Ja. Unsere KI-Agenten ergänzen bestehende Workflows mit intelligenter Entscheidungslogik.' },
       ],
       nl: [
         { q: 'Welke HubSpot-hubs worden ondersteund?', a: 'Marketing Hub, Sales Hub, Service Hub en CMS Hub — allemaal met volledige API-integratie.' },
@@ -310,13 +310,13 @@ export const FEATURED_INTEGRATIONS = {
     logo: 'precision_manufacturing',
     color: '#0FAAFF',
     title: { de: 'SAP S/4HANA KI-Integration', nl: 'SAP S/4HANA AI-Integratie', en: 'SAP S/4HANA AI Integration' },
-    meta: { de: 'NeXifyAI verbindet KI-Agenten mit SAP S/4HANA fuer automatisierte Prozesse in Einkauf, Produktion, Logistik und Finanzen.', nl: 'NeXifyAI verbindt AI-agenten met SAP S/4HANA voor geautomatiseerde processen in inkoop, productie, logistiek en financien.', en: 'NeXifyAI connects AI agents with SAP S/4HANA for automated processes in procurement, production, logistics, and finance.' },
+    meta: { de: 'NeXifyAI verbindet KI-Agenten mit SAP S/4HANA für automatisierte Prozesse in Einkauf, Produktion, Logistik und Finanzen.', nl: 'NeXifyAI verbindt AI-agenten met SAP S/4HANA voor geautomatiseerde processen in inkoop, productie, logistiek en financien.', en: 'NeXifyAI connects AI agents with SAP S/4HANA for automated processes in procurement, production, logistics, and finance.' },
     hero: { de: 'SAP-Prozesse intelligent automatisieren. Ohne Kompromisse.', nl: 'SAP-processen intelligent automatiseren. Zonder compromissen.', en: 'Intelligently automate SAP processes. Without compromise.' },
     usecases: {
       de: [
         { title: 'Einkaufsautomation', desc: 'Automatische Bestellanforderungen basierend auf Bestandsanalysen und Bedarfsprognosen.' },
-        { title: 'Rechnungsverarbeitung', desc: 'Intelligente Eingangsrechnungspruefung mit automatischem Abgleich gegen Bestellungen und Wareneingaenge.' },
-        { title: 'Produktionsplanung', desc: 'KI-gestuetzte Kapazitaetsplanung und Fertigungsauftragsoptimierung in Echtzeit.' },
+        { title: 'Rechnungsverarbeitung', desc: 'Intelligente Eingangsrechnungsprüfung mit automatischem Abgleich gegen Bestellungen und Wareneingänge.' },
+        { title: 'Produktionsplanung', desc: 'KI-gestützte Kapazitätsplanung und Fertigungsauftragsoptimierung in Echtzeit.' },
         { title: 'Finanz-Reporting', desc: 'Automatisierte Monatsabschluesse, Konsolidierungen und regulatorische Reports.' },
       ],
       nl: [
@@ -335,8 +335,8 @@ export const FEATURED_INTEGRATIONS = {
     combinedWith: ['datev', 'microsoft-teams', 'power-bi', 'aws'],
     faq: {
       de: [
-        { q: 'Wie erfolgt die SAP-Anbindung technisch?', a: 'Ueber SAP OData Services, RFC/BAPI oder den SAP Integration Suite Connector. On-Premise und Cloud.' },
-        { q: 'Ist die Integration mit SAP ECC moeglich?', a: 'Ja. Sowohl SAP S/4HANA als auch SAP ECC (ERP 6.0) werden unterstuetzt.' },
+        { q: 'Wie erfolgt die SAP-Anbindung technisch?', a: 'Über SAP OData Services, RFC/BAPI oder den SAP Integration Suite Connector. On-Premise und Cloud.' },
+        { q: 'Ist die Integration mit SAP ECC möglich?', a: 'Ja. Sowohl SAP S/4HANA als auch SAP ECC (ERP 6.0) werden unterstützt.' },
       ],
       nl: [
         { q: 'Hoe werkt de SAP-koppeling technisch?', a: 'Via SAP OData Services, RFC/BAPI of de SAP Integration Suite Connector. On-premise en cloud.' },
@@ -354,13 +354,13 @@ export const FEATURED_INTEGRATIONS = {
     logo: 'receipt_long',
     color: '#009D3C',
     title: { de: 'DATEV KI-Integration', nl: 'DATEV AI-Integratie', en: 'DATEV AI Integration' },
-    meta: { de: 'NeXifyAI automatisiert DATEV-Prozesse mit KI-Agenten — fuer Buchhaltung, Lohnabrechnung und Steuerberatung im DACH-Raum.', nl: 'NeXifyAI automatiseert DATEV-processen met AI-agenten — voor boekhouding, salarisadministratie en belastingadvies in de DACH-regio.', en: 'NeXifyAI automates DATEV processes with AI agents — for accounting, payroll, and tax advisory in the DACH region.' },
+    meta: { de: 'NeXifyAI automatisiert DATEV-Prozesse mit KI-Agenten — für Buchhaltung, Lohnabrechnung und Steuerberatung im DACH-Raum.', nl: 'NeXifyAI automatiseert DATEV-processen met AI-agenten — voor boekhouding, salarisadministratie en belastingadvies in de DACH-regio.', en: 'NeXifyAI automates DATEV processes with AI agents — for accounting, payroll, and tax advisory in the DACH region.' },
     hero: { de: 'DATEV-Buchhaltung. KI-Agenten. Null manueller Aufwand.', nl: 'DATEV-boekhouding. AI-agenten. Nul handmatige inspanning.', en: 'DATEV accounting. AI agents. Zero manual effort.' },
     usecases: {
       de: [
         { title: 'Belegerfassung', desc: 'Automatische Erkennung, Klassifizierung und Verbuchung von Eingangs- und Ausgangsbelegen.' },
-        { title: 'Lohnbuchhaltung', desc: 'KI-gestuetzte Pruefung und Vorbereitung von Gehaltsabrechnungen mit DATEV LODAS/Lohn und Gehalt.' },
-        { title: 'Umsatzsteuer-Voranmeldung', desc: 'Automatisierte Erstellung und Pruefung der monatlichen USt-VA mit Plausibilitaetskontrolle.' },
+        { title: 'Lohnbuchhaltung', desc: 'KI-gestützte Prüfung und Vorbereitung von Gehaltsabrechnungen mit DATEV LODAS/Lohn und Gehalt.' },
+        { title: 'Umsatzsteuer-Voranmeldung', desc: 'Automatisierte Erstellung und Prüfung der monatlichen USt-VA mit Plausibilitätskontrolle.' },
         { title: 'Mandantenkommunikation', desc: 'KI-Agenten bearbeiten Mandantenanfragen und liefern relevante Unterlagen aus DATEV automatisch.' },
       ],
       nl: [
@@ -379,8 +379,8 @@ export const FEATURED_INTEGRATIONS = {
     combinedWith: ['sap', 'lexware', 'sevdesk', 'slack'],
     faq: {
       de: [
-        { q: 'Ist die DATEV-Integration DSGVO-konform?', a: 'Ja. Alle Daten werden verschluesselt uebertragen und ausschliesslich in EU-Rechenzentren verarbeitet.' },
-        { q: 'Welche DATEV-Produkte werden unterstuetzt?', a: 'DATEV Unternehmen online, DATEV LODAS, Lohn und Gehalt, Rechnungswesen — ueber die DATEV-API und Schnittstellen.' },
+        { q: 'Ist die DATEV-Integration DSGVO-konform?', a: 'Ja. Alle Daten werden verschlüsselt übertragen und ausschließlich in EU-Rechenzentren verarbeitet.' },
+        { q: 'Welche DATEV-Produkte werden unterstützt?', a: 'DATEV Unternehmen online, DATEV LODAS, Lohn und Gehalt, Rechnungswesen — über die DATEV-API und Schnittstellen.' },
       ],
       nl: [
         { q: 'Is de DATEV-integratie AVG-conform?', a: 'Ja. Alle data wordt versleuteld verzonden en uitsluitend in EU-datacenters verwerkt.' },
@@ -398,12 +398,12 @@ export const FEATURED_INTEGRATIONS = {
     logo: 'tag',
     color: '#4A154B',
     title: { de: 'Slack KI-Integration', nl: 'Slack AI-Integratie', en: 'Slack AI Integration' },
-    meta: { de: 'NeXifyAI bringt KI-Agenten direkt in Slack — fuer automatisierte Benachrichtigungen, Teamkommunikation und Workflow-Steuerung.', nl: 'NeXifyAI brengt AI-agenten direct naar Slack — voor geautomatiseerde meldingen, teamcommunicatie en workflow-aansturing.', en: 'NeXifyAI brings AI agents directly to Slack — for automated notifications, team communication, and workflow control.' },
+    meta: { de: 'NeXifyAI bringt KI-Agenten direkt in Slack — für automatisierte Benachrichtigungen, Teamkommunikation und Workflow-Steuerung.', nl: 'NeXifyAI brengt AI-agenten direct naar Slack — voor geautomatiseerde meldingen, teamcommunicatie en workflow-aansturing.', en: 'NeXifyAI brings AI agents directly to Slack — for automated notifications, team communication, and workflow control.' },
     hero: { de: 'KI-Agenten in Slack. Automatisierung dort, wo Ihr Team arbeitet.', nl: 'AI-agenten in Slack. Automatisering waar uw team werkt.', en: 'AI agents in Slack. Automation where your team works.' },
     usecases: {
       de: [
         { title: 'Intelligente Benachrichtigungen', desc: 'Kontextbezogene Alerts aus CRM, ERP und Monitoring-Tools direkt in relevante Slack-Channels.' },
-        { title: 'Slash-Command-Automationen', desc: 'Eigene /commands fuer haeufige Aufgaben wie Status-Checks, Report-Generierung und Ticket-Erstellung.' },
+        { title: 'Slash-Command-Automationen', desc: 'Eigene /commands für häufige Aufgaben wie Status-Checks, Report-Generierung und Ticket-Erstellung.' },
         { title: 'Meeting-Summaries', desc: 'Automatische Zusammenfassungen von Slack-Diskussionen mit Action Items und Verantwortlichkeiten.' },
       ],
       nl: [
@@ -440,9 +440,9 @@ export const FEATURED_INTEGRATIONS = {
     hero: { de: 'KI-Agenten auf AWS. Enterprise-Scale. EU-Compliance.', nl: 'AI-agenten op AWS. Enterprise-schaal. EU-compliance.', en: 'AI agents on AWS. Enterprise scale. EU compliance.' },
     usecases: {
       de: [
-        { title: 'Serverless-Agenten', desc: 'KI-Agenten als Lambda-Functions fuer kosteneffiziente, event-getriebene Verarbeitung.' },
+        { title: 'Serverless-Agenten', desc: 'KI-Agenten als Lambda-Functions für kosteneffiziente, event-getriebene Verarbeitung.' },
         { title: 'Auto-Scaling-Infrastruktur', desc: 'Dynamische Skalierung basierend auf Auslastung mit ECS/EKS und Application Load Balancer.' },
-        { title: 'Daten-Pipeline-Automation', desc: 'Automatisierte ETL-Prozesse mit S3, Glue, Athena und Redshift fuer Ihre BI-Anforderungen.' },
+        { title: 'Daten-Pipeline-Automation', desc: 'Automatisierte ETL-Prozesse mit S3, Glue, Athena und Redshift für Ihre BI-Anforderungen.' },
       ],
       nl: [
         { title: 'Serverless-agenten', desc: 'AI-agenten als Lambda-functies voor kosteneffectieve, event-driven verwerking.' },
@@ -458,7 +458,7 @@ export const FEATURED_INTEGRATIONS = {
     combinedWith: ['google-cloud', 'kubernetes', 'terraform', 'datadog'],
     faq: {
       de: [
-        { q: 'In welcher AWS-Region werden die Agenten gehostet?', a: 'Standardmaessig in eu-central-1 (Frankfurt) oder eu-west-1 (Irland). Weitere Regionen auf Anfrage.' },
+        { q: 'In welcher AWS-Region werden die Agenten gehostet?', a: 'Standardmäßig in eu-central-1 (Frankfurt) oder eu-west-1 (Irland). Weitere Regionen auf Anfrage.' },
       ],
       nl: [
         { q: 'In welke AWS-regio worden de agenten gehost?', a: 'Standaard in eu-central-1 (Frankfurt) of eu-west-1 (Ierland). Andere regio\'s op aanvraag.' },
@@ -474,13 +474,13 @@ export const FEATURED_INTEGRATIONS = {
     logo: 'storefront',
     color: '#96BF48',
     title: { de: 'Shopify KI-Integration', nl: 'Shopify AI-Integratie', en: 'Shopify AI Integration' },
-    meta: { de: 'NeXifyAI automatisiert Ihren Shopify-Shop mit KI-Agenten — fuer Bestellmanagement, Kundenservice und Conversion-Optimierung.', nl: 'NeXifyAI automatiseert uw Shopify-shop met AI-agenten — voor orderbeheer, klantenservice en conversie-optimalisatie.', en: 'NeXifyAI automates your Shopify store with AI agents — for order management, customer service, and conversion optimization.' },
+    meta: { de: 'NeXifyAI automatisiert Ihren Shopify-Shop mit KI-Agenten — für Bestellmanagement, Kundenservice und Conversion-Optimierung.', nl: 'NeXifyAI automatiseert uw Shopify-shop met AI-agenten — voor orderbeheer, klantenservice en conversie-optimalisatie.', en: 'NeXifyAI automates your Shopify store with AI agents — for order management, customer service, and conversion optimization.' },
     hero: { de: 'Shopify + KI-Agenten. E-Commerce auf Autopilot.', nl: 'Shopify + AI-agenten. E-commerce op autopilot.', en: 'Shopify + AI agents. E-commerce on autopilot.' },
     usecases: {
       de: [
         { title: 'Bestellautomation', desc: 'Automatisierte Bestellbestaetigung, Versandbenachrichtigung und Retouren-Management.' },
         { title: 'Produkt-Empfehlungen', desc: 'KI-basierte Produktvorschlaege basierend auf Kundenverhalten und Kaufhistorie.' },
-        { title: 'Bestandsmanagement', desc: 'Automatische Bestandsueberwachung mit Nachbestellungs-Triggern und Lieferantenbenachrichtigung.' },
+        { title: 'Bestandsmanagement', desc: 'Automatische Bestandsüberwachung mit Nachbestellungs-Triggern und Lieferantenbenachrichtigung.' },
       ],
       nl: [
         { title: 'Orderautomatisering', desc: 'Geautomatiseerde orderbevestiging, verzendmelding en retourenbeheer.' },
@@ -496,7 +496,7 @@ export const FEATURED_INTEGRATIONS = {
     combinedWith: ['stripe', 'klarna', 'mailchimp', 'google-ads'],
     faq: {
       de: [
-        { q: 'Funktioniert die Integration mit Shopify Plus?', a: 'Ja. Shopify Basic, Shopify, Advanced und Shopify Plus — alle Versionen werden unterstuetzt.' },
+        { q: 'Funktioniert die Integration mit Shopify Plus?', a: 'Ja. Shopify Basic, Shopify, Advanced und Shopify Plus — alle Versionen werden unterstützt.' },
       ],
       nl: [
         { q: 'Werkt de integratie met Shopify Plus?', a: 'Ja. Shopify Basic, Shopify, Advanced en Shopify Plus — alle versies worden ondersteund.' },
@@ -512,12 +512,12 @@ export const FEATURED_INTEGRATIONS = {
     logo: 'auto_awesome',
     color: '#10A37F',
     title: { de: 'OpenAI KI-Integration', nl: 'OpenAI AI-Integratie', en: 'OpenAI AI Integration' },
-    meta: { de: 'NeXifyAI integriert OpenAI-Modelle (GPT, DALL-E, Whisper) in Ihre Geschaeftsprozesse fuer Text-, Bild- und Sprachverarbeitung.', nl: 'NeXifyAI integreert OpenAI-modellen (GPT, DALL-E, Whisper) in uw bedrijfsprocessen voor tekst-, beeld- en spraakverwerking.', en: 'NeXifyAI integrates OpenAI models (GPT, DALL-E, Whisper) into your business processes for text, image, and speech processing.' },
+    meta: { de: 'NeXifyAI integriert OpenAI-Modelle (GPT, DALL-E, Whisper) in Ihre Geschaeftsprozesse für Text-, Bild- und Sprachverarbeitung.', nl: 'NeXifyAI integreert OpenAI-modellen (GPT, DALL-E, Whisper) in uw bedrijfsprocessen voor tekst-, beeld- en spraakverwerking.', en: 'NeXifyAI integrates OpenAI models (GPT, DALL-E, Whisper) into your business processes for text, image, and speech processing.' },
     hero: { de: 'OpenAI-Power. In Ihrem Unternehmen. Sicher und kontrolliert.', nl: 'OpenAI-kracht. In uw organisatie. Veilig en gecontroleerd.', en: 'OpenAI power. In your business. Secure and controlled.' },
     usecases: {
       de: [
-        { title: 'Textgenerierung & Zusammenfassung', desc: 'Automatisierte Erstellung von Reports, E-Mails, Vertraegen und Zusammenfassungen mit GPT-Modellen.' },
-        { title: 'Dokumentenanalyse', desc: 'KI-gestuetzte Analyse von Vertraegen, Rechnungen und Berichten mit Extraktion relevanter Informationen.' },
+        { title: 'Textgenerierung & Zusammenfassung', desc: 'Automatisierte Erstellung von Reports, E-Mails, Verträgen und Zusammenfassungen mit GPT-Modellen.' },
+        { title: 'Dokumentenanalyse', desc: 'KI-gestützte Analyse von Verträgen, Rechnungen und Berichten mit Extraktion relevanter Informationen.' },
         { title: 'Sprachverarbeitung', desc: 'Transkription und Analyse von Calls, Meetings und Voicemails mit OpenAI Whisper.' },
       ],
       nl: [
@@ -534,7 +534,7 @@ export const FEATURED_INTEGRATIONS = {
     combinedWith: ['langchain', 'pinecone', 'slack', 'google-drive'],
     faq: {
       de: [
-        { q: 'Werden unsere Daten von OpenAI gespeichert?', a: 'Nein. Wir nutzen die Enterprise-API mit Opt-out fuer Datentraining. Ihre Daten bleiben Ihre Daten.' },
+        { q: 'Werden unsere Daten von OpenAI gespeichert?', a: 'Nein. Wir nutzen die Enterprise-API mit Opt-out für Datentraining. Ihre Daten bleiben Ihre Daten.' },
       ],
       nl: [
         { q: 'Worden onze data door OpenAI opgeslagen?', a: 'Nee. Wij gebruiken de Enterprise-API met opt-out voor datatraining. Uw data blijft uw data.' },
@@ -550,13 +550,13 @@ export const FEATURED_INTEGRATIONS = {
     logo: 'payments',
     color: '#635BFF',
     title: { de: 'Stripe Payment-Integration', nl: 'Stripe Payment-Integratie', en: 'Stripe Payment Integration' },
-    meta: { de: 'NeXifyAI automatisiert Zahlungsprozesse mit Stripe — fuer Rechnungsstellung, Subscriptions und Revenue-Reporting.', nl: 'NeXifyAI automatiseert betalingsprocessen met Stripe — voor facturering, subscriptions en omzetrapportage.', en: 'NeXifyAI automates payment processes with Stripe — for invoicing, subscriptions, and revenue reporting.' },
+    meta: { de: 'NeXifyAI automatisiert Zahlungsprozesse mit Stripe — für Rechnungsstellung, Subscriptions und Revenue-Reporting.', nl: 'NeXifyAI automatiseert betalingsprocessen met Stripe — voor facturering, subscriptions en omzetrapportage.', en: 'NeXifyAI automates payment processes with Stripe — for invoicing, subscriptions, and revenue reporting.' },
     hero: { de: 'Zahlungen. Rechnungen. Subscriptions. Alles automatisiert.', nl: 'Betalingen. Facturen. Subscriptions. Alles geautomatiseerd.', en: 'Payments. Invoices. Subscriptions. All automated.' },
     usecases: {
       de: [
         { title: 'Automatisierte Rechnungsstellung', desc: 'KI-Agenten erstellen, versenden und verfolgen Rechnungen basierend auf Vertragsdaten und Leistungsnachweisen.' },
         { title: 'Subscription-Management', desc: 'Automatisierte Verwaltung wiederkehrender Zahlungen mit Upgrade-, Downgrade- und Kuendigungslogik.' },
-        { title: 'Revenue-Analytics', desc: 'Echtzeit-Dashboards fuer MRR, Churn-Rate, LTV und Zahlungsausfaelle mit praediktiver Analyse.' },
+        { title: 'Revenue-Analytics', desc: 'Echtzeit-Dashboards für MRR, Churn-Rate, LTV und Zahlungsausfaelle mit prädiktiver Analyse.' },
       ],
       nl: [
         { title: 'Geautomatiseerde facturering', desc: 'AI-agenten maken, verzenden en volgen facturen op basis van contractgegevens en prestatiebewijzen.' },
@@ -572,7 +572,7 @@ export const FEATURED_INTEGRATIONS = {
     combinedWith: ['shopify', 'salesforce', 'datev', 'quickbooks'],
     faq: {
       de: [
-        { q: 'Werden auch SEPA-Lastschriften unterstuetzt?', a: 'Ja. Stripe unterstuetzt SEPA, Kreditkarte, Klarna, giropay und weitere europaeische Zahlungsmethoden.' },
+        { q: 'Werden auch SEPA-Lastschriften unterstützt?', a: 'Ja. Stripe unterstützt SEPA, Kreditkarte, Klarna, giropay und weitere europaeische Zahlungsmethoden.' },
       ],
       nl: [
         { q: 'Worden SEPA-incasso\'s ook ondersteund?', a: 'Ja. Stripe ondersteunt SEPA, creditcard, Klarna, iDEAL en andere Europese betaalmethoden.' },

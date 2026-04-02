@@ -1157,7 +1157,7 @@ from commercial import (
     generate_quote_pdf, generate_invoice_pdf,
     generate_tariff_sheet_pdf,
     get_commercial_faq,
-    SERVICE_CATALOG, BUNDLE_CATALOG,
+    SERVICE_CATALOG, BUNDLE_CATALOG, PRODUCT_DESCRIPTIONS,
     COMPLIANCE_STATUS, ISO_GAP_ANALYSIS,
 )
 from fastapi.responses import StreamingResponse
@@ -1287,9 +1287,9 @@ async def get_compliance():
 @app.get("/api/product/tariff-sheet")
 async def download_tariff_sheet(category: str = "all"):
     """Download a CI-branded tariff comparison PDF"""
-    valid = ("all", "agents", "websites", "seo", "bundles")
+    valid = ("all", "agents", "websites", "seo", "apps", "addons", "bundles")
     if category not in valid:
-        raise HTTPException(400, f"Ungueltige Kategorie. Erlaubt: {', '.join(valid)}")
+        raise HTTPException(400, f"Ungültige Kategorie. Erlaubt: {', '.join(valid)}")
     pdf_bytes = generate_tariff_sheet_pdf(category)
     filename = f"NeXifyAI_Tarife_{category}_{datetime.now(timezone.utc).strftime('%Y%m%d')}.pdf"
     return StreamingResponse(
@@ -1297,6 +1297,32 @@ async def download_tariff_sheet(category: str = "all"):
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
+
+
+
+@app.get("/api/product/descriptions")
+async def get_product_descriptions():
+    """Complete product descriptions for all services"""
+    return {
+        "products": {k: v for k, v in PRODUCT_DESCRIPTIONS.items()},
+        "services": {k: {
+            "tariff_number": v["tariff_number"],
+            "name": v["name"],
+            "category": v.get("category", ""),
+            "price": v.get("price_eur") or v.get("price_monthly_eur") or 0,
+            "billing_mode": v.get("billing_mode", "one_time"),
+            "features": v.get("features", []),
+            "target": v.get("target", ""),
+        } for k, v in SERVICE_CATALOG.items()},
+        "bundles": {k: {
+            "tariff_number": v["tariff_number"],
+            "name": v["name"],
+            "description": v["description"],
+            "bundle_price_eur": v["bundle_price_eur"],
+            "savings_desc": v.get("savings_desc", ""),
+            "includes": v.get("includes", []),
+        } for k, v in BUNDLE_CATALOG.items()},
+    }
 
 
 # --- Quote Management (Admin) ---

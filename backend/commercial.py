@@ -321,7 +321,7 @@ SERVICE_CATALOG = {
         "features": [
             "Keyword-Recherche (200 Keywords)",
             "On-Page-Optimierung (15 Seiten/Mo.)",
-            "Woechentlicher SEO-Report",
+            "Wöchentlicher SEO-Report",
             "Content-Strategie & KI-Briefings",
             "Technisches SEO (monatlich)",
             "Linkbuilding-Strategie",
@@ -341,9 +341,9 @@ SERVICE_CATALOG = {
         "features": [
             "Unbegrenzte Keywords",
             "Tagesaktuelle Reports & Dashboards",
-            "Vollstaendige Content-Produktion",
+            "Vollständige Content-Produktion",
             "Dediziertes SEO-Team",
-            "International SEO (5+ Maerkte)",
+            "International SEO (5+ Märkte)",
             "API-Zugang & Custom Reporting",
             "Executive Quarterly Reviews",
         ],
@@ -357,45 +357,45 @@ BUNDLE_CATALOG = {
         "tariff_number": "NXA-BDL-DS-3990",
         "slug": "digital-starter-bundle",
         "name": "Digital Starter Bundle",
-        "description": "Website + KI-Chatbot",
-        "includes": ["web_starter", "ai_addon_chatbot"],
+        "description": "Website Starter + SEO Starter (3 Monate) — der ideale Einstieg für KMU.",
+        "includes": ["web_starter", "seo_starter"],
         "bundle_price_eur": 3990.00,
-        "savings_eur": 1248.00,
-        "savings_desc": "Website Starter + 12 Monate KI-Chatbot",
+        "savings_eur": 299.00,
+        "savings_desc": "Statt 4.289 EUR (Website 2.990 + SEO 3x 799/Mo. anteilig)",
         "billing_mode": "one_time_plus_monthly",
         "one_time_eur": 2990.00,
-        "monthly_eur": 199.00,
-        "monthly_months": 12,
+        "monthly_eur": 333.33,
+        "monthly_months": 3,
         "status": "active",
     },
     "growth_digital": {
-        "tariff_number": "NXA-BDL-GD-11900",
+        "tariff_number": "NXA-BDL-GD-17490",
         "slug": "growth-digital-bundle",
         "name": "Growth Digital Bundle",
-        "description": "Website Professional + Starter AI Agenten AG (24 Mo.)",
-        "includes": ["web_professional", "starter"],
+        "description": "Website Professional + SEO Growth (6 Monate) + KI-Chatbot — 15 % Bundle-Rabatt.",
+        "includes": ["web_professional", "seo_growth", "ai_addon_chatbot"],
         "bundle_price_eur": 17490.00,
-        "savings_eur": 1976.00,
-        "savings_desc": "Website + Starter AI Agenten AG (24 Monate)",
+        "savings_eur": 1977.00,
+        "savings_desc": "Statt 19.467 EUR — 15 % Bundle-Rabatt",
         "billing_mode": "custom",
-        "one_time_website_eur": 5990.00,
-        "ai_monthly_eur": 479.00,
-        "ai_months": 24,
+        "one_time_website_eur": 6370.00,
+        "seo_monthly_eur": 1274.15,
+        "seo_months": 6,
+        "chatbot_monthly_eur": 211.75,
+        "chatbot_months": 6,
         "status": "active",
+        "badge": "BELIEBT",
     },
     "enterprise_digital": {
         "tariff_number": "NXA-BDL-ED-39900",
         "slug": "enterprise-digital-bundle",
         "name": "Enterprise Digital Bundle",
-        "description": "Website Enterprise + Growth AI Agenten AG (24 Mo.)",
-        "includes": ["web_enterprise", "growth"],
+        "description": "Website Enterprise + App + SEO Enterprise + Growth AI Agenten AG + dediziertes Projektteam.",
+        "includes": ["web_enterprise", "app_professional", "seo_enterprise", "growth"],
         "bundle_price_eur": 39900.00,
-        "savings_eur": 6176.00,
-        "savings_desc": "Website + Growth AI Agenten AG (24 Monate)",
+        "savings_eur": 0,
+        "savings_desc": "Individuelles Angebot — ab 39.900 EUR",
         "billing_mode": "custom",
-        "one_time_website_eur": 9900.00,
-        "ai_monthly_eur": 1249.00,
-        "ai_months": 24,
         "status": "active",
     },
 }
@@ -404,14 +404,82 @@ BUNDLE_CATALOG = {
 # COMPLIANCE & TRUST METADATA
 # ═══════════════════════════════════════════════════
 COMPLIANCE_STATUS = {
-    "gdpr": {"status": "implemented", "label": "DSGVO / AVG", "detail": "Verordnung (EU) 2016/679 — vollstaendig umgesetzt"},
+    "gdpr": {"status": "implemented", "label": "DSGVO / AVG", "detail": "Verordnung (EU) 2016/679 — vollständig umgesetzt"},
     "eu_ai_act": {"status": "implemented", "label": "EU AI Act", "detail": "Verordnung (EU) 2024/1689 — Transparenz- und Kennzeichnungspflichten umgesetzt"},
-    "uavg": {"status": "implemented", "label": "UAVG (NL)", "detail": "Uitvoeringswet AVG — niederlaendische Datenschutz-Implementierung"},
+    "uavg": {"status": "implemented", "label": "UAVG (NL)", "detail": "Uitvoeringswet AVG — niederländische Datenschutz-Implementierung"},
     "iso_27001": {"status": "aligned", "label": "ISO/IEC 27001", "detail": "Informationssicherheits-Managementsystem — orientiert, nicht zertifiziert"},
     "iso_27701": {"status": "aligned", "label": "ISO/IEC 27701", "detail": "Privacy Information Management — orientiert, nicht zertifiziert"},
     "pci_dss": {"status": "delegated", "label": "PCI DSS", "detail": "Zahlungssicherheit via Revolut (PCI DSS Level 1 zertifiziert)"},
-    "ssl_tls": {"status": "implemented", "label": "SSL/TLS", "detail": "Verschluesselte Uebertragung aller Daten"},
-    "eu_hosting": {"status": "implemented", "label": "EU-Hosting", "detail": "Datenverarbeitung ausschliesslich in EU-Rechenzentren"},
+    "ssl_tls": {"status": "implemented", "label": "SSL/TLS", "detail": "Verschlüsselte Übertragung aller Daten"},
+    "eu_hosting": {"status": "implemented", "label": "EU-Hosting", "detail": "Datenverarbeitung ausschließlich in EU-Rechenzentren"},
+}
+
+# ═══════════════════════════════════════════════════
+# PRODUCT DESCRIPTIONS — Professional marketing/legal content
+# ═══════════════════════════════════════════════════
+PRODUCT_DESCRIPTIONS = {
+    "starter": {
+        "what": "Einstiegstarif für den Aufbau KI-gestützter Geschäftsprozesse mit zwei dedizierten KI-Agenten in einer geteilten Cloud-Umgebung.",
+        "for_whom": "KMU, Startups und Unternehmen, die erste KI-Automatisierungen einführen möchten, ohne eigene Infrastruktur aufzubauen.",
+        "results": "Automatisierung wiederkehrender Aufgaben, schnellere Reaktionszeiten, Entlastung des Teams bei Routineprozessen.",
+        "included": "2 KI-Agenten, Shared Cloud Infrastructure, E-Mail-Support (48h), Basis-Integrationen (REST API), Standard-Monitoring, monatlicher Performance-Report.",
+        "not_included": "CRM/ERP-Kit, dedizierter Onboarding-Manager, Private Cloud, Priority Support.",
+        "process": "Bedarfsanalyse → Konzeptfreigabe → Setup & Konfiguration → Testphase → Go-Live. Ca. 3–4 Wochen.",
+        "prerequisites": "Zugang zu den Systemen, die angebunden werden sollen. Ansprechpartner für fachliche Abstimmung.",
+        "contract_terms": "24 Monate Laufzeit. 30 % Aktivierungsanzahlung bei Auftragserteilung (3.592,80 EUR netto). Restbetrag in 24 gleichen Monatsraten à 349,30 EUR netto.",
+        "support": "E-Mail-Support mit Reaktionszeit bis 48 Stunden (Werktage).",
+        "reporting": "Monatlicher Performance-Report mit KPI-Übersicht, Agenten-Auslastung und Optimierungsempfehlungen.",
+        "infrastructure": "Shared Cloud Infrastructure (EU-Hosting, Frankfurt/Amsterdam). 99,5 % Verfügbarkeit.",
+    },
+    "growth": {
+        "what": "Professioneller Tarif für den skalierten Einsatz von KI-Agenten mit dedizierten Ressourcen, erweitertem Support und CRM/ERP-Integration.",
+        "for_whom": "Mittelständische Unternehmen, Scale-ups und Organisationen mit komplexen Prozesslandschaften und mehreren Abteilungen.",
+        "results": "Skalierbare Prozessautomation, tiefere Systemintegration, kürzere Durchlaufzeiten, datengestützte Entscheidungsgrundlagen.",
+        "included": "10 KI-Agenten, Private Cloud Infrastructure, Priority Support (24h), CRM/ERP-Kit (SAP, HubSpot, Salesforce), Advanced Monitoring & Analytics, wöchentlicher Report, dedizierter Onboarding-Manager.",
+        "not_included": "Enterprise-SLA mit garantiertem 4h-Support, benutzerdefinierte ML-Modelle.",
+        "process": "Bedarfsanalyse → Architektur-Workshop → Setup & Integration → Testphase → Go-Live → Onboarding. Ca. 4–6 Wochen.",
+        "prerequisites": "Systemzugänge, fachlicher Ansprechpartner, Klarheit über Zielprozesse. Optional: API-Dokumentation bestehender Systeme.",
+        "contract_terms": "24 Monate Laufzeit. 30 % Aktivierungsanzahlung bei Auftragserteilung (9.352,80 EUR netto). Restbetrag in 24 gleichen Monatsraten à 909,30 EUR netto.",
+        "support": "Priority Support mit Reaktionszeit bis 24 Stunden (inkl. Wochenende bei kritischen Incidents).",
+        "reporting": "Wöchentlicher Performance-Report mit detaillierten KPIs, Agenten-Analytics, Integrationsmetriken und strategischen Empfehlungen.",
+        "infrastructure": "Private Cloud Infrastructure (EU-Hosting, dedizierte Ressourcen). 99,9 % Verfügbarkeit. Automatische Skalierung.",
+    },
+    "web_starter": {
+        "what": "Professionelle Business-Website mit bis zu 5 Seiten, responsivem Design und SEO-Grundoptimierung.",
+        "for_whom": "Einzelunternehmer, Startups und KMU, die eine moderne Online-Präsenz benötigen.",
+        "results": "Sichtbarkeit im Web, professioneller Ersteindruck, Grundlage für Kundengewinnung.",
+        "included": "Responsive Design, CI-konformes Layout, SEO-Basis, Kontaktformular, SSL, CMS-Integration, 1 Monat Support.",
+        "not_included": "Blog-System, Animationen, Multi-Language, E-Commerce, Analytics-Integration.",
+        "process": "Briefing → Designentwurf → Umsetzung → Feedbackrunde → Go-Live. Ca. 3 Wochen.",
+        "contract_terms": "Einmaliger Projektpreis 2.990 EUR netto. 50 % bei Auftragserteilung, 50 % bei Abnahme.",
+    },
+    "web_professional": {
+        "what": "Umfangreiche Business-Website mit bis zu 15 Seiten, Animationen, Blog-System und Analytics-Integration.",
+        "for_whom": "Mittelständische Unternehmen, die ihre digitale Präsenz ausbauen und Content-Marketing starten möchten.",
+        "results": "Professioneller Web-Auftritt, Content-Marketing-Basis, Lead-Generierung, messbare Performance.",
+        "included": "Alle Starter-Features plus: Animationen, Blog/News, Google Analytics 4, Mehrsprachig (DE/NL/EN), Performance-Optimierung, 3 Monate Support.",
+        "not_included": "Headless CMS, E-Commerce, Custom API-Anbindungen, WCAG-Barrierefreiheit.",
+        "process": "Briefing → Konzept → Designentwurf → Umsetzung → Content-Einpflege → Testing → Go-Live. Ca. 5 Wochen.",
+        "contract_terms": "Einmaliger Projektpreis 7.490 EUR netto. 50 % bei Auftragserteilung, 50 % bei Abnahme.",
+    },
+    "seo_starter": {
+        "what": "KI-gesteuerte Suchmaschinenoptimierung mit Keyword-Recherche, On-Page-Optimierung und monatlichem Reporting.",
+        "for_whom": "KMU und Startups, die organisch wachsen möchten, ohne ein dediziertes SEO-Team aufzubauen.",
+        "results": "Verbesserte Sichtbarkeit bei relevanten Suchbegriffen, technisch saubere Website, nachvollziehbare Fortschritte.",
+        "included": "50 Keywords, On-Page (5 Seiten/Mo.), monatlicher Report, Core Web Vitals, Google Search Console, quartalsweiser Tech-Audit.",
+        "not_included": "Content-Strategie, Linkbuilding, Multilingual SEO, wöchentliches Reporting.",
+        "process": "SEO-Audit → Keyword-Strategie → technische Optimierung → monatliche On-Page-Runden → Reporting.",
+        "contract_terms": "799 EUR/Monat netto. Mindestlaufzeit 6 Monate. Monatliche Abrechnung.",
+    },
+    "seo_growth": {
+        "what": "Umfassende KI-gesteuerte SEO mit Content-Strategie, Linkbuilding, Wettbewerberanalyse und multilingualer Optimierung.",
+        "for_whom": "Mittelständische Unternehmen und Scale-ups, die in kompetitiven Märkten organisch dominieren wollen.",
+        "results": "Signifikante Ranking-Verbesserungen, qualifizierter organischer Traffic, Content-Pipeline, internationales Wachstum.",
+        "included": "200 Keywords, On-Page (15 Seiten/Mo.), wöchentlicher Report, Content-Strategie & KI-Briefings, technisches SEO (monatlich), Linkbuilding, Wettbewerberanalyse, Multilingual SEO (DE/NL/EN).",
+        "not_included": "Dediziertes SEO-Team, tagesaktuelle Reports, vollständige Content-Produktion.",
+        "process": "SEO-Audit → Keyword-Strategie → technische Optimierung → Content-Plan → monatliche Zyklen → Linkbuilding → wöchentliche Reports.",
+        "contract_terms": "1.499 EUR/Monat netto. Mindestlaufzeit 6 Monate. Monatliche Abrechnung. Empfohlener Tarif.",
+    },
 }
 
 ISO_GAP_ANALYSIS = {
@@ -813,7 +881,7 @@ def generate_quote_pdf(quote_data: dict) -> bytes:
         "- Die Anzahlung deckt: Projektstart, Priorisierung, Setup, Kapazitaetsreservierung, Implementierungsfreigabe<br/>"
         "- Restbetrag: In 24 gleichen monatlichen Folgeraten<br/>"
         "- Alle Preise verstehen sich zzgl. der gesetzlichen USt. (21 % NL / 19 % DE)<br/>"
-        "- Gueltigkeit dieses Angebots: 30 Tage ab Ausstellungsdatum<br/>"
+        "- Gültigkeit dieses Angebots: 30 Tage ab Ausstellungsdatum<br/>"
         "- DSGVO- und EU-AI-Act-konforme Umsetzung garantiert<br/>"
         "- Gerichtsstand: Venlo, Niederlande (Burgerlijk Wetboek)",
         styles["BodyText2"],
@@ -823,10 +891,10 @@ def generate_quote_pdf(quote_data: dict) -> bytes:
     elements.append(Paragraph("Zahlungsinformationen", styles["SectionHead"]))
     elements.append(Paragraph(
         f"<b>Online-Zahlung:</b> Sie erhalten einen sicheren Zahlungslink via Revolut Checkout.<br/><br/>"
-        f"<b>Ueberweisung innerhalb des EWR:</b><br/>"
+        f"<b>Überweisung innerhalb des EWR:</b><br/>"
         f"IBAN: {COMPANY_DATA['bank']['iban']} | BIC: {COMPANY_DATA['bank']['bic']}<br/>"
         f"Kontoinhaber: {COMPANY_DATA['bank']['account_holder']}<br/><br/>"
-        f"<b>Ueberweisung von ausserhalb des EWR:</b><br/>"
+        f"<b>Überweisung von außerhalb des EWR:</b><br/>"
         f"IBAN: {COMPANY_DATA['bank']['iban']} | BIC: {COMPANY_DATA['bank']['bic']}<br/>"
         f"BIC der zwischengeschalteten Bank: {COMPANY_DATA['bank']['intermediary_bic']}",
         styles["BodyText2"],
@@ -950,7 +1018,7 @@ def generate_invoice_pdf(invoice_data: dict) -> bytes:
         f"IBAN: {COMPANY_DATA['bank']['iban']}<br/>"
         f"BIC: {COMPANY_DATA['bank']['bic']}<br/>"
         f"Kontoinhaber: {COMPANY_DATA['bank']['account_holder']}<br/><br/>"
-        f"Von ausserhalb des EWR zusaetzlich:<br/>"
+        f"Von außerhalb des EWR zusaetzlich:<br/>"
         f"BIC der zwischengeschalteten Bank: {COMPANY_DATA['bank']['intermediary_bic']}",
         styles["BodyText2"],
     ))
@@ -1006,7 +1074,7 @@ def generate_tariff_sheet_pdf(category: str = "all") -> bytes:
 
     # Title
     elements.append(Spacer(1, 6 * mm))
-    elements.append(Paragraph("Tarif- und Leistungsuebersicht", styles["SheetTitle"]))
+    elements.append(Paragraph("Tarif- und Leistungsübersicht", styles["SheetTitle"]))
     elements.append(Paragraph(
         f"NeXifyAI | Stand: {now_str} | Alle Preise in EUR, zzgl. gesetzlicher USt.",
         styles["SheetSub"],
@@ -1142,13 +1210,111 @@ def generate_tariff_sheet_pdf(category: str = "all") -> bytes:
         elements.append(t)
         elements.append(Spacer(1, 6 * mm))
 
+    # --- Apps ---
+    if category in ("all", "apps"):
+        elements.append(Paragraph("App-Entwicklung", styles["CatTitle"]))
+        app_header = [
+            Paragraph("<b>Merkmal</b>", styles["CellBold"]),
+            Paragraph("<b>App MVP</b>", styles["CellBold"]),
+            Paragraph("<b>App Professional</b>", styles["CellBold"]),
+        ]
+        am = SERVICE_CATALOG["app_mvp"]
+        ap = SERVICE_CATALOG["app_professional"]
+        app_rows = [app_header]
+        app_rows.append([Paragraph("Tarif-Nr.", styles["CellText"]), Paragraph(am["tariff_number"], styles["CellText"]), Paragraph(ap["tariff_number"], styles["CellText"])])
+        app_rows.append([Paragraph("Preis (netto)", styles["CellText"]), Paragraph(_fmt_eur(am["price_eur"]), styles["CellText"]), Paragraph(_fmt_eur(ap["price_eur"]), styles["CellText"])])
+        app_rows.append([Paragraph("Lieferzeit", styles["CellText"]), Paragraph(f'{am["delivery_weeks"]} Wochen', styles["CellText"]), Paragraph(f'{ap["delivery_weeks"]} Wochen', styles["CellText"])])
+        app_rows.append([Paragraph("Zahlungsbedingungen", styles["CellText"]), Paragraph("50 % bei Auftrag, 50 % bei Abnahme", styles["CellText"]), Paragraph("50 % bei Auftrag, 50 % bei Abnahme", styles["CellText"])])
+        all_app = set()
+        for s in [am, ap]:
+            all_app.update(s["features"])
+        for f in sorted(all_app):
+            app_rows.append([
+                Paragraph(f[:50], styles["CellText"]),
+                Paragraph("Inkl." if f in am["features"] else "—", styles["CellText"]),
+                Paragraph("Inkl." if f in ap["features"] else "—", styles["CellText"]),
+            ])
+        w = doc.width
+        t = Table(app_rows, colWidths=[w * 0.40, w * 0.30, w * 0.30])
+        t.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ("LINEBELOW", (0, 0), (-1, 0), 0.8, CI_DARK),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.Color(255/255, 155/255, 122/255, 0.08)),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.Color(0.97, 0.97, 0.97)]),
+            ("GRID", (0, 0), (-1, -1), 0.25, colors.Color(0.85, 0.85, 0.85)),
+        ]))
+        elements.append(t)
+        elements.append(Spacer(1, 6 * mm))
+
+    # --- KI Add-ons ---
+    if category in ("all", "addons"):
+        elements.append(Paragraph("KI Add-ons", styles["CatTitle"]))
+        addon_header = [
+            Paragraph("<b>Merkmal</b>", styles["CellBold"]),
+            Paragraph("<b>KI-Chatbot</b>", styles["CellBold"]),
+            Paragraph("<b>KI-Automation</b>", styles["CellBold"]),
+        ]
+        ac = SERVICE_CATALOG["ai_addon_chatbot"]
+        aa = SERVICE_CATALOG["ai_addon_automation"]
+        addon_rows = [addon_header]
+        addon_rows.append([Paragraph("Tarif-Nr.", styles["CellText"]), Paragraph(ac["tariff_number"], styles["CellText"]), Paragraph(aa["tariff_number"], styles["CellText"])])
+        addon_rows.append([Paragraph("Preis (netto/Mo.)", styles["CellText"]), Paragraph(f'{ac["price_monthly_eur"]:.2f} EUR', styles["CellText"]), Paragraph(f'{aa["price_monthly_eur"]:.2f} EUR', styles["CellText"])])
+        addon_rows.append([Paragraph("Abrechnungsmodus", styles["CellText"]), Paragraph("Monatlich", styles["CellText"]), Paragraph("Monatlich", styles["CellText"])])
+        all_addon = set()
+        for s in [ac, aa]:
+            all_addon.update(s["features"])
+        for f in sorted(all_addon):
+            addon_rows.append([
+                Paragraph(f[:50], styles["CellText"]),
+                Paragraph("Inkl." if f in ac["features"] else "—", styles["CellText"]),
+                Paragraph("Inkl." if f in aa["features"] else "—", styles["CellText"]),
+            ])
+        w = doc.width
+        t = Table(addon_rows, colWidths=[w * 0.40, w * 0.30, w * 0.30])
+        t.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ("LINEBELOW", (0, 0), (-1, 0), 0.8, CI_DARK),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.Color(255/255, 155/255, 122/255, 0.08)),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.Color(0.97, 0.97, 0.97)]),
+            ("GRID", (0, 0), (-1, -1), 0.25, colors.Color(0.85, 0.85, 0.85)),
+        ]))
+        elements.append(t)
+        elements.append(Spacer(1, 6 * mm))
+
     # --- Bundles ---
     if category in ("all", "bundles"):
         elements.append(Paragraph("Bundles & Kombiangebote", styles["CatTitle"]))
+        elements.append(Paragraph(
+            "Cross-Sell-Rabatte bis 15 %. Alle Bundles kombinieren mehrere Leistungen zu einem vergünstigten Gesamtpreis.",
+            styles["CellText"],
+        ))
+        elements.append(Spacer(1, 3 * mm))
         for bkey, b in BUNDLE_CATALOG.items():
-            elements.append(Paragraph(f"<b>{b['name']}</b> (Tarif-Nr. {b['tariff_number']})", styles["CellBold"]))
-            elements.append(Paragraph(f"{b['description']} | Bundle-Preis: {_fmt_eur(b['bundle_price_eur'])} | Ersparnis: {_fmt_eur(b.get('savings_eur', 0))}", styles["CellText"]))
-            elements.append(Spacer(1, 3 * mm))
+            badge_str = f' [{b["badge"]}]' if b.get("badge") else ""
+            elements.append(Paragraph(
+                f'<b>{b["name"]}{badge_str}</b> (Tarif-Nr. {b["tariff_number"]})',
+                styles["CellBold"],
+            ))
+            elements.append(Paragraph(
+                f'{b["description"]}<br/>'
+                f'Bundle-Preis: <b>{_fmt_eur(b["bundle_price_eur"])}</b>'
+                f'{" | " + b["savings_desc"] if b.get("savings_desc") else ""}',
+                styles["CellText"],
+            ))
+            if b.get("includes"):
+                inc_names = []
+                for inc_key in b["includes"]:
+                    if inc_key in SERVICE_CATALOG:
+                        inc_names.append(SERVICE_CATALOG[inc_key]["name"])
+                    elif inc_key in ("starter", "growth"):
+                        inc_names.append(TARIFF_CONFIG[inc_key]["name"])
+                if inc_names:
+                    elements.append(Paragraph(f'Enthaltene Leistungen: {", ".join(inc_names)}', styles["CellText"]))
+            elements.append(Spacer(1, 4 * mm))
 
     # Footnotes
     elements.append(Spacer(1, 8 * mm))
@@ -1156,7 +1322,7 @@ def generate_tariff_sheet_pdf(category: str = "all") -> bytes:
     elements.append(Paragraph(
         f"<b>Rechtliche Hinweise:</b><br/>"
         f"Alle Preise in EUR, zzgl. der gesetzlichen Umsatzsteuer (21 % NL / 19 % DE).<br/>"
-        f"Preise gueltig ab {now_str}. Aenderungen vorbehalten.<br/>"
+        f"Preise gültig ab {now_str}. Änderungen vorbehalten.<br/>"
         f"Individuelle Konditionen und Sondervereinbarungen auf Anfrage.<br/>"
         f"Es gelten die AGB der {COMPANY_DATA['name']}.<br/><br/>"
         f"<b>Kontakt:</b> {COMPANY_DATA['email']} | {COMPANY_DATA['phone']}<br/>"
@@ -1183,7 +1349,7 @@ def generate_tariff_sheet_pdf(category: str = "all") -> bytes:
         canvas.drawString(15 * mm + w, A4[1] - 14 * mm, "AI")
         canvas.setFont("Helvetica", 7)
         canvas.setFillColor(CI_GRAY)
-        canvas.drawRightString(A4[0] - 15 * mm, A4[1] - 12 * mm, f"Tarif- und Leistungsuebersicht")
+        canvas.drawRightString(A4[0] - 15 * mm, A4[1] - 12 * mm, f"Tarif- und Leistungsübersicht")
         canvas.drawRightString(A4[0] - 15 * mm, A4[1] - 16 * mm, f"Stand: {now_str}")
         canvas.setStrokeColor(CI_GRAY)
         canvas.setLineWidth(0.5)
@@ -1289,7 +1455,7 @@ def get_commercial_faq() -> list:
         {
             "q": "Wie erfolgt die Zahlung per Bankueberweisung?",
             "a": (
-                f"Ueberweisen Sie den Rechnungsbetrag unter Angabe der Rechnungsnummer an:\n\n"
+                f"Überweisen Sie den Rechnungsbetrag unter Angabe der Rechnungsnummer an:\n\n"
                 f"IBAN: {bank['iban']}\nBIC: {bank['bic']}\nKontoinhaber: {bank['account_holder']}\n\n"
                 f"Der Zahlungseingang wird manuell oder halbautomatisch abgeglichen."
             ),
@@ -1299,7 +1465,7 @@ def get_commercial_faq() -> list:
             "a": f"IBAN: {bank['iban']}\nBIC: {bank['bic']}\nKontoinhaber: {bank['account_holder']}",
         },
         {
-            "q": "Welche Bankdaten gelten ausserhalb des EWR?",
+            "q": "Welche Bankdaten gelten außerhalb des EWR?",
             "a": (
                 f"IBAN: {bank['iban']}\nBIC: {bank['bic']}\n"
                 f"BIC der zwischengeschalteten Bank: {bank['intermediary_bic']}\n"
@@ -1310,7 +1476,7 @@ def get_commercial_faq() -> list:
             "q": "Wie funktioniert die Angebotsannahme?",
             "a": (
                 "1. Sie erhalten Ihr Angebot per E-Mail mit sicherem Zugangslink\n"
-                "2. Nach Oeffnen koennen Sie: Angebot annehmen, Aenderung anfragen oder ablehnen\n"
+                "2. Nach Öffnen können Sie: Angebot annehmen, Änderung anfragen oder ablehnen\n"
                 "3. Bei Annahme wird sofort die Anzahlungsrechnung erstellt\n"
                 "4. Alle Zugriffe werden DSGVO-konform protokolliert"
             ),
@@ -1318,7 +1484,7 @@ def get_commercial_faq() -> list:
         {
             "q": "Wie funktioniert der sichere Angebotszugriff?",
             "a": (
-                "Ueber zeitlich begrenzte Magic-Links (24h Gueltigkeit). "
+                "Über zeitlich begrenzte Magic-Links (24h Gültigkeit). "
                 "Kein Passwort noetig — der Link wird per E-Mail an die verifizierte Adresse gesendet. "
                 "Alle Zugriffe werden im Audit-Log protokolliert."
             ),
@@ -1327,7 +1493,7 @@ def get_commercial_faq() -> list:
             "q": "Wie werden Daten DSGVO-konform verarbeitet?",
             "a": (
                 "- Alle Daten werden in EU-Rechenzentren verarbeitet\n"
-                "- Kein Datentransfer in Drittlaender\n"
+                "- Kein Datentransfer in Drittländer\n"
                 "- Zeitlich begrenzte Zugriffslinks statt Passwoerter\n"
                 "- Vollstaendige Audit-Logs aller Dokumentenzugriffe\n"
                 "- Verschluesselte Speicherung und Uebertragung\n"

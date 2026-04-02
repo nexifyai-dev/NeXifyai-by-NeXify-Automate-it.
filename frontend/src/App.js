@@ -281,7 +281,7 @@ const Integrations = ({ onBook, t }) => {
   }).filter(Boolean);
 
   const l = {
-    de: { popular: 'Beliebte Integrationen', allCats: 'Alle Kategorien', checkCta: 'Details ansehen', protocols: 'Unterstuetzte Protokolle', requestCta: 'Anbindung anfragen', exploreCta: 'Alle Integrationen erkunden', customTitle: 'Ihre Wunsch-Integration nicht dabei?', customDesc: 'Kein Problem — wir realisieren jede erdenkliche Systemanbindung. Sprechen Sie mit uns ueber Ihre Anforderungen.', customCta: 'Integration besprechen', totalLabel: 'Verfuegbare Systemintegrationen', totalDesc: 'Ueber REST API, GraphQL, Webhooks, OAuth 2.0, SAML und gRPC — nahtlos integriert in Ihre bestehende Infrastruktur.' },
+    de: { popular: 'Beliebte Integrationen', allCats: 'Alle Kategorien', checkCta: 'Details ansehen', protocols: 'Unterstützte Protokolle', requestCta: 'Anbindung anfragen', exploreCta: 'Alle Integrationen erkunden', customTitle: 'Ihre Wunsch-Integration nicht dabei?', customDesc: 'Kein Problem — wir realisieren jede erdenkliche Systemanbindung. Sprechen Sie mit uns über Ihre Anforderungen.', customCta: 'Integration besprechen', totalLabel: 'Verfügbare Systemintegrationen', totalDesc: 'Über REST API, GraphQL, Webhooks, OAuth 2.0, SAML und gRPC — nahtlos integriert in Ihre bestehende Infrastruktur.' },
     nl: { popular: 'Populaire integraties', allCats: 'Alle categorieen', checkCta: 'Details bekijken', protocols: 'Ondersteunde protocollen', requestCta: 'Koppeling aanvragen', exploreCta: 'Alle integraties verkennen', customTitle: 'Uw gewenste integratie niet gevonden?', customDesc: 'Geen probleem — wij realiseren elke denkbare systeemkoppeling. Bespreek uw vereisten met ons.', customCta: 'Integratie bespreken', totalLabel: 'Beschikbare systeemintegraties', totalDesc: 'Via REST API, GraphQL, Webhooks, OAuth 2.0, SAML en gRPC — naadloos geintegreerd in uw bestaande infrastructuur.' },
     en: { popular: 'Popular Integrations', allCats: 'All Categories', checkCta: 'View details', protocols: 'Supported protocols', requestCta: 'Request integration', exploreCta: 'Explore all integrations', customTitle: 'Don\'t see your integration?', customDesc: 'No problem — we can build any system connection you need. Talk to us about your requirements.', customCta: 'Discuss integration', totalLabel: 'Available system integrations', totalDesc: 'Via REST API, GraphQL, Webhooks, OAuth 2.0, SAML, and gRPC — seamlessly integrated into your existing infrastructure.' },
   };
@@ -495,9 +495,9 @@ const TrustSection = ({ t }) => (
       </div>
       <div className="trust-ops-grid" data-testid="trust-ops">
         {[
-          { icon: 'link', title: t.lang === 'en' ? 'Secure Document Access' : 'Sichere Dokumentenzugriffe', desc: t.lang === 'en' ? 'Time-limited Magic Links instead of passwords. Single-use tokens with automatic expiration.' : 'Zeitbegrenzte Magic Links statt Passwoerter. Einmal-Tokens mit automatischer Ablaufzeit.' },
-          { icon: 'history', title: 'Audit Trail', desc: t.lang === 'en' ? 'Complete audit logging of all commercial transactions, document access and system changes.' : 'Lueckenlose Protokollierung aller kommerziellen Transaktionen, Dokumentenzugriffe und Systemeingriffe.' },
-          { icon: 'auto_delete', title: t.lang === 'en' ? 'Data Lifecycle' : 'Daten-Lebenszyklus', desc: t.lang === 'en' ? 'Defined retention and deletion periods per data category. Automated cleanup processes.' : 'Definierte Aufbewahrungs- und Loeschfristen pro Datenkategorie. Automatisierte Bereinigungsprozesse.' },
+          { icon: 'link', title: t.lang === 'en' ? 'Secure Document Access' : 'Sichere Dokumentenzugriffe', desc: t.lang === 'en' ? 'Time-limited Magic Links instead of passwords. Single-use tokens with automatic expiration.' : 'Zeitbegrenzte Magic Links statt Passwörter. Einmal-Tokens mit automatischer Ablaufzeit.' },
+          { icon: 'history', title: 'Audit Trail', desc: t.lang === 'en' ? 'Complete audit logging of all commercial transactions, document access and system changes.' : 'Lückenlose Protokollierung aller kommerziellen Transaktionen, Dokumentenzugriffe und Systemeingriffe.' },
+          { icon: 'auto_delete', title: t.lang === 'en' ? 'Data Lifecycle' : 'Daten-Lebenszyklus', desc: t.lang === 'en' ? 'Defined retention and deletion periods per data category. Automated cleanup processes.' : 'Definierte Aufbewahrungs- und Löschfristen pro Datenkategorie. Automatisierte Bereinigungsprozesse.' },
           { icon: 'admin_panel_settings', title: 'RBAC', desc: t.lang === 'en' ? 'Role-based access control with principle of least privilege across all systems.' : 'Rollenbasierte Zugriffskontrolle mit Minimal-Rechte-Prinzip ueber alle Systeme.' },
         ].map((item, i) => (
           <motion.div key={i} className="trust-ops-card" role="listitem" variants={fadeUp}>
@@ -613,7 +613,7 @@ const ServicesAll = ({ onBook }) => {
       <div className="container">
         <motion.header className="section-header centered" variants={fadeUp}>
           <span className="label">{FULL_SERVICES.title[lang] || FULL_SERVICES.title.de}</span>
-          <h2>{lang === 'en' ? 'Websites, Apps, SEO & AI Solutions' : lang === 'nl' ? 'Websites, Apps, SEO & AI-oplossingen' : 'Websites, Apps, SEO & KI-Loesungen'}</h2>
+          <h2>{lang === 'en' ? 'Websites, Apps, SEO & AI Solutions' : lang === 'nl' ? 'Websites, Apps, SEO & AI-oplossingen' : 'Websites, Apps, SEO & KI-Lösungen'}</h2>
           <p className="section-subtitle">{FULL_SERVICES.subtitle[lang] || FULL_SERVICES.subtitle.de}</p>
         </motion.header>
         <div className="services-cat-grid" data-testid="services-categories">
@@ -665,8 +665,8 @@ const ServicesAll = ({ onBook }) => {
         <motion.div className="tariff-download-bar" variants={fadeUp}>
           <div className="tariff-download-inner">
             <div>
-              <h4>{lang === 'en' ? 'Complete tariff overview as PDF' : lang === 'nl' ? 'Volledig tariefoverzicht als PDF' : 'Komplette Tarifuebersicht als PDF'}</h4>
-              <p>{lang === 'en' ? 'All products, prices, features and bundles — printable, shareable, clear.' : lang === 'nl' ? 'Alle producten, prijzen, features en bundels — printbaar, deelbaar, overzichtelijk.' : 'Alle Produkte, Preise, Features und Bundles — druckbar, teilbar, uebersichtlich.'}</p>
+              <h4>{lang === 'en' ? 'Complete tariff overview as PDF' : lang === 'nl' ? 'Volledig tariefoverzicht als PDF' : 'Komplette Tarifübersicht als PDF'}</h4>
+              <p>{lang === 'en' ? 'All products, prices, features and bundles — printable, shareable, clear.' : lang === 'nl' ? 'Alle producten, prijzen, features en bundels — printbaar, deelbaar, overzichtelijk.' : 'Alle Produkte, Preise, Features und Bundles — druckbar, teilbar, übersichtlich.'}</p>
             </div>
             <a href={`${API}/api/product/tariff-sheet?category=all`} className="btn btn-secondary" target="_blank" rel="noopener noreferrer" data-testid="tariff-pdf-download">
               <I n="picture_as_pdf" /> {lang === 'en' ? 'Download PDF' : 'PDF herunterladen'}
