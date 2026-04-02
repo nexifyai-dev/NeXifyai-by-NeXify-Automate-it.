@@ -504,7 +504,7 @@ const LiveChat = ({ isOpen, onClose, initialQ, t, lang }) => {
             <p className="chat-sidebar-desc">{t.chat.sidebarDesc}</p>
             <div className="chat-presets">
               {t.chat.presets.map((q, i) => (
-                <button key={i} className="chat-preset" onClick={() => { track('preset_click', { q }); send(q); }} data-testid={`chat-preset-${i}`}><I n="chat_bubble" /><span>{q}</span></button>
+                <button key={i} className="chat-preset" onClick={() => { track('preset_click', { q }); send(q); }} data-testid={`chat-preset-${i}`}><svg className="chat-preset-arrow" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h10M8 3.5L11.5 7 8 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg><span>{q}</span></button>
               ))}
             </div>
             <div className="chat-sidebar-cta"><button className="btn btn-primary btn-glow" onClick={() => { track('chat_booking_click'); send(t.chat.presets[3] || 'Book a meeting'); }} style={{ width: '100%' }} data-testid="chat-sidebar-book-btn">{t.chat.bookBtn}</button></div>

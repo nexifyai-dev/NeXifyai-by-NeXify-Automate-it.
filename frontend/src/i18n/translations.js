@@ -139,7 +139,7 @@ de: {
     status:'KI-Berater', statusOn:'Online',
     presets:['Welche KI-Lösungen bietet ihr an?','Wie funktioniert die Integration?','Was kostet eine Implementierung?','Ich möchte einen Termin buchen','Welche Branchen bedient ihr?','Wie sicher sind eure Agenten?'],
     bookBtn:'Direkt Termin buchen', placeholder:'Ihre Frage eingeben...', topicLabel:'Enterprise KI',
-    welcome:'Willkommen bei NeXifyAI. Ich bin Ihr KI-Berater und helfe Ihnen, die optimale Lösung für Ihre Anforderungen zu finden. Wie kann ich Ihnen helfen?'
+    welcome:'Guten Tag! Ich bin der NeXifyAI Advisor und unterstütze Sie bei der Analyse Ihrer Automatisierungspotenziale.\n\nWas beschäftigt Sie aktuell — gibt es einen konkreten Prozess oder eine Herausforderung, die Sie lösen möchten?'
   },
   booking: {
     title:'Strategiegespräch buchen',
