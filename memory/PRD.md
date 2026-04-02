@@ -1,74 +1,61 @@
 # NeXifyAI Landing Page — Product Requirements Document
 
 ## Original Problem Statement
-Premium DACH B2B landing page for "NeXifyAI by NeXify" — an enterprise AI automation company. Core claim: "Chat it. Automate it." Primary goal: generate qualified B2B strategy calls ("Strategiegespräch buchen"). Target: DACH Mittelstand (Germany, Austria, Switzerland).
+Premium DACH B2B landing page for "NeXifyAI by NeXify" — enterprise AI automation. Core claim: "Chat it. Automate it." Primary goal: generate qualified B2B strategy calls. Target: DACH Mittelstand.
 
-## Brand
-- **Name**: NeXifyAI by NeXify
-- **Legal Entity**: NeXify Automate
-- **CEO**: Pascal Courbois, Geschäftsführer
-- **Locations**: DE (Wallstraße 9, 41334 Nettetal-Kaldenkirchen) + NL (Graaf van Loonstraat 1E, 5921 JA Venlo)
-- **KvK**: 90483944 | **USt-ID**: NL865786276B01
+## Brand & Legal
+- **Name**: NeXifyAI by NeXify | **Entity**: NeXify Automate (NL, KvK: 90483944)
+- **CEO**: Pascal Courbois | **USt-ID**: NL865786276B01
+- **Applicable Law**: Dutch (Burgerlijk Wetboek), DSGVO/UAVG, EU AI Act
 
 ## Architecture
-- **Frontend**: React 18 SPA (CRA) at port 3000
-- **Backend**: FastAPI at port 8001
-- **Database**: MongoDB (motor async driver)
-- **Auth**: JWT + Argon2 (pwdlib)
-- **Email**: Resend API
-- **Proxy**: package.json proxy forwards /api/* to backend
+- Frontend: React 18 (CRA, port 3000) with proxy to backend
+- Backend: FastAPI (port 8001), MongoDB (motor), JWT+Argon2 auth
+- LLM: GPT-4o-mini via Emergent LLM Key (emergentintegrations)
+- Email: Resend API
 
-## What's Been Implemented (April 2026)
+## Implemented Features (April 2026)
 
-### Frontend
-- [x] Hero section with ArchPanel visual
-- [x] Solutions section (6 cards)
-- [x] Use Cases section (bento grid)
-- [x] App Development section (6 cards + highlight CTA)
-- [x] Process section (4 steps)
-- [x] Integrations section (64 integrations, 10 categories)
-- [x] Governance section (DSGVO, ISO 27001 angestrebt, SOC 2 Roadmap)
-- [x] Pricing section (3 tiers)
-- [x] FAQ section (7 items, accordion)
-- [x] Contact section (form + CTA)
-- [x] Footer (company info, nav, legal links, cookie settings)
-- [x] Live Chat modal (rule-based, keyword qualification)
-- [x] Booking modal (date/time/form/success)
-- [x] Cookie consent banner (accept/reject/reopen from footer)
-- [x] Mobile responsive (tested 375-1920px, no horizontal scroll)
-- [x] Legal pages: /impressum, /datenschutz, /agb, /ki-hinweise
-- [x] Admin CRM: /admin (JWT login, stats, leads table, bookings, lead detail)
-- [x] Logo: icon-mark.svg, logo-light.svg, logo-dark.svg
-- [x] Typography: Plus Jakarta Sans (display) + Inter (body)
-- [x] Accessibility: skip link, aria labels, keyboard nav, focus-visible
-- [x] Analytics tracking (scroll depth, clicks, form submissions)
+### Landing Page
+- Hero, Solutions (6), Use Cases (bento), App Development (6+highlight), Process (4 steps)
+- 64 Integrations in 10 categories, Governance, Pricing (3 tiers), FAQ (7), Contact form
+- Footer with legal links + cookie settings reopener
+- Logo system: icon-mark.svg, logo-light.svg, logo-dark.svg
+- Typography: Plus Jakarta Sans (display) + Inter (body)
 
-### Backend
-- [x] FastAPI v3.0 with lifespan management
-- [x] JWT auth (OAuth2PasswordRequestForm, Argon2 hashing)
-- [x] POST /api/contact (lead creation + email notifications)
-- [x] POST /api/booking (booking creation + confirmation emails)
-- [x] GET /api/booking/slots (availability check)
-- [x] POST /api/chat/message (rule-based advisor, qualification tracking)
-- [x] POST /api/analytics/track (event tracking)
-- [x] Admin: /api/admin/login, /stats, /leads, /bookings, /leads/:id (PATCH)
-- [x] Rate limiting on all public endpoints
-- [x] Resend email templates (customer confirmation + internal notification)
-- [x] Audit logging
+### LLM-Powered Chat
+- GPT-4o-mini via Emergent key with comprehensive system prompt
+- Context-aware responses about all services, pricing, integrations
+- Qualification tracking (use case, interest area)
+- **Chat-based booking**: LLM collects name/email/date, creates booking, sends confirmation email
+- Dynamic date awareness (current date injected into system prompt)
 
-## Testing
-- Backend: 84% pass rate (21/25, 4 skipped fixture issues)
-- Frontend: 100% pass rate (all critical flows)
-- Test report: /app/test_reports/iteration_3.json
+### Admin CRM (/admin)
+- JWT login (Argon2 hashing, OAuth2PasswordRequestForm)
+- Dashboard: stats cards, leads table with search/filter/sort, lead detail drawer
+- Bookings view, status management, internal notes
+- Rate limit: 20 req/5min for login
 
-## Backlog / Future
-- P1: SEO schema markup (JSON-LD)
-- P1: Proper cookie consent persistence settings page
-- P2: LLM integration for chat (currently rule-based)
-- P2: Admin: lead/booking export CSV
-- P2: Admin: MFA support
-- P3: Performance: Lighthouse optimization
-- P3: A/B testing framework
+### Legal & Compliance
+- /impressum (TMG + Art. 3:15d BW), /datenschutz (DSGVO + UAVG + AVG)
+- /agb (Boek 6 BW, NL law), /ki-hinweise (EU AI Act Art. 52, compliance matrix)
+- Cookie consent (accept/reject/reopen from footer)
+
+### UX/Performance
+- Invisible scrollbars globally (scrollbar-width:none)
+- Mobile responsive (360-1920px, no horizontal overflow)
+- Container system with responsive padding (20-64px)
+- Accessibility: skip link, ARIA labels, keyboard nav
+
+## Testing (Iteration 4)
+- Backend: 100% | Frontend: 100% | All critical features verified
+- Test reports: /app/test_reports/iteration_4.json
+
+## Backlog
+- P1: SEO JSON-LD schema markup
+- P1: Cookie settings granular page
+- P2: Admin CSV export, MFA
+- P3: Lighthouse optimization, A/B testing
 
 ---
 *Letzte Aktualisierung: 02.04.2026*
