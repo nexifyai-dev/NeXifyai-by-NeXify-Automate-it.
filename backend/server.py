@@ -112,10 +112,15 @@ VERBOTEN:
 - Sage NIE "kostenlose Testversion" oder "Free Trial"
 """
 
-def get_system_prompt():
+def get_system_prompt(language="de"):
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     weekday_de = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"][datetime.now(timezone.utc).weekday()]
-    return ADVISOR_SYSTEM_PROMPT + f"\n\nWICHTIG: Das heutige Datum ist {today} ({weekday_de}). Alle Terminvorschläge müssen in der Zukunft liegen (frühestens ab morgen). Verwende ausschließlich Daten im Format YYYY-MM-DD. Schlage nur Werktage (Mo-Fr) vor, keine Wochenenden."
+    lang_instruction = ""
+    if language == "nl":
+        lang_instruction = "\n\nBELANGRIJK: Antwoord altijd in het Nederlands. De gebruiker spreekt Nederlands."
+    elif language == "en":
+        lang_instruction = "\n\nIMPORTANT: Always respond in English. The user speaks English."
+    return ADVISOR_SYSTEM_PROMPT + f"\n\nWICHTIG: Das heutige Datum ist {today} ({weekday_de}). Alle Terminvorschläge müssen in der Zukunft liegen (frühestens ab morgen). Verwende ausschließlich Daten im Format YYYY-MM-DD. Schlage nur Werktage (Mo-Fr) vor, keine Wochenenden." + lang_instruction
 
 if RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
@@ -236,6 +241,7 @@ class ChatMessage(BaseModel):
     session_id: str
     message: str
     context: Optional[dict] = None
+    language: Optional[str] = "de"
 
 class LeadUpdate(BaseModel):
     status: str
@@ -531,7 +537,7 @@ async def chat_message(data: ChatMessage, request: Request):
                 chat = LlmChat(
                     api_key=EMERGENT_LLM_KEY,
                     session_id=data.session_id,
-                    system_message=get_system_prompt()
+                    system_message=get_system_prompt(data.language or "de")
                 )
                 chat.with_model("openai", "gpt-4o-mini")
                 llm_sessions[data.session_id] = chat

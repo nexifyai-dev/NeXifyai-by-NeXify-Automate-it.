@@ -433,5 +433,14 @@ h3{font-size:1.125rem;font-weight:700}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+
+/* ═══════════ LANGUAGE SWITCHER ═══════════ */
+.lang-switcher{display:flex;align-items:center;gap:2px;background:rgba(19,26,34,0.6);border:1px solid rgba(255,255,255,0.06);padding:2px;backdrop-filter:blur(8px)}
+.lang-btn{padding:5px 10px;font-family:var(--f-display);font-size:.6875rem;font-weight:700;letter-spacing:.06em;color:var(--nx-dim);background:transparent;border:none;cursor:pointer;transition:all 250ms cubic-bezier(0.25,0.4,0,1);position:relative}
+.lang-btn:hover{color:var(--nx-muted)}
+.lang-btn.active{color:#0c1117;background:var(--nx-accent)}
+.lang-mobile{margin-top:12px;align-self:flex-start}
+.lang-mobile .lang-btn{padding:8px 14px;font-size:.75rem}
+
 /* ═══════════ PRINT ═══════════ */
 @media print{.nav,.chat-trigger,.chat-overlay,.booking-overlay,.cookie-banner{display:none!important}body{background:#fff;color:#000}}
