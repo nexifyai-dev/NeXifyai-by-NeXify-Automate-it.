@@ -5,6 +5,8 @@ import { useLanguage } from './i18n/LanguageContext';
 import T from './i18n/translations';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import SEOHead from './components/SEOHead';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import './App.css';
 
 const API = process.env.REACT_APP_BACKEND_URL || '';
@@ -175,7 +177,21 @@ const UseCases = ({ t }) => (
             <motion.article key={i} className="uc-card uc-wd" variants={fadeUp}>
               <div className="uc-split">
                 <div><h3 className="uc-title">{item.title}</h3><p className="uc-desc">{item.desc}</p></div>
-                <div className="orch-visual"><div className="orch-circle"><I n={t.usecases.orchIcon} /><span className="orch-label top">{t.usecases.orchLabels[0]}</span><span className="orch-label btm">{t.usecases.orchLabels[1]}</span></div></div>
+                <div className="orch-visual">
+                  <div className="orch-hub">
+                    <div className="orch-core"><I n={t.usecases.orchIcon} /></div>
+                    <div className="orch-ring orch-ring-1"></div>
+                    <div className="orch-ring orch-ring-2"></div>
+                    <div className="orch-ring orch-ring-3"></div>
+                    <div className="orch-node orch-node-1"><span>{t.usecases.orchLabels[0]}</span></div>
+                    <div className="orch-node orch-node-2"><span>{t.usecases.orchLabels[1]}</span></div>
+                    <div className="orch-node orch-node-3"><span>API</span></div>
+                    <div className="orch-node orch-node-4"><span>KI</span></div>
+                    <div className="orch-pulse orch-pulse-1"></div>
+                    <div className="orch-pulse orch-pulse-2"></div>
+                    <div className="orch-pulse orch-pulse-3"></div>
+                  </div>
+                </div>
               </div>
             </motion.article>
           );
@@ -498,7 +514,13 @@ const LiveChat = ({ isOpen, onClose, initialQ, t, lang }) => {
             <div className="chat-msgs" data-testid="chat-messages">
               {msgs.map((m, i) => (
                 <motion.div key={i} className={`chat-msg ${m.role}`} data-testid={`chat-msg-${i}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-                  <div>{m.content}</div>
+                  {m.role === 'assistant' ? (
+                    <div className="chat-md">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <div>{m.content}</div>
+                  )}
                   {m.actions && m.actions.length > 0 && <div className="chat-msg-actions">{m.actions.map((a, ai) => <button key={ai} className="btn btn-sm btn-primary" onClick={() => send(t.booking.title)}>{a.label}</button>)}</div>}
                 </motion.div>
               ))}

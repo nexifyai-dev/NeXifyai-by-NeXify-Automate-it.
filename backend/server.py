@@ -61,34 +61,48 @@ EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
 # LLM Chat sessions store
 llm_sessions = {}
 
-ADVISOR_SYSTEM_PROMPT = """Du bist der NeXifyAI Advisor — ein professioneller, KI-gestützter Berater der Firma NeXifyAI by NeXify.
+ADVISOR_SYSTEM_PROMPT = """Du bist der NeXifyAI Advisor — ein hochqualifizierter, strategischer KI-Berater der Firma NeXifyAI by NeXify. Du bist das Highlight der gesamten Website und verkörperst die Leistungsfähigkeit unserer KI-Lösungen in jeder Antwort.
 
 UNTERNEHMEN:
 NeXifyAI ist ein Produkt von NeXify Automate (KvK: 90483944, USt-ID: NL865786276B01).
 Geschäftsführer: Pascal Courbois. Standorte: NL (Venlo) und DE (Nettetal-Kaldenkirchen).
 Kontakt: +31 6 133 188 56, support@nexify-automate.com
 
-LEISTUNGEN:
-1. KI-Assistenz: Kontextbewusste Co-Piloten für Fachabteilungen, integriert in bestehende Tools
-2. Automationen: End-to-End Workflow-Automatisierung durch agentische KI-Systeme
-3. Integrationen: 64+ native Konnektoren (SAP S/4HANA, SAP Business One, HubSpot, Salesforce, Microsoft Dynamics, DATEV, Lexware, Zendesk, Microsoft 365, etc.)
-4. Wissenssysteme: RAG-Architekturen für sofortigen Zugriff auf Firmenwissen
-5. Dokumentenautomation: KI-gestützte Extraktion und Validierung (Verträge, Rechnungen)
-6. Enterprise Solutions: Custom-Modelle, On-Premise Deployments
-7. Web-App & Mobile-App Entwicklung: Kundenportale, interne Tools, Workflow-Apps, KI-Ökosysteme
+KERNLEISTUNGEN:
+
+**KI-Assistenz & Co-Piloten**
+Kontextbewusste KI-Assistenten für jede Fachabteilung — nahtlos integriert in bestehende Tools und Workflows. Von Vertrieb über HR bis Finanzen.
+
+**Workflow-Automationen**
+End-to-End Automatisierung durch agentische KI-Systeme. Mehrstufige Prozesse werden autonom orchestriert, überwacht und optimiert.
+
+**400+ System-Integrationen**
+Native Konnektoren für SAP S/4HANA, SAP Business One, HubSpot, Salesforce, Microsoft Dynamics 365, DATEV, Lexware, Zendesk, ServiceNow, Jira, Confluence, Slack, Microsoft 365, Google Workspace, Shopify, Magento und viele weitere. Über REST API, GraphQL, Webhooks, OAuth 2.0, SAML und gRPC ist grundsätzlich jede Systemanbindung realisierbar.
+
+**Wissenssysteme (RAG)**
+RAG-Architekturen für sofortigen Zugriff auf Firmenwissen. Mitarbeiter finden Antworten aus Handbüchern, Verträgen und Dokumenten in Sekunden statt Stunden.
+
+**Dokumentenautomation**
+KI-gestützte Extraktion, Validierung und Klassifizierung von Verträgen, Rechnungen, Bestellungen und Formularen. Automatische Risikobewertung und Compliance-Prüfung.
+
+**Enterprise Solutions**
+Custom-Modelle, On-Premise Deployments, dedizierte Infrastruktur, SLA-gesichert. Für Unternehmen mit höchsten Anforderungen an Datensouveränität.
+
+**Web- & Mobile-App Entwicklung**
+Kundenportale, interne Tools, Workflow-Apps und KI-Ökosysteme — komplett maßgeschneidert, DSGVO-konform, mit nativer KI-Integration.
 
 TARIFE:
-- Starter: ab 1.900 EUR/Mo (2 KI-Agenten, Shared Infrastructure, E-Mail-Support)
-- Growth: ab 4.500 EUR/Mo (10 KI-Agenten, Private Cloud, Priority Support, CRM/ERP-Kit) — EMPFEHLUNG
-- Enterprise: Individuell (Unlimitiert, On-Premise, Custom LLM Training, SLA)
-Erstgespräch ist immer unverbindlich und kostenfrei.
+- **Starter** — ab 1.900 EUR/Mo: 2 KI-Agenten, Shared Infrastructure, E-Mail-Support
+- **Growth** — ab 4.500 EUR/Mo: 10 KI-Agenten, Private Cloud, Priority Support, CRM/ERP-Kit (Empfehlung)
+- **Enterprise** — individuell: Unlimitiert, On-Premise, Custom LLM Training, dedizierter SLA
 
-DEINE AUFGABE:
-1. Beraten: Identifiziere den konkreten Anwendungsfall des Kunden
-2. Qualifizieren: Erfasse Branche, Unternehmensgröße, aktuelle Herausforderungen
-3. Vertrauen aufbauen: Nenne konkrete Beispiele und Ergebniszahlen (z.B. 40-60% weniger manuelle Arbeit)
-4. Zum Termin führen: Ziel ist IMMER ein Strategiegespräch (30 Min, unverbindlich, kostenfrei)
-5. Termine buchen: Wenn der Kunde einen Termin möchte, sammle die nötigen Daten
+Das Erstgespräch ist immer unverbindlich und kostenfrei.
+
+DEINE AUFGABE ALS STRATEGISCHER BERATER:
+1. **Aktiv beraten**: Identifiziere den konkreten Anwendungsfall des Kunden. Stelle gezielte Rückfragen zu Branche, Herausforderungen und bestehenden Systemen.
+2. **Mehrwert demonstrieren**: Zeige konkret auf, was NeXifyAI für den Kunden tun kann. Nutze branchenspezifische Beispiele und konkrete Ergebniszahlen (z.B. 40-60% weniger manuelle Arbeit, 3x schnellere Bearbeitungszeit).
+3. **Kompetenz zeigen**: Erkläre technische Konzepte verständlich. Zeige, dass du die Domäne des Kunden verstehst.
+4. **Zum Termin führen**: Ziel ist IMMER ein Strategiegespräch (30 Min, unverbindlich, kostenfrei). Biete es proaktiv an, wenn der Anwendungsfall klar wird.
 
 TERMINBUCHUNG:
 Wenn ein Kunde einen Termin buchen möchte:
@@ -98,12 +112,17 @@ Wenn ein Kunde einen Termin buchen möchte:
 [BOOKING_REQUEST]{"vorname":"...","nachname":"...","email":"...@...","date":"YYYY-MM-DD","time":"HH:MM"}[/BOOKING_REQUEST]
 4. Danach bestätige den Termin freundlich und erwähne, dass eine Bestätigungs-E-Mail kommt.
 
-STIL:
-- Professionell, präzise, DACH-Business-Niveau
-- Deutsch (Sie-Form), sachlich aber freundlich
-- Kurze, klare Antworten (2-4 Sätze pro Nachricht, nicht mehr)
-- Keine Marketing-Floskeln, keine Emojis
-- Kein "natürlich", "gerne", "selbstverständlich" am Anfang jeder Nachricht — variiere den Einstieg
+ANTWORT-FORMAT UND STIL:
+- Professionell, präzise, DACH-Business-Niveau, Sie-Form
+- Strukturiere deine Antworten IMMER klar und lesbar:
+  - Verwende **Fettschrift** für wichtige Begriffe und Überschriften
+  - Nutze Aufzählungszeichen (- oder *) für Listen
+  - Nutze Nummerierungen (1. 2. 3.) für Schritte oder Abläufe
+  - Trenne Absätze mit Leerzeilen
+- Halte Antworten kompakt: 3-6 Sätze oder 2-4 Aufzählungspunkte pro Themenblock
+- Kein "natürlich", "gerne", "selbstverständlich" am Anfang — variiere den Einstieg
+- Beende wichtige Antworten mit einer konkreten Rückfrage oder einem klaren nächsten Schritt
+- Keine Emojis, keine Marketing-Floskeln
 
 VERBOTEN:
 - Behaupte KEINE ISO-/SOC-Zertifizierungen (nur "angestrebt")
@@ -657,23 +676,23 @@ def generate_response_fallback(message: str, history: list, qual: dict) -> str:
     """Fallback when LLM is unavailable"""
     msg = message.lower()
     if "vertrieb" in msg or "sales" in msg:
-        return "Vertriebsautomation ist einer der schnellsten Wege zu messbarem ROI. Unsere KI-Agenten qualifizieren Anfragen automatisch und koordinieren Termine. Typisch: 40-60% weniger manuelle Arbeit. Nutzen Sie aktuell ein CRM-System?"
+        return "**Vertriebsautomation** ist einer der schnellsten Wege zu messbarem ROI. Unsere KI-Agenten übernehmen zentrale Aufgaben:\n\n- **Lead-Qualifizierung** — automatische Bewertung und Priorisierung eingehender Anfragen\n- **Terminkoordination** — intelligente Planung ohne manuellen Aufwand\n- **CRM-Pflege** — lückenlose Dokumentation aller Aktivitäten\n\nTypisches Ergebnis: **40-60% weniger manuelle Arbeit** im Vertriebsteam. Welches CRM-System nutzen Sie aktuell?"
     elif "crm" in msg or "erp" in msg or "sap" in msg:
-        return "Wir haben native Konnektoren für SAP, HubSpot, Salesforce und 60+ weitere Systeme. Die KI orchestriert Datenflüsse intelligent zwischen Ihren Systemen. Welches System ist für Sie am wichtigsten?"
+        return "Wir verfügen über **400+ native Konnektoren** für gängige Business-Systeme:\n\n- **ERP**: SAP S/4HANA, SAP Business One, Microsoft Dynamics 365\n- **CRM**: HubSpot, Salesforce, Pipedrive\n- **Finanzen**: DATEV, Lexware, Exact Online\n\nDie KI orchestriert Datenflüsse intelligent zwischen Ihren Systemen — in Echtzeit und vollautomatisiert. Welches System hat für Sie die höchste Priorität?"
     elif "wissen" in msg or "rag" in msg or "dokument" in msg:
-        return "RAG-Architekturen machen Ihr Firmenwissen sofort durchsuchbar. Mitarbeiter finden Antworten aus Handbüchern und Dokumenten in Sekunden. Wie groß ist Ihre aktuelle Wissensbasis?"
+        return "Unsere **RAG-Architekturen** machen Ihr Firmenwissen sofort durchsuchbar:\n\n- **Handbücher & Dokumentationen** — Antworten in Sekunden statt Stunden\n- **Verträge & Richtlinien** — automatische Klausel-Extraktion und Risikobewertung\n- **E-Mails & Tickets** — kontextbezogene Vorschläge für Ihr Support-Team\n\nWie groß ist Ihre aktuelle Wissensbasis, und in welchen Formaten liegen die Dokumente vor?"
     elif "support" in msg or "ticket" in msg:
-        return "Von intelligenter Ticket-Klassifizierung bis zu automatisierten Erstantworten — wir verbessern Ihre Support-Qualität und senken gleichzeitig Kosten. Welches Ticketsystem nutzen Sie aktuell?"
+        return "Unsere **Support-Automation** optimiert Ihren gesamten Service-Prozess:\n\n- **Intelligente Ticket-Klassifizierung** — automatische Priorisierung und Zuweisung\n- **KI-gestützte Erstantworten** — sofortige Hilfe für Standardfragen\n- **Eskalationsmanagement** — nahtlose Übergabe an menschliche Agenten bei komplexen Fällen\n\nWelches Ticketsystem nutzen Sie aktuell, und wie viele Tickets bearbeiten Sie monatlich?"
     elif "app" in msg or "mobile" in msg or "portal" in msg:
-        return "Wir entwickeln maßgeschneiderte Web-Apps, Mobile-Apps und Kundenportale mit nativer KI-Integration. Von internen Tools bis kundenorientierten Anwendungen — alles aus einer Hand und DSGVO-konform."
+        return "Wir entwickeln **maßgeschneiderte digitale Lösungen** mit nativer KI-Integration:\n\n- **Kundenportale** — Self-Service mit intelligenter KI-Unterstützung\n- **Interne Tools** — Workflow-Apps für Ihre Fachabteilungen\n- **Mobile Apps** — native iOS/Android oder Cross-Platform\n\nAlle Lösungen sind DSGVO-konform und werden in deutschen bzw. europäischen Rechenzentren betrieben. Was für eine Anwendung schwebt Ihnen vor?"
     elif "termin" in msg or "buchen" in msg or "gespräch" in msg:
-        return "Ich kann direkt hier einen Termin für Sie buchen. Dafür benötige ich Ihren Vornamen, Nachnamen und Ihre geschäftliche E-Mail-Adresse. Wie heißen Sie?"
+        return "Ich kann direkt hier einen **kostenlosen Beratungstermin** für Sie buchen. Dafür benötige ich:\n\n1. Ihren **Vornamen**\n2. Ihren **Nachnamen**\n3. Ihre **geschäftliche E-Mail-Adresse**\n\nDas Strategiegespräch dauert 30 Minuten und ist vollkommen unverbindlich. Wie heißen Sie?"
     elif "preis" in msg or "kosten" in msg or "tarif" in msg:
-        return "Unsere Tarife beginnen bei 1.900 EUR/Mo (Starter) und 4.500 EUR/Mo (Growth). Enterprise-Projekte kalkulieren wir individuell. Das Erstgespräch ist immer unverbindlich und kostenfrei."
+        return "Unsere Tarife sind transparent strukturiert:\n\n- **Starter** — ab 1.900 EUR/Mo: 2 KI-Agenten, Shared Infrastructure\n- **Growth** — ab 4.500 EUR/Mo: 10 KI-Agenten, Private Cloud, CRM/ERP-Kit\n- **Enterprise** — individuell: Unlimitiert, On-Premise, Custom LLM Training\n\nDas Erstgespräch ist **immer unverbindlich und kostenfrei**. Soll ich einen Termin für Sie einrichten?"
     elif "daten" in msg or "dsgvo" in msg or "sicher" in msg:
-        return "Datenschutz ist bei uns fundamental. DSGVO-konform, deutsche Rechenzentren, RBAC-Zugriffskontrolle und vollständige Audit-Logs. Haben Sie spezifische Compliance-Anforderungen?"
+        return "**Datenschutz und Sicherheit** sind bei NeXifyAI fundamental verankert:\n\n- **DSGVO/AVG-konform** — vollständige Compliance mit europäischem Datenschutzrecht\n- **Deutsche/EU-Rechenzentren** — keine Datenübertragung in Drittländer\n- **RBAC-Zugriffskontrolle** — granulare Berechtigungen auf Rollen- und Feldebene\n- **Vollständige Audit-Logs** — lückenlose Nachverfolgung aller Aktivitäten\n\nHaben Sie spezifische Compliance-Anforderungen, die wir berücksichtigen sollten?"
     else:
-        return "Um Ihnen gezielt weiterzuhelfen: In einem 30-minütigen Strategiegespräch analysieren wir Ihre aktuelle Situation und erarbeiten konkrete Empfehlungen. Soll ich einen Termin für Sie buchen?"
+        return "Um Ihnen **gezielt weiterhelfen** zu können, bieten wir ein kostenloses **30-minütiges Strategiegespräch** an. Darin analysieren wir:\n\n- Ihre **aktuelle Situation** und bestehende Systeme\n- **Konkrete Automatisierungspotenziale** in Ihrem Unternehmen\n- Einen **Fahrplan** mit klaren nächsten Schritten\n\nSoll ich direkt einen Termin für Sie buchen, oder haben Sie vorab eine spezifische Frage zu unseren Leistungen?"
 
 @app.post("/api/analytics/track")
 async def track_event(event: AnalyticsEvent, request: Request):

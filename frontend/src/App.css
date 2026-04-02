@@ -154,20 +154,36 @@ h3{font-size:1.125rem;font-weight:700}
 .uc-title{font-size:1.125rem;margin:8px 0}
 .uc-desc{font-size:.875rem;color:var(--nx-muted);line-height:1.7;max-width:380px}
 
-/* Orchestration Visual — Premium rings */
+/* Orchestration Visual — Premium Hub & Spoke */
 .uc-split{display:grid;grid-template-columns:1fr;gap:24px;align-items:center;height:100%}
 @media(min-width:640px){.uc-split{grid-template-columns:1fr 1fr}}
 .orch-visual{display:flex;align-items:center;justify-content:center;padding:16px}
-.orch-circle{position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center}
-/* Outer ring */
-.orch-circle::before{content:'';position:absolute;inset:0;border:1px solid rgba(255,155,122,0.12);border-radius:50%;animation:orbSpin 20s linear infinite}
-/* Inner ring */
-.orch-circle::after{content:'';position:absolute;inset:12px;border:1px solid rgba(255,155,122,0.06);border-radius:50%;animation:orbSpin 15s linear infinite reverse}
-@keyframes orbSpin{to{transform:rotate(360deg)}}
-.orch-circle .material-symbols-outlined{font-size:1.5rem;color:var(--nx-accent);padding:12px;background:rgba(255,155,122,0.06);border:1px solid rgba(255,155,122,0.12);border-radius:50%;position:relative;z-index:2;box-shadow:0 0 24px rgba(255,155,122,0.08)}
-.orch-label{position:absolute;left:50%;transform:translateX(-50%);padding:3px 10px;background:rgba(19,26,34,0.9);border:1px solid rgba(255,155,122,0.1);font-size:.5625rem;font-weight:600;color:var(--nx-accent);letter-spacing:.04em;backdrop-filter:blur(8px);z-index:3}
-.orch-label.top{top:-8px}
-.orch-label.btm{bottom:-8px}
+.orch-hub{position:relative;width:180px;height:180px;display:flex;align-items:center;justify-content:center}
+.orch-core{width:52px;height:52px;display:flex;align-items:center;justify-content:center;background:rgba(255,155,122,0.08);border:1px solid rgba(255,155,122,0.2);border-radius:50%;position:relative;z-index:5;box-shadow:0 0 30px rgba(255,155,122,0.12),0 0 60px rgba(255,155,122,0.04)}
+.orch-core .material-symbols-outlined{font-size:1.375rem;color:var(--nx-accent)}
+.orch-ring{position:absolute;border-radius:50%;border:1px solid rgba(255,155,122,0.08)}
+.orch-ring-1{inset:20px;animation:orchRotate 25s linear infinite}
+.orch-ring-2{inset:5px;border-style:dashed;border-color:rgba(255,155,122,0.05);animation:orchRotate 35s linear infinite reverse}
+.orch-ring-3{inset:-5px;border-color:rgba(255,155,122,0.03);animation:orchRotate 45s linear infinite}
+@keyframes orchRotate{to{transform:rotate(360deg)}}
+.orch-node{position:absolute;padding:4px 10px;background:rgba(19,26,34,0.92);border:1px solid rgba(255,155,122,0.15);backdrop-filter:blur(8px);z-index:4;transition:all 350ms ease}
+.orch-node span{font-family:var(--f-display);font-size:.5625rem;font-weight:700;color:var(--nx-accent);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.orch-node:hover{border-color:rgba(255,155,122,0.35);box-shadow:0 0 16px rgba(255,155,122,0.1);transform:scale(1.05)}
+.orch-node-1{top:4px;left:50%;transform:translateX(-50%)}
+.orch-node-2{bottom:4px;left:50%;transform:translateX(-50%)}
+.orch-node-3{left:-8px;top:50%;transform:translateY(-50%)}
+.orch-node-4{right:-8px;top:50%;transform:translateY(-50%)}
+.orch-node-1:hover{transform:translateX(-50%) scale(1.05)}
+.orch-node-2:hover{transform:translateX(-50%) scale(1.05)}
+.orch-node-3:hover{transform:translateY(-50%) scale(1.05)}
+.orch-node-4:hover{transform:translateY(-50%) scale(1.05)}
+.orch-pulse{position:absolute;border-radius:50%;background:rgba(255,155,122,0.06);pointer-events:none}
+.orch-pulse-1{width:8px;height:8px;top:28px;left:38px;animation:orchPulseMove1 4s ease-in-out infinite}
+.orch-pulse-2{width:6px;height:6px;bottom:35px;right:42px;animation:orchPulseMove2 5s ease-in-out infinite 1s}
+.orch-pulse-3{width:7px;height:7px;top:50%;left:22px;animation:orchPulseMove3 4.5s ease-in-out infinite 0.5s}
+@keyframes orchPulseMove1{0%,100%{transform:translate(0,0);opacity:.6}50%{transform:translate(40px,30px);opacity:0}}
+@keyframes orchPulseMove2{0%,100%{transform:translate(0,0);opacity:.5}50%{transform:translate(-35px,-25px);opacity:0}}
+@keyframes orchPulseMove3{0%,100%{transform:translate(0,0);opacity:.5}50%{transform:translate(50px,-10px);opacity:0}}
 
 /* ═══════════ APP DEVELOPMENT ═══════════ */
 .appdev-grid{display:grid;grid-template-columns:1fr;gap:16px}
@@ -475,6 +491,30 @@ h3{font-size:1.125rem;font-weight:700}
   .booking-time{padding:8px 4px;font-size:.75rem}
 }
 
+
+/* ═══════════ CHAT MARKDOWN RENDERING ═══════════ */
+.chat-md{font-size:inherit;line-height:1.7;color:inherit}
+.chat-md p{margin:0 0 10px}
+.chat-md p:last-child{margin-bottom:0}
+.chat-md strong{color:#fff;font-weight:700}
+.chat-md em{color:var(--nx-accent);font-style:italic}
+.chat-md ul,.chat-md ol{margin:8px 0;padding-left:20px}
+.chat-md ul{list-style:none;padding-left:0}
+.chat-md ul li{position:relative;padding-left:16px;margin-bottom:6px}
+.chat-md ul li::before{content:'';position:absolute;left:0;top:9px;width:5px;height:5px;background:var(--nx-accent);border-radius:50%}
+.chat-md ol{list-style:decimal;padding-left:22px}
+.chat-md ol li{margin-bottom:6px;padding-left:4px}
+.chat-md ol li::marker{color:var(--nx-accent);font-weight:700}
+.chat-md h1,.chat-md h2,.chat-md h3,.chat-md h4{color:#fff;margin:12px 0 6px;font-family:var(--f-display);line-height:1.3}
+.chat-md h1{font-size:1.0625rem}
+.chat-md h2{font-size:1rem}
+.chat-md h3{font-size:.9375rem}
+.chat-md h4{font-size:.875rem}
+.chat-md code{background:rgba(255,155,122,0.08);border:1px solid rgba(255,155,122,0.12);color:var(--nx-accent);padding:1px 6px;font-family:var(--f-mono);font-size:.8125rem;border-radius:2px}
+.chat-md blockquote{border-left:2px solid var(--nx-accent);margin:8px 0;padding:4px 12px;background:rgba(255,155,122,0.03);color:rgba(255,255,255,0.8)}
+.chat-md hr{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:12px 0}
+.chat-md a{color:var(--nx-accent);text-decoration:underline;text-underline-offset:2px}
+.chat-md a:hover{color:var(--nx-accent-h)}
 
 /* ═══════════ PRINT ═══════════ */
 @media print{.nav,.chat-trigger,.chat-overlay,.booking-overlay,.cookie-banner{display:none!important}body{background:#fff;color:#000}}
