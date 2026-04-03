@@ -81,3 +81,28 @@
 .cp-badge-sm{font-size:.5625rem;padding:2px 6px}
 .cp-timeline-date{color:#6b7b8d;font-size:.6875rem}
 @media(max-width:600px){.cp-card-actions{flex-direction:column}.cp-card-actions .cp-btn{width:100%;justify-content:center}}
+/* ── Contract Portal ── */
+.cp-meta-label{font-size:.6875rem;color:#6b7b8d;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.cp-meta-val{font-size:.8125rem;color:#fff;font-weight:500}
+.cp-status-box{display:flex;align-items:center;gap:10px;padding:14px 18px;border-radius:8px;margin-bottom:16px;font-size:.8125rem;font-weight:500}
+.cp-status-box .material-symbols-outlined{font-size:22px;flex-shrink:0}
+.cp-status-success{background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);color:#10b981}
+.cp-status-danger{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#ef4444}
+.cp-status-warning{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);color:#f59e0b}
+.cp-legal-check{display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.03);cursor:pointer;transition:background .15s}
+.cp-legal-check:hover{background:rgba(255,255,255,0.02)}
+.cp-legal-check input{display:none}
+.cp-legal-check-box{flex-shrink:0}
+.cp-legal-check-box .material-symbols-outlined{font-size:22px;color:#6b7b8d;transition:color .2s}
+.cp-legal-check input:checked + .cp-legal-check-box .material-symbols-outlined{color:#10b981}
+.cp-legal-label{font-size:.8125rem;color:#c8d1dc;font-weight:500}
+.cp-sig-toggle{display:flex;gap:4px;margin-bottom:16px;background:rgba(14,20,28,0.4);padding:4px;border-radius:8px}
+.cp-sig-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border:none;background:transparent;color:#6b7b8d;font-size:.8125rem;font-weight:500;cursor:pointer;border-radius:6px;transition:all .2s}
+.cp-sig-btn.active{background:rgba(255,155,122,0.1);color:#ff9b7a}
+.cp-sig-btn .material-symbols-outlined{font-size:18px}
+.cp-canvas-wrap{position:relative}
+.cp-sig-canvas{width:100%;height:120px;background:rgba(14,20,28,0.6);border:1px dashed rgba(255,255,255,0.12);border-radius:8px;cursor:crosshair;touch-action:none}
+.cp-sig-name-input{width:100%;background:rgba(14,20,28,0.6);border:1px solid rgba(255,255,255,0.08);color:#fff;padding:12px 16px;font-size:1rem;border-radius:8px;font-family:inherit}
+.cp-sig-name-input:focus{outline:none;border-color:rgba(255,155,122,0.3)}
+.cp-contract-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+@media(max-width:600px){.cp-contract-actions{flex-direction:column}.cp-contract-actions .cp-btn{width:100%;justify-content:center}}

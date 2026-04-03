@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './CustomerPortal.css';
 
 const API = process.env.REACT_APP_BACKEND_URL || '';
 const I = ({ n }) => <span className="material-symbols-outlined">{n}</span>;
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
+const fmtTime = (d) => d ? new Date(d).toLocaleString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '-';
 const fmtEur = (v) => v != null ? new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(v) : '-';
 
 const QUOTE_STATUS = {
@@ -27,6 +28,25 @@ const CustomerPortal = () => {
   const [revisionNotes, setRevisionNotes] = useState('');
   const [showRevision, setShowRevision] = useState(null);
   const [authToken, setAuthToken] = useState('');
+  const [contracts, setContracts] = useState([]);
+  const [selectedContract, setSelectedContract] = useState(null);
+  const [contractDetail, setContractDetail] = useState(null);
+  const [contractLoading, setContractLoading] = useState(false);
+  const [legalAccepted, setLegalAccepted] = useState({});
+  const [signatureType, setSignatureType] = useState('canvas');
+  const [signatureName, setSignatureName] = useState('');
+  const [signatureData, setSignatureData] = useState('');
+  const [contractBusy, setContractBusy] = useState('');
+  const [changeRequest, setChangeRequest] = useState('');
+  const [declineReason, setDeclineReason] = useState('');
+  const [showDecline, setShowDecline] = useState(false);
+  const [showChangeReq, setShowChangeReq] = useState(false);
+  const [projects, setProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [projectDetail, setProjectDetail] = useState(null);
+  const [projectChatMsg, setProjectChatMsg] = useState('');
+  const canvasRef = useRef(null);
+  const isDrawingRef = useRef(false);
 
   const apiFetch = (url, opts = {}) => {
     const headers = { ...opts.headers };
@@ -62,9 +82,180 @@ const CustomerPortal = () => {
   const reload = () => {
     if (authToken) {
       loadDashboard(authToken).catch(e => setError(e.message));
+      loadContracts();
+      loadProjects();
     } else if (urlToken) {
       loadLegacyToken(urlToken).catch(e => setError(e.message));
     }
+  };
+
+  const loadContracts = useCallback(async () => {
+    if (!authToken) return;
+    try {
+      const r = await fetch(`${API}/api/customer/contracts`, { headers: { Authorization: `Bearer ${authToken}` } });
+      if (r.ok) { const d = await r.json(); setContracts(d.contracts || []); }
+    } catch {}
+  }, [authToken]);
+
+  const loadContractDetail = async (contractId) => {
+    setContractLoading(true);
+    try {
+      const r = await fetch(`${API}/api/customer/contracts/${contractId}`, { headers: { Authorization: `Bearer ${authToken}` } });
+      if (r.ok) {
+        const d = await r.json();
+        setContractDetail(d);
+        setSelectedContract(contractId);
+        const initial = {};
+        (d.legal_module_definitions || []).forEach(lm => { initial[lm.key] = d.legal_modules?.[lm.key]?.accepted || false; });
+        setLegalAccepted(initial);
+        setSignatureData('');
+        setSignatureName('');
+        setShowDecline(false);
+        setShowChangeReq(false);
+      }
+    } catch (e) { console.error(e); } finally { setContractLoading(false); }
+  };
+
+  const loadProjects = useCallback(async () => {
+    if (!authToken) return;
+    try {
+      const r = await fetch(`${API}/api/customer/projects`, { headers: { Authorization: `Bearer ${authToken}` } });
+      if (r.ok) { const d = await r.json(); setProjects(d.projects || []); }
+    } catch {}
+  }, [authToken]);
+
+  const loadProjectDetail = async (projectId) => {
+    try {
+      const r = await fetch(`${API}/api/customer/projects/${projectId}`, { headers: { Authorization: `Bearer ${authToken}` } });
+      if (r.ok) { const d = await r.json(); setProjectDetail(d); setSelectedProject(projectId); }
+    } catch {}
+  };
+
+  const sendProjectChatMsg = async () => {
+    if (!projectChatMsg.trim() || !selectedProject) return;
+    try {
+      await fetch(`${API}/api/customer/projects/${selectedProject}/chat`, {
+        method: 'POST', headers: { Authorization: `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: projectChatMsg }),
+      });
+      setProjectChatMsg('');
+      loadProjectDetail(selectedProject);
+    } catch {}
+  };
+
+  /* Signature Canvas */
+  const initCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * 2;
+    canvas.height = rect.height * 2;
+    ctx.scale(2, 2);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+  }, []);
+
+  const startDraw = useCallback((e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    isDrawingRef.current = true;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  }, []);
+
+  const draw = useCallback((e) => {
+    if (!isDrawingRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    e.preventDefault();
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  }, []);
+
+  const endDraw = useCallback(() => {
+    isDrawingRef.current = false;
+    const canvas = canvasRef.current;
+    if (canvas) setSignatureData(canvas.toDataURL('image/png'));
+  }, []);
+
+  const clearCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setSignatureData('');
+  }, []);
+
+  useEffect(() => { if (tab === 'contracts' && selectedContract && signatureType === 'canvas') { setTimeout(initCanvas, 200); } }, [tab, selectedContract, signatureType, initCanvas]);
+
+  const allRequiredLegalAccepted = () => {
+    if (!contractDetail?.legal_module_definitions) return false;
+    return contractDetail.legal_module_definitions.filter(l => l.required).every(l => legalAccepted[l.key]);
+  };
+
+  const hasValidSignature = () => {
+    if (signatureType === 'name') return signatureName.trim().length >= 2;
+    return !!signatureData;
+  };
+
+  const acceptContract = async () => {
+    if (!allRequiredLegalAccepted() || !hasValidSignature()) return;
+    setContractBusy('accepting');
+    try {
+      const payload = {
+        signature_type: signatureType,
+        signature_data: signatureType === 'name' ? signatureName : signatureData,
+        legal_modules_accepted: legalAccepted,
+        customer_name: contractDetail?.customer?.name || '',
+      };
+      const r = await fetch(`${API}/api/customer/contracts/${selectedContract}/accept`, {
+        method: 'POST', headers: { Authorization: `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (r.ok) {
+        loadContractDetail(selectedContract);
+        loadContracts();
+      }
+    } catch (e) { console.error(e); } finally { setContractBusy(''); }
+  };
+
+  const declineContract = async () => {
+    setContractBusy('declining');
+    try {
+      await fetch(`${API}/api/customer/contracts/${selectedContract}/decline`, {
+        method: 'POST', headers: { Authorization: `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: declineReason }),
+      });
+      loadContractDetail(selectedContract);
+      loadContracts();
+      setShowDecline(false);
+    } catch (e) { console.error(e); } finally { setContractBusy(''); }
+  };
+
+  const requestChange = async () => {
+    if (!changeRequest.trim()) return;
+    setContractBusy('change');
+    try {
+      await fetch(`${API}/api/customer/contracts/${selectedContract}/request-change`, {
+        method: 'POST', headers: { Authorization: `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requested_changes: changeRequest }),
+      });
+      loadContractDetail(selectedContract);
+      loadContracts();
+      setShowChangeReq(false);
+      setChangeRequest('');
+    } catch (e) { console.error(e); } finally { setContractBusy(''); }
   };
 
   useEffect(() => {
@@ -77,6 +268,7 @@ const CustomerPortal = () => {
           if (auth.role === 'customer' && auth.token) {
             await loadDashboard(auth.token);
             setLoading(false);
+            // Load contracts and projects after dashboard
             return;
           }
         } catch {}
@@ -124,6 +316,10 @@ const CustomerPortal = () => {
     init();
   }, []);
 
+  useEffect(() => {
+    if (authToken) { loadContracts(); loadProjects(); }
+  }, [authToken, loadContracts, loadProjects]);
+
   const logout = () => {
     localStorage.removeItem('nx_auth');
     window.location.href = '/login';
@@ -159,6 +355,8 @@ const CustomerPortal = () => {
 
   const tabs = [
     { id: 'overview', icon: 'dashboard', label: 'Übersicht' },
+    { id: 'contracts', icon: 'gavel', label: `Verträge (${contracts.length})` },
+    { id: 'projects', icon: 'folder_special', label: `Projekte (${projects.length})` },
     { id: 'quotes', icon: 'description', label: `Angebote (${data?.quotes?.length || 0})` },
     { id: 'invoices', icon: 'receipt', label: `Rechnungen (${data?.invoices?.length || 0})` },
     { id: 'bookings', icon: 'event', label: `Termine (${data?.bookings?.length || 0})` },
@@ -219,6 +417,268 @@ const CustomerPortal = () => {
                   );
                 })}
               </div>
+            )}
+          </div>
+        )}
+
+        {/* ══════════ CONTRACTS TAB ══════════ */}
+        {tab === 'contracts' && (
+          <div className="cp-contracts" data-testid="cp-contracts">
+            {selectedContract && contractDetail ? (() => {
+              const cd = contractDetail;
+              const CTR_S = { draft:{l:'Entwurf',c:'#6b7b8d'}, review:{l:'Review',c:'#f59e0b'}, sent:{l:'Zur Prüfung',c:'#3b82f6'}, viewed:{l:'Eingesehen',c:'#06b6d4'}, accepted:{l:'Angenommen',c:'#10b981'}, declined:{l:'Abgelehnt',c:'#ef4444'}, change_requested:{l:'Änderung angefragt',c:'#f97316'}, amended:{l:'Überarbeitet',c:'#8b5cf6'}, cancelled:{l:'Storniert',c:'#64748b'}, expired:{l:'Abgelaufen',c:'#4a5568'} };
+              const st = CTR_S[cd.status] || CTR_S.draft;
+              const canSign = ['sent', 'viewed'].includes(cd.status);
+              const isAccepted = cd.status === 'accepted';
+              const isDeclined = cd.status === 'declined';
+              const isChangeReq = cd.status === 'change_requested';
+              return (
+                <div data-testid="cp-contract-detail">
+                  <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => { setSelectedContract(null); setContractDetail(null); }} data-testid="cp-contract-back"><I n="arrow_back" /> Alle Verträge</button>
+                  <div style={{display:'flex',alignItems:'center',gap:12,margin:'20px 0 16px',flexWrap:'wrap'}}>
+                    <h2 style={{margin:0}}>Vertrag {cd.contract_number}</h2>
+                    <span className="cp-badge" style={{background:st.c+'22',color:st.c,fontSize:'.75rem'}}>{st.l}</span>
+                  </div>
+
+                  {/* Status messages */}
+                  {isAccepted && <div className="cp-status-box cp-status-success" data-testid="cp-contract-accepted-msg"><I n="verified" /> <span>Vertrag erfolgreich angenommen. Vielen Dank für Ihr Vertrauen.</span></div>}
+                  {isDeclined && <div className="cp-status-box cp-status-danger" data-testid="cp-contract-declined-msg"><I n="cancel" /> <span>Vertrag wurde abgelehnt. Bei Fragen kontaktieren Sie uns gerne.</span></div>}
+                  {isChangeReq && <div className="cp-status-box cp-status-warning" data-testid="cp-contract-change-msg"><I n="edit_note" /> <span>Ihre Änderungsanfrage wurde übermittelt. Wir melden uns in Kürze.</span></div>}
+
+                  {/* Contract info */}
+                  <div className="cp-card" style={{marginBottom:16}}>
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))',gap:12}}>
+                      <div><div className="cp-meta-label">Vertragstyp</div><div className="cp-meta-val">{{standard:'Standardvertrag',individual:'Individualvertrag',amendment:'Nachtragsvertrag'}[cd.contract_type]||cd.contract_type}</div></div>
+                      <div><div className="cp-meta-label">Tarif</div><div className="cp-meta-val">{cd.calculation?.tier_name || cd.tier_key || '-'}</div></div>
+                      <div><div className="cp-meta-label">Version</div><div className="cp-meta-val">v{cd.version || 1}</div></div>
+                      <div><div className="cp-meta-label">Erstellt</div><div className="cp-meta-val">{fmtDate(cd.created_at)}</div></div>
+                    </div>
+                  </div>
+
+                  {/* Calculation */}
+                  {cd.calculation && cd.calculation.total_contract_eur && (
+                    <div className="cp-card" style={{marginBottom:16}}>
+                      <h3 style={{margin:'0 0 12px',fontSize:'.9375rem'}}>Kommerzielle Konditionen</h3>
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))',gap:12}}>
+                        <div><div className="cp-meta-label">Gesamtvertragswert</div><div className="cp-meta-val" style={{fontSize:'1.125rem',fontWeight:700,color:'#fff'}}>{fmtEur(cd.calculation.total_contract_eur)}</div></div>
+                        <div><div className="cp-meta-label">Aktivierungsanzahlung (30%)</div><div className="cp-meta-val" style={{color:'#ff9b7a',fontWeight:600}}>{fmtEur(cd.calculation.upfront_eur)}</div></div>
+                        <div><div className="cp-meta-label">Monatsrate</div><div className="cp-meta-val">{fmtEur(cd.calculation.recurring_eur)}/Monat</div></div>
+                        <div><div className="cp-meta-label">Laufzeit</div><div className="cp-meta-val">{cd.calculation.contract_months || 0} Monate</div></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Appendices */}
+                  {(cd.appendices_detail || []).length > 0 && (
+                    <div className="cp-card" style={{marginBottom:16}}>
+                      <h3 style={{margin:'0 0 12px',fontSize:'.9375rem'}}>Vertragsanlagen</h3>
+                      {cd.appendices_detail.map(a => (
+                        <div key={a.appendix_id} style={{padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.03)'}} data-testid={`cp-appendix-${a.appendix_id}`}>
+                          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                            <span style={{fontWeight:600,color:'#fff',fontSize:'.8125rem'}}>{a.title}</span>
+                            {a.pricing?.amount > 0 && <span style={{color:'#ff9b7a',fontWeight:600}}>{fmtEur(a.pricing.amount)}</span>}
+                          </div>
+                          {a.content?.description && <p style={{margin:'4px 0 0',fontSize:'.75rem',color:'#6b7b8d'}}>{a.content.description}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Legal Modules */}
+                  {canSign && (
+                    <div className="cp-card" style={{marginBottom:16}} data-testid="cp-legal-modules">
+                      <h3 style={{margin:'0 0 12px',fontSize:'.9375rem'}}>Rechtliche Bestimmungen</h3>
+                      <p style={{fontSize:'.75rem',color:'#6b7b8d',marginBottom:16}}>Bitte bestätigen Sie die folgenden rechtlichen Bestimmungen, um den Vertrag anzunehmen.</p>
+                      {(cd.legal_module_definitions || []).map(lm => (
+                        <label key={lm.key} className="cp-legal-check" data-testid={`cp-legal-${lm.key}`}>
+                          <input type="checkbox" checked={legalAccepted[lm.key] || false} onChange={e => setLegalAccepted({ ...legalAccepted, [lm.key]: e.target.checked })} />
+                          <span className="cp-legal-check-box"><I n={legalAccepted[lm.key] ? 'check_box' : 'check_box_outline_blank'} /></span>
+                          <div>
+                            <span className="cp-legal-label">{lm.label}{lm.required && <span style={{color:'#ef4444'}}> *</span>}</span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Signature */}
+                  {canSign && (
+                    <div className="cp-card" style={{marginBottom:16}} data-testid="cp-signature-section">
+                      <h3 style={{margin:'0 0 12px',fontSize:'.9375rem'}}>Digitale Unterschrift</h3>
+                      <div className="cp-sig-toggle">
+                        <button className={`cp-sig-btn ${signatureType === 'canvas' ? 'active' : ''}`} onClick={() => setSignatureType('canvas')} data-testid="cp-sig-canvas-btn"><I n="draw" /> Zeichnen</button>
+                        <button className={`cp-sig-btn ${signatureType === 'name' ? 'active' : ''}`} onClick={() => setSignatureType('name')} data-testid="cp-sig-name-btn"><I n="edit" /> Name eingeben</button>
+                      </div>
+                      {signatureType === 'canvas' ? (
+                        <div className="cp-canvas-wrap">
+                          <canvas ref={canvasRef} className="cp-sig-canvas" data-testid="cp-sig-canvas"
+                            onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
+                            onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw}
+                          />
+                          <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={clearCanvas} style={{marginTop:8}} data-testid="cp-sig-clear"><I n="delete" /> Löschen</button>
+                          {signatureData && <p style={{fontSize:'.6875rem',color:'#10b981',marginTop:4}}>Unterschrift erfasst</p>}
+                        </div>
+                      ) : (
+                        <div>
+                          <input type="text" className="cp-sig-name-input" value={signatureName} onChange={e => setSignatureName(e.target.value)} placeholder="Vor- und Nachname" data-testid="cp-sig-name-input" />
+                          {signatureName.trim().length >= 2 && <p style={{fontSize:'.6875rem',color:'#10b981',marginTop:4}}>Name erfasst</p>}
+                        </div>
+                      )}
+                      <div className="cp-meta-label" style={{marginTop:12}}>Dokumentenhash</div>
+                      <div style={{fontSize:'.6875rem',fontFamily:'monospace',color:'#6b7b8d',wordBreak:'break-all'}}>{cd.document_hash}</div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  {canSign && (
+                    <div className="cp-contract-actions" data-testid="cp-contract-actions">
+                      <button className="cp-btn cp-btn-accept" onClick={acceptContract} disabled={!allRequiredLegalAccepted() || !hasValidSignature() || !!contractBusy} data-testid="cp-accept-contract">
+                        {contractBusy === 'accepting' ? 'Wird verarbeitet...' : <><I n="verified" /> Vertrag annehmen</>}
+                      </button>
+                      <button className="cp-btn cp-btn-secondary" onClick={() => setShowChangeReq(!showChangeReq)} disabled={!!contractBusy} data-testid="cp-change-contract"><I n="edit_note" /> Änderung anfragen</button>
+                      <button className="cp-btn cp-btn-danger" onClick={() => setShowDecline(!showDecline)} disabled={!!contractBusy} data-testid="cp-decline-contract"><I n="cancel" /> Ablehnen</button>
+                    </div>
+                  )}
+
+                  {showChangeReq && canSign && (
+                    <div className="cp-revision-form" style={{marginTop:12}} data-testid="cp-change-form">
+                      <textarea value={changeRequest} onChange={e => setChangeRequest(e.target.value)} rows={3} placeholder="Welche Änderungen wünschen Sie am Vertrag?" />
+                      <div style={{display:'flex',gap:8,marginTop:8}}>
+                        <button className="cp-btn cp-btn-primary cp-btn-sm" onClick={requestChange} disabled={!changeRequest.trim() || !!contractBusy}>Anfrage senden</button>
+                        <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => setShowChangeReq(false)}>Abbrechen</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {showDecline && canSign && (
+                    <div className="cp-revision-form" style={{marginTop:12}} data-testid="cp-decline-form">
+                      <textarea value={declineReason} onChange={e => setDeclineReason(e.target.value)} rows={3} placeholder="Grund der Ablehnung (optional)" />
+                      <div style={{display:'flex',gap:8,marginTop:8}}>
+                        <button className="cp-btn cp-btn-danger cp-btn-sm" onClick={declineContract} disabled={!!contractBusy}>Vertrag ablehnen</button>
+                        <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => setShowDecline(false)}>Abbrechen</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })() : (
+              <>
+                <h2>Ihre Verträge</h2>
+                {contracts.length === 0 ? (
+                  <div className="cp-empty"><I n="gavel" /><p>Noch keine Verträge vorhanden.</p></div>
+                ) : contracts.map(c => {
+                  const CTR_S = { draft:{l:'Entwurf',c:'#6b7b8d'}, sent:{l:'Zur Prüfung',c:'#3b82f6'}, viewed:{l:'Eingesehen',c:'#06b6d4'}, accepted:{l:'Angenommen',c:'#10b981'}, declined:{l:'Abgelehnt',c:'#ef4444'}, change_requested:{l:'Änderung angefragt',c:'#f97316'} };
+                  const st = CTR_S[c.status] || { l: c.status, c: '#6b7b8d' };
+                  return (
+                    <div key={c.contract_id} className="cp-card" style={{cursor:'pointer'}} onClick={() => loadContractDetail(c.contract_id)} data-testid={`cp-contract-${c.contract_id}`}>
+                      <div className="cp-card-header">
+                        <span className="cp-card-title">{c.contract_number}</span>
+                        <span className="cp-badge" style={{background:st.c+'22',color:st.c}}>{st.l}</span>
+                      </div>
+                      <div className="cp-card-body">
+                        <span>{{standard:'Standardvertrag',individual:'Individualvertrag',amendment:'Nachtrag'}[c.contract_type]||c.contract_type}</span>
+                        <span className="cp-card-price">{fmtEur(c.calculation?.total_contract_eur)}</span>
+                      </div>
+                      <div className="cp-card-footer">
+                        <span>{fmtDate(c.created_at)}</span>
+                        {['sent','viewed'].includes(c.status) && <span className="cp-btn cp-btn-primary cp-btn-sm" data-testid={`cp-open-contract-${c.contract_id}`}>Vertrag prüfen</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ══════════ PROJECTS TAB ══════════ */}
+        {tab === 'projects' && (
+          <div className="cp-projects" data-testid="cp-projects">
+            {selectedProject && projectDetail ? (() => {
+              const pd = projectDetail;
+              const PRJ_S = { draft:{l:'Entwurf',c:'#6b7b8d'}, discovery:{l:'Discovery',c:'#3b82f6'}, planning:{l:'Planung',c:'#f59e0b'}, approved:{l:'Freigegeben',c:'#10b981'}, build:{l:'Build',c:'#8b5cf6'}, review:{l:'Review',c:'#ec4899'}, handover:{l:'Handover',c:'#06b6d4'}, live:{l:'Live',c:'#22c55e'}, paused:{l:'Pausiert',c:'#f97316'}, closed:{l:'Abgeschlossen',c:'#64748b'} };
+              const st = PRJ_S[pd.status] || PRJ_S.draft;
+              return (
+                <div data-testid="cp-project-detail">
+                  <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => { setSelectedProject(null); setProjectDetail(null); }} data-testid="cp-project-back"><I n="arrow_back" /> Alle Projekte</button>
+                  <div style={{display:'flex',alignItems:'center',gap:12,margin:'20px 0 16px',flexWrap:'wrap'}}>
+                    <h2 style={{margin:0}}>{pd.title}</h2>
+                    <span className="cp-badge" style={{background:st.c+'22',color:st.c}}>{st.l}</span>
+                    <span className="cp-badge" style={{background:'rgba(255,155,122,0.12)',color:'#ff9b7a'}}>{pd.completeness || 0}% abgeschlossen</span>
+                  </div>
+                  {/* Progress */}
+                  <div style={{background:'rgba(255,255,255,0.04)',borderRadius:6,height:8,marginBottom:20,overflow:'hidden'}}>
+                    <div style={{background:'linear-gradient(90deg,#ff9b7a,#ffb599)',height:'100%',width:`${pd.completeness||0}%`,borderRadius:6,transition:'width .5s'}}></div>
+                  </div>
+                  {/* Sections */}
+                  {(pd.sections || []).length > 0 && (
+                    <div style={{marginBottom:24}}>
+                      <h3 style={{fontSize:'.9375rem',marginBottom:12}}>Projektdokumentation</h3>
+                      {pd.sections.map(s => (
+                        <div key={s.section_id} className="cp-card" style={{marginBottom:8,borderLeft:`3px solid ${s.status==='freigegeben'?'#10b981':s.status==='review'?'#3b82f6':'#f59e0b'}`}} data-testid={`cp-section-${s.section_key}`}>
+                          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                            <span style={{fontWeight:600,color:'#fff',fontSize:'.8125rem'}}>{s.label}</span>
+                            <span className="cp-badge" style={{background:s.status==='freigegeben'?'#10b98122':'#f59e0b22',color:s.status==='freigegeben'?'#10b981':'#f59e0b',fontSize:'.625rem'}}>{s.status} v{s.version}</span>
+                          </div>
+                          <p style={{fontSize:'.8125rem',color:'#c8d1dc',whiteSpace:'pre-wrap',lineHeight:1.6}}>{s.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Build-Handover */}
+                  {pd.latest_version && (
+                    <div className="cp-card" style={{marginBottom:20}}>
+                      <h3 style={{margin:'0 0 8px',fontSize:'.9375rem'}}>Build-Handover (v{pd.latest_version.version})</h3>
+                      <pre style={{background:'rgba(12,17,23,0.8)',padding:16,borderRadius:6,fontSize:'.75rem',color:'#c8d1dc',overflow:'auto',maxHeight:300,whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{pd.latest_version.markdown}</pre>
+                    </div>
+                  )}
+                  {/* Chat */}
+                  <h3 style={{fontSize:'.9375rem',marginBottom:12}}>Projektchat</h3>
+                  <div className="cp-card">
+                    <div style={{maxHeight:300,overflowY:'auto',marginBottom:12}}>
+                      {(pd.chat || []).map(m => (
+                        <div key={m.message_id} style={{marginBottom:8,padding:'8px 12px',background:m.sender_type==='customer'?'rgba(255,155,122,0.06)':'rgba(59,130,246,0.06)',borderRadius:6,borderLeft:`3px solid ${m.sender_type==='customer'?'#ff9b7a':'#3b82f6'}`}}>
+                          <div style={{display:'flex',justifyContent:'space-between',fontSize:'.6875rem',color:'#6b7b8d',marginBottom:2}}>
+                            <span>{m.sender_type === 'customer' ? 'Sie' : 'NeXifyAI'}</span>
+                            <span>{fmtTime(m.timestamp)}</span>
+                          </div>
+                          <div style={{fontSize:'.8125rem',color:'#c8d1dc',whiteSpace:'pre-wrap'}}>{m.content}</div>
+                        </div>
+                      ))}
+                      {(!pd.chat || pd.chat.length === 0) && <div style={{textAlign:'center',padding:20,color:'#4a5568',fontSize:'.8125rem'}}>Noch keine Nachrichten</div>}
+                    </div>
+                    <div style={{display:'flex',gap:8}}>
+                      <input style={{flex:1,background:'rgba(14,20,28,0.6)',border:'1px solid rgba(255,255,255,0.06)',color:'#fff',padding:'10px 14px',fontSize:'.8125rem',borderRadius:4}} value={projectChatMsg} onChange={e => setProjectChatMsg(e.target.value)} placeholder="Nachricht schreiben..." onKeyDown={e => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendProjectChatMsg();}}} data-testid="cp-project-chat-input" />
+                      <button className="cp-btn cp-btn-primary" style={{flexShrink:0}} onClick={sendProjectChatMsg} disabled={!projectChatMsg.trim()} data-testid="cp-project-chat-send"><I n="send" /></button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })() : (
+              <>
+                <h2>Ihre Projekte</h2>
+                {projects.length === 0 ? (
+                  <div className="cp-empty"><I n="folder_special" /><p>Noch keine Projekte vorhanden.</p></div>
+                ) : projects.map(p => {
+                  const PRJ_S = { draft:{l:'Entwurf',c:'#6b7b8d'}, discovery:{l:'Discovery',c:'#3b82f6'}, planning:{l:'Planung',c:'#f59e0b'}, build:{l:'Build',c:'#8b5cf6'}, live:{l:'Live',c:'#22c55e'} };
+                  const st = PRJ_S[p.status] || { l: p.status, c: '#6b7b8d' };
+                  return (
+                    <div key={p.project_id} className="cp-card" style={{cursor:'pointer'}} onClick={() => loadProjectDetail(p.project_id)} data-testid={`cp-project-${p.project_id}`}>
+                      <div className="cp-card-header">
+                        <span className="cp-card-title">{p.title}</span>
+                        <span className="cp-badge" style={{background:st.c+'22',color:st.c}}>{st.l}</span>
+                      </div>
+                      <div className="cp-card-body">
+                        <span>{p.tier || '-'}</span>
+                        <span style={{color:'#ff9b7a',fontWeight:600}}>{p.completeness || 0}%</span>
+                      </div>
+                      <div className="cp-card-footer">
+                        <span>{fmtDate(p.created_at)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
             )}
           </div>
         )}
