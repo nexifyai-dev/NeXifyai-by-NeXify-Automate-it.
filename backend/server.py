@@ -43,6 +43,11 @@ from agents.finance import create_finance_agent
 from agents.design import create_design_agent
 from agents.qa import create_qa_agent
 from memory_service import MemoryService, AGENT_IDS
+from workers.manager import WorkerManager
+from services.comms import CommunicationService
+from services.billing import BillingService
+from services.outbound import OutboundLeadMachine
+from services.llm_provider import create_llm_provider
 
 # Password hashing with Argon2 (fallback to bcrypt if pwdlib unavailable)
 try:
@@ -82,6 +87,13 @@ llm_sessions = {}
 # Agent Layer (initialized in lifespan)
 orchestrator = None
 agents = {}
+
+# Service Layer (initialized in lifespan)
+worker_mgr = None
+comms_svc = None
+billing_svc = None
+outbound_svc = None
+llm_provider = None
 
 ADVISOR_SYSTEM_PROMPT = """Du bist der NeXify**AI** Advisor — der strategische KI-Berater von NeXify**AI**. Du verkörperst die Marke in jeder Interaktion: modern, kompetent, kreativ, lösungsorientiert.
 
@@ -323,6 +335,7 @@ async def lifespan(app: FastAPI):
 
     # Initialize AI Agent Layer
     global orchestrator, agents, memory_svc
+    global worker_mgr, comms_svc, billing_svc, outbound_svc, llm_provider
     memory_svc = MemoryService(db)
     orchestrator = Orchestrator(db)
     agents = {
@@ -337,8 +350,27 @@ async def lifespan(app: FastAPI):
         "qa": create_qa_agent(db),
     }
 
-    logger.info("NeXifyAI Backend v3.0 started")
+    # Initialize Worker/Scheduler Layer (P0: entkoppelt von Request-Prozess)
+    worker_mgr = WorkerManager(db, max_workers=4)
+    await worker_mgr.start()
+
+    # Initialize Service Layer
+    llm_provider = create_llm_provider()
+    comms_svc = CommunicationService(db, worker_manager=worker_mgr)
+    billing_svc = BillingService(db, worker_manager=worker_mgr, comms_service=comms_svc)
+    outbound_svc = OutboundLeadMachine(db, worker_manager=worker_mgr, comms_service=comms_svc)
+
+    # Outbound-Indexes
+    await db.outbound_leads.create_index("outbound_lead_id", unique=True)
+    await db.outbound_leads.create_index("status")
+    await db.outbound_leads.create_index("score")
+    await db.outbound_leads.create_index("contact_email")
+    await db.suppression_list.create_index("email", unique=True)
+
+    logger.info("NeXifyAI Backend v3.0 started — Worker/Scheduler/Services aktiv")
     yield
+    # Shutdown
+    await worker_mgr.stop()
     db_client.close()
 
 app = FastAPI(title="NeXifyAI API", version="3.0.0", lifespan=lifespan)
@@ -3917,6 +3949,247 @@ async def wa_inbound_webhook(data: dict):
     await db.whatsapp_sessions.update_one({}, {"$set": {"last_activity": utcnow()}})
     
     return {"status": "received", "message_id": msg["message_id"], "conversation_id": convo["conversation_id"]}
+
+
+# ══════════════════════════════════════════════════════════════
+# WORKER/SCHEDULER MONITORING ENDPOINTS
+# ══════════════════════════════════════════════════════════════
+
+@app.get("/api/admin/workers/status")
+async def worker_status(current_user: dict = Depends(get_current_admin)):
+    """Worker- und Scheduler-Status."""
+    if not worker_mgr:
+        return {"status": "not_initialized"}
+    return worker_mgr.get_status()
+
+
+@app.get("/api/admin/workers/jobs")
+async def worker_jobs(
+    status: str = None, job_type: str = None,
+    skip: int = 0, limit: int = 50,
+    current_user: dict = Depends(get_current_admin),
+):
+    """Job-Liste mit Filtern."""
+    query = {}
+    if status:
+        query["status"] = status
+    if job_type:
+        query["job_type"] = job_type
+    jobs = []
+    async for j in db.jobs.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit):
+        jobs.append(j)
+    return {"jobs": jobs, "count": len(jobs)}
+
+
+@app.get("/api/admin/workers/dead-letter")
+async def worker_dead_letter(
+    limit: int = 50,
+    current_user: dict = Depends(get_current_admin),
+):
+    """Dead-Letter-Queue."""
+    jobs = []
+    async for j in db.jobs.find({"status": "dead_letter"}, {"_id": 0}).sort("dead_letter_at", -1).limit(limit):
+        jobs.append(j)
+    return {"dead_letter_jobs": jobs, "count": len(jobs)}
+
+
+@app.post("/api/admin/workers/retry/{job_id}")
+async def worker_retry_job(job_id: str, current_user: dict = Depends(get_current_admin)):
+    """Dead-Letter-Job manuell wiederholen."""
+    job = await db.jobs.find_one({"job_id": job_id}, {"_id": 0})
+    if not job:
+        raise HTTPException(404, "Job nicht gefunden")
+    if job["status"] != "dead_letter":
+        raise HTTPException(400, "Nur Dead-Letter-Jobs können wiederholt werden")
+
+    from workers.job_queue import JobPriority
+    new_job_id = await worker_mgr.enqueue(
+        job["job_type"], job["payload"],
+        priority=JobPriority(job.get("priority", 2)),
+        ref_id=job.get("ref_id", ""),
+        ref_type=job.get("ref_type", ""),
+        created_by=f"manual_retry:{current_user['email']}",
+    )
+    return {"new_job_id": new_job_id, "original_job_id": job_id}
+
+
+# ══════════════════════════════════════════════════════════════
+# COMMUNICATION SERVICE ENDPOINTS
+# ══════════════════════════════════════════════════════════════
+
+@app.get("/api/admin/comms/contacts/{email}")
+async def comms_contact_detail(email: str, current_user: dict = Depends(get_current_admin)):
+    """Kontakt-Detail mit allen Konversationen."""
+    contact = await db.contacts.find_one({"email": email.lower()}, {"_id": 0})
+    if not contact:
+        raise HTTPException(404, "Kontakt nicht gefunden")
+    for k in ("created_at", "updated_at"):
+        if hasattr(contact.get(k), "isoformat"):
+            contact[k] = contact[k].isoformat()
+    convs = await comms_svc.get_contact_conversations(contact["contact_id"])
+    timeline = await comms_svc.get_unified_timeline(contact["contact_id"])
+    return {"contact": contact, "conversations": convs, "timeline": timeline}
+
+
+@app.get("/api/admin/comms/conversations/{conv_id}/messages")
+async def comms_conversation_messages(conv_id: str, current_user: dict = Depends(get_current_admin)):
+    """Kanalübergreifende Nachrichtenhistorie."""
+    messages = await comms_svc.get_conversation_history(conv_id)
+    return {"messages": messages, "count": len(messages)}
+
+
+@app.post("/api/admin/comms/conversations/{conv_id}/send")
+async def comms_send_message(conv_id: str, data: dict, current_user: dict = Depends(get_current_admin)):
+    """Nachricht über Kommunikationskern senden."""
+    channel = data.get("channel", "email")
+    content = data.get("content", "")
+    if not content:
+        raise HTTPException(400, "Nachricht darf nicht leer sein")
+    msg = await comms_svc.send_outbound(
+        conv_id, channel, content,
+        sender=current_user["email"],
+        ai_generated=False,
+    )
+    msg.pop("_id", None)
+    if hasattr(msg.get("timestamp"), "isoformat"):
+        msg["timestamp"] = msg["timestamp"].isoformat()
+    return msg
+
+
+@app.post("/api/admin/comms/conversations/{conv_id}/assign")
+async def comms_assign(conv_id: str, data: dict, current_user: dict = Depends(get_current_admin)):
+    """Konversation zuweisen."""
+    await comms_svc.assign_conversation(conv_id, data.get("assigned_to", "admin"), by=current_user["email"])
+    return {"assigned": True}
+
+
+@app.get("/api/admin/comms/timeline/{contact_id}")
+async def comms_timeline(contact_id: str, current_user: dict = Depends(get_current_admin)):
+    """Kanalübergreifende Timeline."""
+    events = await comms_svc.get_unified_timeline(contact_id)
+    return {"events": events, "count": len(events)}
+
+
+# ══════════════════════════════════════════════════════════════
+# BILLING SERVICE ENDPOINTS
+# ══════════════════════════════════════════════════════════════
+
+@app.get("/api/admin/billing/status/{email}")
+async def billing_status(email: str, current_user: dict = Depends(get_current_admin)):
+    """Gesamter Billing-Status für einen Kontakt."""
+    result = await billing_svc.get_billing_status(email)
+    return result
+
+
+@app.post("/api/admin/billing/sync-quote/{quote_id}")
+async def billing_sync_quote(quote_id: str, data: dict, current_user: dict = Depends(get_current_admin)):
+    """Quote-Status synchronisieren."""
+    new_status = data.get("status", "")
+    if not new_status:
+        raise HTTPException(400, "Status erforderlich")
+    result = await billing_svc.sync_quote_status(quote_id, new_status, by=current_user["email"])
+    return result
+
+
+@app.post("/api/admin/billing/sync-invoice/{invoice_id}")
+async def billing_sync_invoice(invoice_id: str, data: dict, current_user: dict = Depends(get_current_admin)):
+    """Invoice-Status synchronisieren."""
+    new_status = data.get("status", "")
+    if not new_status:
+        raise HTTPException(400, "Status erforderlich")
+    result = await billing_svc.sync_invoice_status(invoice_id, new_status, by=current_user["email"])
+    return result
+
+
+# ══════════════════════════════════════════════════════════════
+# OUTBOUND LEAD MACHINE ENDPOINTS
+# ══════════════════════════════════════════════════════════════
+
+@app.get("/api/admin/outbound/leads")
+async def outbound_leads_list(
+    status: str = None, min_score: int = 0,
+    skip: int = 0, limit: int = 50,
+    current_user: dict = Depends(get_current_admin),
+):
+    """Outbound-Leads auflisten."""
+    leads = await outbound_svc.list_outbound_leads(status, min_score, skip, limit)
+    return {"leads": leads, "count": len(leads)}
+
+
+@app.get("/api/admin/outbound/stats")
+async def outbound_stats(current_user: dict = Depends(get_current_admin)):
+    """Outbound-Pipeline-Statistiken."""
+    return await outbound_svc.get_outbound_stats()
+
+
+@app.post("/api/admin/outbound/discover")
+async def outbound_discover(data: dict, current_user: dict = Depends(get_current_admin)):
+    """Neuen Outbound-Lead erfassen."""
+    result = await outbound_svc.discover_lead(data, source=data.get("source", "admin"))
+    return result
+
+
+@app.post("/api/admin/outbound/{lead_id}/prequalify")
+async def outbound_prequalify(lead_id: str, current_user: dict = Depends(get_current_admin)):
+    """Lead vorqualifizieren."""
+    return await outbound_svc.prequalify(lead_id)
+
+
+@app.post("/api/admin/outbound/{lead_id}/analyze")
+async def outbound_analyze(lead_id: str, data: dict = None, current_user: dict = Depends(get_current_admin)):
+    """Lead analysieren und scoren."""
+    return await outbound_svc.analyze_and_score(lead_id, data)
+
+
+@app.post("/api/admin/outbound/{lead_id}/legal-check")
+async def outbound_legal_check(lead_id: str, current_user: dict = Depends(get_current_admin)):
+    """Legal Gate prüfen."""
+    return await outbound_svc.legal_check(lead_id)
+
+
+@app.post("/api/admin/outbound/{lead_id}/outreach")
+async def outbound_create_outreach(lead_id: str, data: dict, current_user: dict = Depends(get_current_admin)):
+    """Outreach erstellen."""
+    return await outbound_svc.create_outreach(lead_id, data)
+
+
+@app.post("/api/admin/outbound/{lead_id}/outreach/{outreach_id}/send")
+async def outbound_send_outreach(lead_id: str, outreach_id: str, current_user: dict = Depends(get_current_admin)):
+    """Outreach versenden."""
+    return await outbound_svc.send_outreach(lead_id, outreach_id)
+
+
+@app.post("/api/admin/outbound/{lead_id}/followup")
+async def outbound_followup(lead_id: str, data: dict = None, current_user: dict = Depends(get_current_admin)):
+    """Follow-up planen."""
+    days = (data or {}).get("days_delay", 3)
+    return await outbound_svc.schedule_followup(lead_id, days)
+
+
+@app.post("/api/admin/outbound/opt-out")
+async def outbound_opt_out(data: dict, current_user: dict = Depends(get_current_admin)):
+    """E-Mail auf Suppression-Liste setzen."""
+    email = data.get("email", "")
+    if not email:
+        raise HTTPException(400, "E-Mail erforderlich")
+    return await outbound_svc.opt_out(email, data.get("reason", ""))
+
+
+# ══════════════════════════════════════════════════════════════
+# LLM PROVIDER STATUS
+# ══════════════════════════════════════════════════════════════
+
+@app.get("/api/admin/llm/status")
+async def llm_status(current_user: dict = Depends(get_current_admin)):
+    """LLM-Provider-Status."""
+    return {
+        "provider": llm_provider.get_provider_name() if llm_provider else "not_initialized",
+        "deepseek_configured": bool(os.environ.get("DEEPSEEK_API_KEY")),
+        "emergent_configured": bool(os.environ.get("EMERGENT_LLM_KEY")),
+        "target_architecture": "deepseek",
+        "current_status": "temporary_gpt52" if (llm_provider and "temporary" in llm_provider.get_provider_name()) else "target",
+    }
+
 
 
 if __name__ == "__main__":
