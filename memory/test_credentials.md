@@ -1,25 +1,20 @@
-# NeXifyAI Test Credentials
+# NeXifyAI — Test Credentials
 
-## Admin Panel
-- URL: /admin (oder /login → Admin-Flow)
+## Admin
 - Email: p.courbois@icloud.com
 - Password: NxAi#Secure2026!
+- Login: POST /api/admin/login (form-data: username + password)
 
-## Test Customer
-- Email: max@testfirma.de
-- Unternehmen: Testfirma GmbH
-- Contact ID: ct_6df55ae162a34cd3
-- Portal: /login → Magic Link Flow
+## API
+- Base URL: https://contract-os.preview.emergentagent.com
 
-## Unified Login
-- URL: /login
-- Admin: E-Mail → Passwort-Feld → Anmelden → /admin
-- Kunde: E-Mail → Magic Link per E-Mail → /login/verify?token=xxx → /portal
+## Test-Daten
+- Test-Projekt: prj_6c4e346089384828 (Kunde: max@testfirma.de)
+- Test-Vertrag: ctr_fa24ac23eb394673 (Kunde: max@testfirma.de, Status: sent)
+- Test-Outbound-Lead: obl_236fdcfee15a4b65 (TechFirma GmbH, Status: outreach_ready)
 
-## Auth Flow
-- Admin Login: POST /api/admin/login (form-data) → {access_token, role:admin}
-- Customer Login: POST /api/auth/verify-token → {access_token, role:customer}
-- Role Check: POST /api/auth/check-email → {role: admin|customer|unknown}
-
-## API Base URL
-- https://contract-os.preview.emergentagent.com
+## ENV-Keys
+- EMERGENT_LLM_KEY: Gesetzt (Emergent GPT-5.2 Fallback)
+- DEEPSEEK_API_KEY: Nicht gesetzt (Kunden-Key erforderlich)
+- REVOLUT_SECRET_KEY: Gesetzt
+- RESEND_API_KEY: Gesetzt

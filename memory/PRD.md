@@ -1,89 +1,104 @@
 # NeXifyAI — Product Requirements Document
 
-## Problem Statement
-B2B-Plattform "Starter/Growth AI Agenten AG" — API-First, Unified Communication, Deep Customer Memory (mem0), KI-Orchestrator (DeepSeek Ziel), CRM, Login-Stack, Worker/Scheduler, Kommunikationskern, Outbound Lead Machine, Billing-Sync. Systemweit harmonisiertes Design, Security by Obscurity.
+## Originalauftrag
+B2B-Plattform "Starter/Growth AI Agenten AG" — API-First, Unified Communication, Deep Customer Memory (mem0), KI-Orchestrator. Premium, hochsichere Architektur. Unified Login Stack, Worker/Scheduler Layer, Admin/Agenten strikt nicht öffentlich. Ziel-LLM: DeepSeek.
 
-## Architecture
-- **API-First**: Domain → Channel → Connector → Agent → Event/Audit Layer
-- **Unified Auth**: /login → Admin (Passwort) / Kunde (Magic Link) / Registrierung → Role-based JWT
-- **Security by Obscurity**: /admin → /login redirect, keine internen Terminologien öffentlich
-- **mem0 Memory Layer**: Pflicht-Scoping (user_id, agent_id, app_id, run_id)
-- **LLM-Abstraktionsschicht**: EmergentGPTProvider (TEMPORÄR) | DeepSeekProvider (ZIEL)
-- **Worker/Scheduler**: asyncio JobQueue (4 Worker) + APScheduler (7 Cron-Jobs)
-- **Services**: CommunicationService, BillingService, OutboundLeadMachine
+## Architektur
+```
+/app/
+├── backend/
+│   ├── server.py (FastAPI, >5500 Zeilen)
+│   ├── commercial.py (PDF-Generation, Tarife)
+│   ├── domain.py (Datenmodelle, Enums, Factories)
+│   ├── memory_service.py (mem0-Integration)
+│   ├── services/
+│   │   ├── billing.py (BillingService)
+│   │   ├── comms.py (CommunicationService)
+│   │   ├── outbound.py (OutboundLeadMachine)
+│   │   ├── llm_provider.py (LLM-Abstraktionsschicht)
+│   │   └── legal_guardian.py (Legal & Compliance Guardian)
+│   ├── workers/
+│   │   ├── manager.py
+│   │   ├── job_queue.py
+│   │   └── scheduler.py
+├── frontend/
+│   ├── src/
+│   │   ├── App.js & App.css
+│   │   ├── pages/Admin.js, CustomerPortal.js, UnifiedLogin.js
+│   │   └── components/Scene3D.js
+```
 
-## What's Implemented & Verified
+## Tarife (Commercial Source of Truth)
+- Starter AI Agenten AG — NXA-SAA-24-499 — 499 EUR/Monat — 24 Monate — 30% Anzahlung 3.592,80 EUR
+- Growth AI Agenten AG — NXA-GAA-24-1299 — 1.299 EUR/Monat — 24 Monate — 30% Anzahlung 9.352,80 EUR
 
-### Design & Brand Harmonisierung — VERIFIZIERT (Iteration 27: 16/16 — 100%)
-- **Brand-Konsistenz**: icon-mark.svg + NeXifyAI Text identisch in Header, Footer, Login, Portal, Admin
-- **Einheitliche Typografie**: Plus Jakarta Sans (Display) + Inter (Body) via CSS-Variablen in allen Komponenten
-- **Button-Systematik**: Solid var(--nx-accent) + dunkle Schrift (#0c1117), border-radius: 6px — einheitlich Login, Public, E-Mail
-- **Input-Styling**: border-radius: 4px, var(--nx-bg) Hintergrund, accent-border on focus
-- **Farbtokens**: --nx-accent (#ff9b7a), --nx-bg (#0c1117) durchgängig in CSS, E-Mail-Templates, PDFs (CI_ORANGE)
-- **Footer**: IBAN via .footer-iban CSS-Klasse statt Inline-Styles, KvK/USt-ID/IBAN korrekt
-- **E-Mail-Template**: Konsistente Signatur, DSGVO-Footer, Legal-Links
-- **PDFs**: CI_ORANGE/CI_DARK Color-Konstanten, gleiche Brand-Anmutung
+## DB-Schema (MongoDB)
+leads, customers, quotes, invoices, bookings, timeline_events, customer_memory, messages, conversations, projects, project_sections, project_chat, project_versions, contracts, contract_appendices, contract_evidence, webhook_events, legal_audit, legal_risks, opt_outs, suppression_list, outbound_leads, access_links, documents
 
-### Login — Premium Two-Column — VERIFIZIERT (Iteration 27)
-- Linke Spalte: icon-mark.svg + NeXifyAI, Tagline, Feature-Bullets (Verschlüsselt/Echtzeit/DSGVO)
-- Rechte Spalte: "Sicherer Zugang", E-Mail-Check → Passwort / Magic-Link / Registration
-- Tablet (≤960px): Vertikal gestapelt, justify-content:flex-start, keine Leerraum-Probleme
-- Mobile (≤600px): Kompakte Visual-Spalte, Features ausgeblendet
-- Legal Links: Startseite · Impressum · Datenschutz · AGB
-- Security by Obscurity: Kein "Admin", "Operator", "Agenten", "Interner Zugang" sichtbar
-- Registration-Flow für unbekannte E-Mails (Angebotsanfragen)
+## Implementiert (P0–P6)
 
-### Mobile Menu Overlay — VERIFIZIERT (Iteration 27)
-- position:absolute, height:calc(100dvh - var(--nav-h)), Background #0a0e14 (opak)
-- Backdrop: rgba(0,0,0,0.85), z-index: 199/200
-- Kein Content-Bleed-through, kein doppelter Language Switcher
-- Alle Nav-Links + "Anmelden" + "Beratung starten"
-- body.mobile-menu-open → nav z-index: 9999
+### P0: Architektur & Design (verifiziert)
+- Worker/Scheduler Layer (APScheduler)
+- Services-Scaffolding
+- Auth Security by Obscurity
+- 3D Hero, Design-Harmonisierung
 
-### Floating Actions States — VERIFIZIERT (Iteration 27)
-- body.mobile-menu-open → visibility:hidden für WA + Chat
-- body.cookie-visible → bottom:120px
-- Standard → bottom:24px
-- Korrekte Transition, keine Kollisionen
+### P1: Projektchat / Build-Handover-Kontext (verifiziert — Iteration 28)
+- 22 Pflicht-Sektionen mit Versionierung
+- Projektchat (Admin + Kunden)
+- Build-Ready-Markdown-Generierung
+- Startprompt-Generierung aus Kontext (geheim)
+- Vollständigkeits-Tracking (%)
+- Memory/Audit-Integration
 
-### 3D-Szenen — VERIFIZIERT (Iteration 27)
-- HeroScene: Wireframe-Ikosaeder, Orbits, Nodes, DataStreams, AccentGeometries
-- IntegrationsGlobe: Wireframe-Kugel, Connection-Arcs, Nodes
-- ProcessScene: 4 Hubs mit Orbiting-Ringen, FlowStreams
+### P2: Contract Operating System v1 (verifiziert — Iteration 29)
+- Mastervertrag + 7 Anlagetypen
+- 3 Vertragstypen (Standard/Individual/Nachtrag)
+- Digitale Annahme (Signatur + Namenseingabe)
+- Evidenzpaket (Timestamp, IP, UA, Hash, Version, Consent)
+- 6 Rechtsmodule (4 Pflicht, 2 optional)
+- Ablehnung / Änderungsanfrage / Versionierung
+- Admin-UI + Kunden-Portal
 
-### Breakpoint-Verifizierung — VERIFIZIERT (Iteration 27)
-- 1920px: Full navigation, 3D Hero, two-column login ✅
-- 1440px: Footer komplett mit IBAN ✅
-- 1024px: Anmelden + Beratung starten sichtbar ✅
-- 768px: Tablet login vertikal gestapelt, 86px Gap ✅
-- 390px: Mobile hero lesbar, login kompakt ✅
-- 360px: Kein Overflow, Header 73px ✅
+### P3: Billing/Webhooks produktionsnah (verifiziert — Iteration 30)
+- Revolut + Stripe Webhooks (idempotent)
+- Manuelle Zahlungsbestätigung
+- Reminder/Mahnlogik (3 Eskalationsstufen)
+- Billing-Status-Dashboard
+- Status-Sync: Quote ↔ Invoice ↔ Contract ↔ Timeline
 
-### Worker/Scheduler-Layer — VERIFIZIERT (Iteration 25)
-### Kommunikationskern — VERIFIZIERT (Iteration 25)
-### Outbound Lead Machine — VERIFIZIERT (Iteration 25)
-### Billing Status-Sync — VERIFIZIERT (Iteration 25)
-### LLM-Abstraktionsschicht — VERIFIZIERT (Iteration 25)
-### Auth & Login — VERIFIZIERT (Iteration 26+27)
-### Admin CRM — VERIFIZIERT
-### Customer Portal — VERIFIZIERT
+### P4: Legal & Compliance Guardian (verifiziert — Iteration 31)
+- 10 Compliance-Checks (DSGVO, UWG, KI-Transparenz, etc.)
+- 4 Gate-Prüfungen (Outreach, Vertrag, Kommunikation, Billing)
+- Risikomanagement (Add/Resolve/List)
+- Audit-Log
+- Opt-Out (Admin + Public)
+- Operativ an Vertragsversand gekoppelt
 
-## Testing Status
-- Iteration 25: 100% — 30/30 Backend
-- Iteration 26: 100% — 11/11 Frontend
-- Iteration 27: 100% — 16/16 Frontend (Design-Harmonisierung)
+### P5: DeepSeek Live-Pfad (teilweise verifiziert — Iteration 32)
+- DeepSeekProvider mit httpx, Fehlerbehandlung
+- ENV-basierte Umschaltung (auto/deepseek/emergent)
+- Provider-Status und Test-Endpoint
+- Model-Auswahl (deepseek-chat, deepseek-reasoner)
+- DEEPSEEK_API_KEY nicht gesetzt → Emergent-Fallback aktiv
 
-## Commercial Source of Truth
-| Tarif | Kennung | Preis | Laufzeit | Anzahlung |
-|-------|---------|-------|----------|-----------|
-| Starter AI Agenten AG | NXA-SAA-24-499 | 499 EUR/Mo | 24 Mo | 30% = 3.592,80 EUR |
-| Growth AI Agenten AG | NXA-GAA-24-1299 | 1.299 EUR/Mo | 24 Mo | 30% = 9.352,80 EUR |
+### P6: Outbound Lead Machine (verifiziert — Iteration 32)
+- 16-stufige Pipeline (Discovery → Handover)
+- Legal-Guardian-Gate im Send-Flow
+- Response-Tracking (positive/negative/opt_out)
+- Handover (Quote/Meeting/Nurture)
+- CRM-Lead-Erstellung bei Quote-Handover
+- Pipeline-Übersicht mit Konversionsraten
 
-## Remaining Tasks (Priorisiert)
-1. Projektchat/Handover-Kontext härten
-2. Contract Operating System v1 (Mastervertrag, Anlagen, digitale Signatur)
-3. Revolut/Stripe Live-Webhooks
-4. DeepSeek Live-Migration
-5. Legal & Compliance Guardian operativ verdrahten
-6. Outbound Lead Machine Produktionshärtung
-7. server.py Refactoring (>4200 Zeilen → modulare Routen)
+## Nächste Schritte
+
+### P7: server.py Modular Refactoring (ERST NACH P1–P6 STABIL)
+- auth_routes.py, workers_routes.py, billing_routes.py, outbound_routes.py, comms_routes.py, portal_routes.py, contract_routes.py, monitoring_routes.py
+- Keine Regression, bestehende APIs stabil halten
+- Tests/Imports/Abhängigkeiten nachziehen
+
+## Offene Punkte
+- DEEPSEEK_API_KEY: Vom Kunden zu konfigurieren
+- Revolut/Stripe Live-Keys: Benötigen Produktions-Credentials
+- Resend E-Mail: Konfiguriert, funktioniert
+- Kunden-Portal: Vertragsprüfung + Signatur-Canvas (Touch/Maus) noch zu implementieren
