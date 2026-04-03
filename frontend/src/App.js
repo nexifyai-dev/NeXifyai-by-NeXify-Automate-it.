@@ -456,6 +456,16 @@ function App() {
     return () => window.removeEventListener('scroll', h);
   }, [lang]);
 
+  /* Dynamic floating action positioning based on cookie banner state */
+  useEffect(() => {
+    if (showCookie) {
+      document.body.classList.add('cookie-visible');
+    } else {
+      document.body.classList.remove('cookie-visible');
+    }
+    return () => document.body.classList.remove('cookie-visible');
+  }, [showCookie]);
+
   const openChat = (msg = '') => { setChatQ(msg); setChatOpen(true); track('chat_open', { source: msg ? 'cta_contextual' : 'cta_generic', msg }); };
   const openBooking = () => { setBookOpen(true); };
 

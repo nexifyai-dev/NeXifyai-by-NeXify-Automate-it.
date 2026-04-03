@@ -419,8 +419,15 @@ class ChatMessage(BaseModel):
     language: Optional[str] = "de"
 
 class LeadUpdate(BaseModel):
-    status: str
+    status: Optional[str] = None
     notes: Optional[str] = None
+    vorname: Optional[str] = None
+    nachname: Optional[str] = None
+    email: Optional[str] = None
+    unternehmen: Optional[str] = None
+    telefon: Optional[str] = None
+    source: Optional[str] = None
+    nachricht: Optional[str] = None
 
 class BookingUpdate(BaseModel):
     status: Optional[str] = None
@@ -1254,7 +1261,11 @@ async def admin_lead_detail(lead_id: str, user = Depends(get_current_admin)):
 
 @app.patch("/api/admin/leads/{lead_id}")
 async def admin_update_lead(lead_id: str, update: LeadUpdate, user = Depends(get_current_admin)):
-    updates = {"status": update.status, "updated_at": datetime.now(timezone.utc)}
+    updates = {"updated_at": datetime.now(timezone.utc)}
+    for field in ["status", "vorname", "nachname", "email", "unternehmen", "telefon", "source", "nachricht"]:
+        val = getattr(update, field, None)
+        if val is not None:
+            updates[field] = val
     
     if update.notes:
         await db.leads.update_one(
@@ -1264,7 +1275,16 @@ async def admin_update_lead(lead_id: str, update: LeadUpdate, user = Depends(get
     else:
         await db.leads.update_one({"lead_id": lead_id}, {"$set": updates})
     
-    await log_audit("lead_updated", user["email"], {"lead_id": lead_id, "status": update.status})
+    await log_audit("lead_updated", user["email"], {"lead_id": lead_id, "updates": {k: v for k, v in updates.items() if k != "updated_at"}})
+    
+    # mem0 Memory
+    if memory_svc:
+        contact = await db.contacts.find_one({"email": (update.email or "").lower() or (await db.leads.find_one({"lead_id": lead_id}))["email"]})
+        if contact:
+            changed = ", ".join(f"{k}={v}" for k, v in updates.items() if k != "updated_at")
+            await memory_svc.write(contact["contact_id"], f"Lead {lead_id} bearbeitet: {changed}", AGENT_IDS["admin"],
+                                   category="context", source="admin", source_ref=user["email"], verification_status="verifiziert")
+    
     return {"success": True}
 
 @app.get("/api/admin/bookings")
@@ -1521,6 +1541,166 @@ async def admin_customer_detail(email: str, user = Depends(get_current_admin)):
         {"_id": 0, "messages": {"$slice": -10}}
     ).sort("updated_at", -1).to_list(10)
     return {"leads": leads, "bookings": bookings, "chats": chats}
+
+
+@app.patch("/api/admin/customers/{email}")
+async def admin_update_customer(email: str, data: dict, user = Depends(get_current_admin)):
+    """Kunden-/Kontaktdaten bearbeiten."""
+    email = email.lower()
+    contact = await db.contacts.find_one({"email": email})
+    if not contact:
+        raise HTTPException(404, "Kontakt nicht gefunden")
+    
+    updates = {"updated_at": datetime.now(timezone.utc)}
+    field_map = {"vorname": "first_name", "nachname": "last_name", "unternehmen": "company", "telefon": "phone", "branche": "industry"}
+    for de_key, en_key in field_map.items():
+        if de_key in data and data[de_key]:
+            updates[en_key] = data[de_key].strip()
+    
+    if len(updates) > 1:
+        await db.contacts.update_one({"email": email}, {"$set": updates})
+    
+    # Auch Lead-Daten synchronisieren
+    lead_updates = {}
+    lead_map = {"vorname": "vorname", "nachname": "nachname", "unternehmen": "unternehmen", "telefon": "telefon", "branche": "branche"}
+    for key in lead_map:
+        if key in data and data[key]:
+            lead_updates[key] = data[key].strip()
+    if lead_updates:
+        lead_updates["updated_at"] = datetime.now(timezone.utc)
+        await db.leads.update_many({"email": email}, {"$set": lead_updates})
+    
+    await log_audit("customer_updated", user["email"], {"email": email, "fields": list(updates.keys())})
+    
+    if memory_svc:
+        changed = ", ".join(f"{k}={v}" for k, v in updates.items() if k != "updated_at")
+        await memory_svc.write(contact["contact_id"], f"Kundendaten bearbeitet: {changed}", AGENT_IDS["admin"],
+                               category="context", source="admin", source_ref=user["email"], verification_status="verifiziert")
+    
+    return {"success": True}
+
+
+@app.patch("/api/admin/quotes/{quote_id}")
+async def admin_update_quote(quote_id: str, data: dict, user = Depends(get_current_admin)):
+    """Angebot bearbeiten — Status, Notizen, Rabatt, Sonderpositionen."""
+    quote = await db.quotes.find_one({"quote_id": quote_id})
+    if not quote:
+        raise HTTPException(404, "Angebot nicht gefunden")
+    
+    updates = {"updated_at": datetime.now(timezone.utc)}
+    
+    if "status" in data:
+        old_status = quote.get("status", "draft")
+        updates["status"] = data["status"]
+        # Timeline Event für Statusänderung
+        evt = create_timeline_event("quote", quote_id, f"quote_status_{data['status']}",
+                                    actor=user["email"], actor_type="admin",
+                                    details={"old_status": old_status, "new_status": data["status"]})
+        await db.timeline_events.insert_one(evt)
+    
+    if "notes" in data:
+        updates["notes"] = data["notes"]
+    
+    if "use_case" in data:
+        updates["use_case"] = data["use_case"]
+    
+    if "customer_name" in data:
+        updates["customer.name"] = data["customer_name"]
+    if "customer_email" in data:
+        updates["customer.email"] = data["customer_email"]
+    if "customer_company" in data:
+        updates["customer.company"] = data["customer_company"]
+    
+    if "discount_percent" in data:
+        dp = float(data["discount_percent"] or 0)
+        updates["discount.percent"] = dp
+        updates["discount.reason"] = data.get("discount_reason", "")
+        # Neuberechnung
+        from commercial import TARIFF_CONFIG
+        tier = quote.get("tier", "starter")
+        tariff = TARIFF_CONFIG.get(tier, TARIFF_CONFIG["starter"])
+        net = tariff.get("total_contract_eur", 11976.00)  # Use total_contract_eur as net base
+        discount_amount = round(net * dp / 100, 2)
+        net_after = net - discount_amount
+        # Special items
+        sp_items = data.get("special_items", quote.get("special_items", []))
+        sp_total = sum(si.get("amount_eur", 0) * (1 if si.get("type") == "add" else -1) for si in sp_items)
+        net_final = net_after + sp_total
+        updates["calculation.discount_amount_eur"] = discount_amount
+        updates["calculation.special_items_total_eur"] = sp_total
+        updates["calculation.total_contract_eur"] = round(net_final * 1.19, 2)
+        updates["calculation.total_contract_net_eur"] = net_final
+        updates["special_items"] = sp_items
+    
+    await db.quotes.update_one({"quote_id": quote_id}, {"$set": updates})
+    await log_audit("quote_updated", user["email"], {"quote_id": quote_id, "fields": list(updates.keys())})
+    
+    return {"success": True}
+
+
+@app.patch("/api/admin/invoices/{invoice_id}")
+async def admin_update_invoice(invoice_id: str, data: dict, user = Depends(get_current_admin)):
+    """Rechnung bearbeiten — Status, Zahlungsstatus, Notizen."""
+    invoice = await db.invoices.find_one({"invoice_id": invoice_id})
+    if not invoice:
+        raise HTTPException(404, "Rechnung nicht gefunden")
+    
+    updates = {"updated_at": datetime.now(timezone.utc)}
+    
+    if "status" in data:
+        updates["status"] = data["status"]
+    if "payment_status" in data:
+        updates["payment_status"] = data["payment_status"]
+    if "notes" in data:
+        updates["notes"] = data["notes"]
+    
+    await db.invoices.update_one({"invoice_id": invoice_id}, {"$set": updates})
+    await log_audit("invoice_updated", user["email"], {"invoice_id": invoice_id, "fields": list(updates.keys())})
+    
+    evt = create_timeline_event("invoice", invoice_id, "invoice_updated",
+                                actor=user["email"], actor_type="admin",
+                                details={"updates": {k: v for k, v in updates.items() if k != "updated_at"}})
+    await db.timeline_events.insert_one(evt)
+    
+    return {"success": True}
+
+
+@app.post("/api/admin/bookings")
+async def admin_create_booking(data: dict, user = Depends(get_current_admin)):
+    """Termin manuell anlegen."""
+    required = ["vorname", "email", "date", "time"]
+    for f in required:
+        if not data.get(f, "").strip():
+            raise HTTPException(400, f"{f} ist Pflichtfeld")
+    
+    booking_id = f"BK-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(3).upper()}"
+    doc = {
+        "booking_id": booking_id,
+        "vorname": data.get("vorname", "").strip(),
+        "nachname": data.get("nachname", "").strip(),
+        "email": data.get("email", "").strip().lower(),
+        "telefon": data.get("telefon", ""),
+        "unternehmen": data.get("unternehmen", ""),
+        "thema": data.get("thema", ""),
+        "date": data.get("date"),
+        "time": data.get("time"),
+        "status": "confirmed",
+        "source": "admin_manual",
+        "notes": [],
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+    }
+    await db.bookings.insert_one(doc)
+    doc.pop("_id", None)
+    
+    await log_audit("booking_created_manual", user["email"], {"booking_id": booking_id})
+    evt = create_timeline_event("booking", booking_id, "booking_created",
+                                actor=user["email"], actor_type="admin",
+                                details={"email": doc["email"], "date": doc["date"], "time": doc["time"]})
+    await db.timeline_events.insert_one(evt)
+    
+    return {"success": True, "booking_id": booking_id}
+
 
 # ============== ENHANCED STATS ==============
 

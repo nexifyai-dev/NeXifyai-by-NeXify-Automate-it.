@@ -841,7 +841,7 @@ a.integ-item-v2.popular{border-color:rgba(255,155,122,0.1);color:rgba(255,255,25
   .whatsapp-btn{
     writing-mode:horizontal-tb;text-orientation:initial;text-transform:none;
     top:auto;left:auto;
-    bottom:120px;right:72px;
+    bottom:24px;right:72px;
     padding:0;width:48px;height:48px;
     font-size:0;letter-spacing:0;
     border-radius:50%;
@@ -849,20 +849,24 @@ a.integ-item-v2.popular{border-color:rgba(255,155,122,0.1);color:rgba(255,255,25
     box-shadow:0 4px 20px rgba(37,211,102,0.3);
     gap:0;justify-content:center;
     z-index:910;
+    transition:bottom 0.4s cubic-bezier(0.4,0,0.2,1);
   }
+  body.cookie-visible .whatsapp-btn{bottom:120px}
   .whatsapp-btn:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(37,211,102,0.4)}
   .whatsapp-btn svg{transform:none;width:22px;height:22px}
   .whatsapp-btn span{display:none}
   /* Chat trigger: right neben WA, gleiche Höhe */
   .chat-trigger{
     position:fixed!important;
-    bottom:120px!important;right:16px!important;
+    bottom:24px!important;right:16px!important;
     width:48px!important;height:48px!important;
     border-radius:50%!important;padding:0!important;
     justify-content:center!important;
     z-index:910!important;
     transform:none!important;
+    transition:bottom 0.4s cubic-bezier(0.4,0,0.2,1)!important;
   }
+  body.cookie-visible .chat-trigger{bottom:120px!important}
   .chat-trigger .chat-trigger-text{display:none!important}
   .chat-trigger .chat-trigger-icon{
     display:flex!important;
@@ -873,8 +877,10 @@ a.integ-item-v2.popular{border-color:rgba(255,155,122,0.1);color:rgba(255,255,25
 /* Safe-area bottom padding for iOS */
 @supports(padding-bottom:env(safe-area-inset-bottom)){
   @media(max-width:768px){
-    .whatsapp-btn{bottom:calc(120px + env(safe-area-inset-bottom))}
-    .chat-trigger{bottom:calc(120px + env(safe-area-inset-bottom))!important}
+    .whatsapp-btn{bottom:calc(24px + env(safe-area-inset-bottom))}
+    body.cookie-visible .whatsapp-btn{bottom:calc(120px + env(safe-area-inset-bottom))}
+    .chat-trigger{bottom:calc(24px + env(safe-area-inset-bottom))!important}
+    body.cookie-visible .chat-trigger{bottom:calc(120px + env(safe-area-inset-bottom))!important}
   }
 }
 

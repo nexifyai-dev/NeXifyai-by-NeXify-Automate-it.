@@ -76,6 +76,12 @@ const Admin = () => {
   const [leadForm, setLeadForm] = useState({ vorname:'', nachname:'', email:'', unternehmen:'', telefon:'', nachricht:'', source:'admin' });
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [customerForm, setCustomerForm] = useState({ vorname:'', nachname:'', email:'', unternehmen:'', telefon:'', branche:'' });
+  const [editLead, setEditLead] = useState(null);
+  const [editCustomer, setEditCustomer] = useState(null);
+  const [editQuote, setEditQuote] = useState(null);
+  const [editInvoice, setEditInvoice] = useState(null);
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [bookingForm, setBookingForm] = useState({ vorname:'', nachname:'', email:'', telefon:'', unternehmen:'', thema:'', date:'', time:'' });
 
   const headers = useMemo(() => ({ 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
@@ -157,6 +163,51 @@ const Admin = () => {
   const updateLead = async (id, status, notes) => {
     await apiFetch(`/api/admin/leads/${id}`, { method: 'PATCH', body: JSON.stringify({ status, notes }) });
     setLeads(prev => prev.map(l => l.lead_id === id ? { ...l, status } : l));
+  };
+
+  /* ── Save full lead edit ── */
+  const saveLeadEdit = async () => {
+    if (!editLead) return;
+    await apiFetch(`/api/admin/leads/${editLead.lead_id}`, { method: 'PATCH', body: JSON.stringify(editLead) });
+    setLeads(prev => prev.map(l => l.lead_id === editLead.lead_id ? { ...l, ...editLead } : l));
+    setEditLead(null);
+  };
+
+  /* ── Save customer edit ── */
+  const saveCustomerEdit = async () => {
+    if (!editCustomer) return;
+    await apiFetch(`/api/admin/customers/${encodeURIComponent(editCustomer.email)}`, { method: 'PATCH', body: JSON.stringify(editCustomer) });
+    setEditCustomer(null);
+    // Reload
+    const params = custSearch ? `?search=${encodeURIComponent(custSearch)}` : '';
+    apiFetch(`/api/admin/customers${params}`).then(d => d && setCustomers(d.customers || []));
+  };
+
+  /* ── Save quote edit ── */
+  const saveQuoteEdit = async () => {
+    if (!editQuote) return;
+    await apiFetch(`/api/admin/quotes/${editQuote.quote_id}`, { method: 'PATCH', body: JSON.stringify(editQuote) });
+    setEditQuote(null);
+    apiFetch('/api/admin/quotes').then(d => d && setQuotes(d.quotes || []));
+  };
+
+  /* ── Save invoice edit ── */
+  const saveInvoiceEdit = async () => {
+    if (!editInvoice) return;
+    await apiFetch(`/api/admin/invoices/${editInvoice.invoice_id}`, { method: 'PATCH', body: JSON.stringify(editInvoice) });
+    setEditInvoice(null);
+    apiFetch('/api/admin/invoices').then(d => d && setInvoices(d.invoices || []));
+  };
+
+  /* ── Create booking manually ── */
+  const createBooking = async () => {
+    if (!bookingForm.email.trim() || !bookingForm.date || !bookingForm.time) return;
+    const d = await apiFetch('/api/admin/bookings', { method: 'POST', body: JSON.stringify(bookingForm) });
+    if (d) {
+      setShowBookingForm(false);
+      setBookingForm({ vorname:'', nachname:'', email:'', telefon:'', unternehmen:'', thema:'', date:'', time:'' });
+      apiFetch(`/api/admin/calendar-data?month=${calMonth}`).then(r => r && setCalData(r));
+    }
   };
 
   /* ── Update booking ── */
@@ -348,10 +399,11 @@ const Admin = () => {
                 <td>{l.vorname} {l.nachname}</td><td>{l.email}</td><td>{l.unternehmen || '-'}</td><td>{l.source}</td>
                 <td><span className="adm-badge" style={{ background: STATUS_MAP[l.status]?.color + '22', color: STATUS_MAP[l.status]?.color }}>{STATUS_MAP[l.status]?.label || l.status}</span></td>
                 <td>{fmtTime(l.created_at)}</td>
-                <td>
-                  <select className="adm-select-sm" value={l.status} onChange={e => updateLead(l.lead_id, e.target.value)} onClick={e => e.stopPropagation()}>
+                <td style={{display:'flex',gap:'4px'}} onClick={e => e.stopPropagation()}>
+                  <select className="adm-select-sm" value={l.status} onChange={e => updateLead(l.lead_id, e.target.value)}>
                     {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
+                  <button className="adm-btn-sm" onClick={() => setEditLead({...l, notes: ''})} title="Bearbeiten" data-testid={`edit-lead-${l.lead_id}`}><I n="edit" /></button>
                 </td>
               </tr>
             ))}
@@ -359,6 +411,29 @@ const Admin = () => {
         </table>
       </div>
       {leads.length === 0 && <div className="adm-empty">Keine Leads gefunden</div>}
+
+      {/* Lead Edit Modal */}
+      {editLead && (
+        <div className="adm-modal-overlay" onClick={e => e.target === e.currentTarget && setEditLead(null)}>
+          <div className="adm-modal" data-testid="lead-edit-modal">
+            <h3>Lead bearbeiten</h3>
+            <div className="adm-form-grid">
+              <div className="adm-field"><label>Vorname</label><input value={editLead.vorname||''} onChange={e => setEditLead({...editLead, vorname: e.target.value})} /></div>
+              <div className="adm-field"><label>Nachname</label><input value={editLead.nachname||''} onChange={e => setEditLead({...editLead, nachname: e.target.value})} /></div>
+              <div className="adm-field"><label>E-Mail</label><input type="email" value={editLead.email||''} onChange={e => setEditLead({...editLead, email: e.target.value})} /></div>
+              <div className="adm-field"><label>Unternehmen</label><input value={editLead.unternehmen||''} onChange={e => setEditLead({...editLead, unternehmen: e.target.value})} /></div>
+              <div className="adm-field"><label>Telefon</label><input value={editLead.telefon||''} onChange={e => setEditLead({...editLead, telefon: e.target.value})} /></div>
+              <div className="adm-field"><label>Quelle</label><select className="adm-select" value={editLead.source||'admin'} onChange={e => setEditLead({...editLead, source: e.target.value})}><option value="admin">Admin</option><option value="website">Website</option><option value="empfehlung">Empfehlung</option><option value="messe">Messe</option><option value="social">Social Media</option><option value="chat">Chat</option></select></div>
+              <div className="adm-field"><label>Status</label><select className="adm-select" value={editLead.status||'neu'} onChange={e => setEditLead({...editLead, status: e.target.value})}>{Object.entries(STATUS_MAP).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}</select></div>
+            </div>
+            <div className="adm-field" style={{marginTop:8}}><label>Notiz hinzufügen</label><textarea value={editLead.notes||''} onChange={e => setEditLead({...editLead, notes: e.target.value})} rows={2} style={{width:'100%',resize:'vertical'}} placeholder="Interne Notiz..." /></div>
+            <div className="adm-modal-actions">
+              <button className="adm-btn-secondary" onClick={() => setEditLead(null)}>Abbrechen</button>
+              <button className="adm-btn-primary" onClick={saveLeadEdit} data-testid="save-lead-edit-btn">Speichern</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -392,6 +467,7 @@ const Admin = () => {
         <div className="adm-cal-header">
           <h2>Kalender</h2>
           <div className="adm-cal-actions">
+            <button className="adm-btn-sm" onClick={() => { setBookingForm({...bookingForm, date: selectedDateStr || ''}); setShowBookingForm(true); }} data-testid="create-booking-btn"><I n="event" /> Termin anlegen</button>
             <button className="adm-btn-sm" onClick={() => { setBlockForm({ ...blockForm, date: selectedDateStr || '' }); setShowBlockForm(true); }} data-testid="block-slot-btn"><I n="block" /> Slot blockieren</button>
           </div>
         </div>
@@ -517,6 +593,34 @@ const Admin = () => {
           </div>
         )}
 
+        {/* Booking Create Modal */}
+        {showBookingForm && (
+          <div className="adm-modal-overlay" onClick={e => e.target === e.currentTarget && setShowBookingForm(false)}>
+            <div className="adm-modal" data-testid="booking-create-modal">
+              <h3>Termin manuell anlegen</h3>
+              <div className="adm-form-grid">
+                <div className="adm-field"><label>Vorname *</label><input value={bookingForm.vorname} onChange={e => setBookingForm({...bookingForm, vorname: e.target.value})} placeholder="Max" /></div>
+                <div className="adm-field"><label>Nachname</label><input value={bookingForm.nachname} onChange={e => setBookingForm({...bookingForm, nachname: e.target.value})} placeholder="Mustermann" /></div>
+                <div className="adm-field"><label>E-Mail *</label><input type="email" value={bookingForm.email} onChange={e => setBookingForm({...bookingForm, email: e.target.value})} placeholder="max@firma.de" /></div>
+                <div className="adm-field"><label>Telefon</label><input value={bookingForm.telefon} onChange={e => setBookingForm({...bookingForm, telefon: e.target.value})} placeholder="+49 171 234 5678" /></div>
+                <div className="adm-field"><label>Unternehmen</label><input value={bookingForm.unternehmen} onChange={e => setBookingForm({...bookingForm, unternehmen: e.target.value})} placeholder="Firma GmbH" /></div>
+                <div className="adm-field"><label>Thema</label><input value={bookingForm.thema} onChange={e => setBookingForm({...bookingForm, thema: e.target.value})} placeholder="z.B. Erstgespräch, Demo" /></div>
+                <div className="adm-field"><label>Datum *</label><input type="date" value={bookingForm.date} onChange={e => setBookingForm({...bookingForm, date: e.target.value})} data-testid="booking-date" /></div>
+                <div className="adm-field"><label>Uhrzeit *</label>
+                  <select value={bookingForm.time} onChange={e => setBookingForm({...bookingForm, time: e.target.value})} className="adm-select" data-testid="booking-time">
+                    <option value="">Wählen...</option>
+                    {['09:00','09:30','10:00','10:30','11:00','11:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00'].map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="adm-modal-actions">
+                <button className="adm-btn-secondary" onClick={() => setShowBookingForm(false)}>Abbrechen</button>
+                <button className="adm-btn-primary" onClick={createBooking} disabled={!bookingForm.email.trim() || !bookingForm.date || !bookingForm.time} data-testid="save-booking-btn">Termin anlegen</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Block Slot Modal */}
         {showBlockForm && (
           <div className="adm-modal-overlay" onClick={e => e.target === e.currentTarget && setShowBlockForm(false)}>
@@ -582,14 +686,18 @@ const Admin = () => {
       )}
       <div className="adm-table-wrap">
         <table className="adm-table" data-testid="customers-table">
-          <thead><tr><th>Name</th><th>E-Mail</th><th>Unternehmen</th><th>Anfragen</th><th>Buchungen</th><th>Erster Kontakt</th><th>Letzter Kontakt</th></tr></thead>
+          <thead><tr><th>Name</th><th>E-Mail</th><th>Unternehmen</th><th>Anfragen</th><th>Buchungen</th><th>Erster Kontakt</th><th>Aktionen</th></tr></thead>
           <tbody>
             {customers.map((c, i) => (
               <tr key={i} className={custDetail?.email === c.email ? 'active' : ''} onClick={() => loadCustomerDetail(c.email)} data-testid={`customer-row-${i}`}>
                 <td>{c.vorname} {c.nachname}</td><td>{c.email}</td><td>{c.unternehmen || '-'}</td>
                 <td><span className="adm-badge">{c.total_leads}</span></td>
                 <td><span className="adm-badge">{c.total_bookings}</span></td>
-                <td>{fmtDate(c.first_contact)}</td><td>{fmtDate(c.last_contact)}</td>
+                <td>{fmtDate(c.first_contact)}</td>
+                <td onClick={e => e.stopPropagation()} style={{display:'flex',gap:'4px'}}>
+                  <button className="adm-btn-sm" onClick={() => setEditCustomer({email:c.email, vorname:c.vorname||'', nachname:c.nachname||'', unternehmen:c.unternehmen||'', telefon:c.telefon||'', branche:c.branche||''})} title="Bearbeiten" data-testid={`edit-customer-${i}`}><I n="edit" /></button>
+                  <button className="adm-btn-sm" style={{color:'#ff9b7a'}} onClick={() => generatePortalAccess(c.email)} title="Portalzugang" data-testid={`portal-btn-${i}`}><I n="link" /></button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -603,6 +711,7 @@ const Admin = () => {
           <div className="adm-detail-header">
             <h3>{custDetail.email}</h3>
             <div style={{display:'flex',gap:8}}>
+              <button className="adm-btn-sm" onClick={() => setEditCustomer({email:custDetail.email, vorname:'', nachname:'', unternehmen:'', telefon:'', branche:''})} title="Bearbeiten" data-testid="edit-customer-detail-btn"><I n="edit" /></button>
               <button className="adm-btn-sm" style={{color:'#ff9b7a'}} onClick={() => generatePortalAccess(custDetail.email)} data-testid="portal-access-btn" title="Portalzugang erstellen"><I n="link" /> Portal</button>
               <button className="adm-btn-icon" onClick={() => setCustDetail(null)}><I n="close" /></button>
             </div>
@@ -628,6 +737,26 @@ const Admin = () => {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Customer Edit Modal */}
+      {editCustomer && (
+        <div className="adm-modal-overlay" onClick={e => e.target === e.currentTarget && setEditCustomer(null)}>
+          <div className="adm-modal" data-testid="customer-edit-modal">
+            <h3>Kunde bearbeiten: {editCustomer.email}</h3>
+            <div className="adm-form-grid">
+              <div className="adm-field"><label>Vorname</label><input value={editCustomer.vorname} onChange={e => setEditCustomer({...editCustomer, vorname: e.target.value})} /></div>
+              <div className="adm-field"><label>Nachname</label><input value={editCustomer.nachname} onChange={e => setEditCustomer({...editCustomer, nachname: e.target.value})} /></div>
+              <div className="adm-field"><label>Unternehmen</label><input value={editCustomer.unternehmen} onChange={e => setEditCustomer({...editCustomer, unternehmen: e.target.value})} /></div>
+              <div className="adm-field"><label>Telefon</label><input value={editCustomer.telefon} onChange={e => setEditCustomer({...editCustomer, telefon: e.target.value})} /></div>
+              <div className="adm-field"><label>Branche</label><input value={editCustomer.branche} onChange={e => setEditCustomer({...editCustomer, branche: e.target.value})} /></div>
+            </div>
+            <div className="adm-modal-actions">
+              <button className="adm-btn-secondary" onClick={() => setEditCustomer(null)}>Abbrechen</button>
+              <button className="adm-btn-primary" onClick={saveCustomerEdit} data-testid="save-customer-edit-btn">Speichern</button>
             </div>
           </div>
         </div>
@@ -721,6 +850,8 @@ const Admin = () => {
                   <div className="adm-field"><label style={{fontSize:'.6875rem'}}>Betrag (EUR netto)</label><input type="number" min="0" step="0.01" value={si.amount_eur} onChange={e => {const items=[...quoteForm.special_items]; items[idx]={...items[idx],amount_eur:parseFloat(e.target.value)||0}; setQuoteForm({...quoteForm,special_items:items});}} /></div>
                   <select style={{padding:'7px',background:'rgba(19,26,34,0.6)',border:'1px solid rgba(255,255,255,0.06)',color:'#fff',borderRadius:4}} value={si.type} onChange={e => {const items=[...quoteForm.special_items]; items[idx]={...items[idx],type:e.target.value}; setQuoteForm({...quoteForm,special_items:items});}}>
                     <option value="add">Zuschlag</option><option value="deduct">Abzug</option>
+
+  /* ══════════ CHATS VIEW ══════════ */
                   </select>
                   <button type="button" className="adm-btn-sm" style={{color:'#ef4444'}} onClick={() => {const items=[...quoteForm.special_items]; items.splice(idx,1); setQuoteForm({...quoteForm,special_items:items});}}>Entfernen</button>
                 </div>
@@ -752,6 +883,7 @@ const Admin = () => {
                   <td>{fmtDate(q.created_at)}</td>
                   <td style={{display:'flex',gap:'4px',flexWrap:'wrap'}}>
                     {['draft','generated'].includes(q.status) && <button className="adm-btn-sm" onClick={()=>sendQuote(q.quote_id)} disabled={commBusy===`send_${q.quote_id}`} data-testid={`send-quote-${q.quote_id}`} title="Versenden"><I n="send" /></button>}
+                    <button className="adm-btn-sm" onClick={() => setEditQuote({quote_id:q.quote_id, status:q.status, notes:q.notes||'', use_case:q.use_case||'', customer_name:q.customer?.name||'', customer_email:q.customer?.email||'', customer_company:q.customer?.company||'', discount_percent:q.discount?.percent||0, discount_reason:q.discount?.reason||'', special_items:q.special_items||[]})} title="Bearbeiten" data-testid={`edit-quote-${q.quote_id}`}><I n="edit" /></button>
                     <button className="adm-btn-sm" onClick={async () => { await apiFetch(`/api/admin/quotes/${q.quote_id}/copy`, { method: 'POST' }); apiFetch('/api/admin/quotes').then(d => d && setQuotes(d.quotes || [])); }} title="Kopieren"><I n="content_copy" /></button>
                     <a className="adm-btn-sm" href={`${API}/api/documents/quote/${q.quote_id}/pdf`} target="_blank" rel="noreferrer" data-testid={`pdf-quote-${q.quote_id}`} title="PDF"><I n="picture_as_pdf" /></a>
                     {q.status === 'accepted' && <button className="adm-btn-sm" style={{color:'#10b981'}} onClick={async () => { await apiFetch('/api/admin/invoices', { method: 'POST', body: JSON.stringify({ quote_id: q.quote_id }) }); apiFetch('/api/admin/invoices').then(d => d && setInvoices(d.invoices || [])); }} title="Rechnung erstellen"><I n="receipt" /></button>}
@@ -784,6 +916,7 @@ const Admin = () => {
                   <td>{fmtDate(inv.created_at)}</td>
                   <td style={{display:'flex',gap:'4px'}}>
                     {inv.payment_status !== 'paid' && <button className="adm-btn-sm" onClick={()=>markPaid(inv.invoice_id)} disabled={!!commBusy} title="Als bezahlt markieren" data-testid={`pay-${inv.invoice_id}`}><I n="paid" /></button>}
+                    <button className="adm-btn-sm" onClick={() => setEditInvoice({invoice_id:inv.invoice_id, status:inv.status, payment_status:inv.payment_status||'pending', notes:inv.notes||''})} title="Bearbeiten" data-testid={`edit-inv-${inv.invoice_id}`}><I n="edit" /></button>
                     <button className="adm-btn-sm" onClick={()=>sendInvoice(inv.invoice_id)} disabled={!!commBusy} title="Per E-Mail senden" data-testid={`send-inv-${inv.invoice_id}`}><I n="send" /></button>
                     <a className="adm-btn-sm" href={`${API}/api/documents/invoice/${inv.invoice_id}/pdf`} target="_blank" rel="noreferrer"><I n="picture_as_pdf" /></a>
                   </td>
@@ -793,10 +926,65 @@ const Admin = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Quote Edit Modal */}
+      {editQuote && (
+        <div className="adm-modal-overlay" onClick={e => e.target === e.currentTarget && setEditQuote(null)}>
+          <div className="adm-modal" style={{maxWidth:640}} data-testid="quote-edit-modal">
+            <h3>Angebot bearbeiten: {editQuote.quote_id?.slice(0,12)}</h3>
+            <div className="adm-form-grid">
+              <div className="adm-field"><label>Status</label><select className="adm-select" value={editQuote.status} onChange={e => setEditQuote({...editQuote, status: e.target.value})}>{Object.entries(QUOTE_STATUS).map(([k,v])=><option key={k} value={k}>{v.l}</option>)}</select></div>
+              <div className="adm-field"><label>Kundenname</label><input value={editQuote.customer_name} onChange={e => setEditQuote({...editQuote, customer_name: e.target.value})} /></div>
+              <div className="adm-field"><label>Kunden-E-Mail</label><input value={editQuote.customer_email} onChange={e => setEditQuote({...editQuote, customer_email: e.target.value})} /></div>
+              <div className="adm-field"><label>Unternehmen</label><input value={editQuote.customer_company} onChange={e => setEditQuote({...editQuote, customer_company: e.target.value})} /></div>
+            </div>
+            <div className="adm-field" style={{marginTop:8}}><label>Use Case</label><input value={editQuote.use_case} onChange={e => setEditQuote({...editQuote, use_case: e.target.value})} style={{width:'100%'}} /></div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 2fr',gap:'12px',marginTop:12,padding:'12px',background:'rgba(255,155,122,0.04)',borderRadius:8,border:'1px solid rgba(255,155,122,0.08)'}}>
+              <div className="adm-field"><label>Rabatt (%)</label><input type="number" min="0" max="25" step="0.5" value={editQuote.discount_percent} onChange={e => setEditQuote({...editQuote, discount_percent:parseFloat(e.target.value)||0})} /></div>
+              <div className="adm-field"><label>Rabattgrund</label><input value={editQuote.discount_reason} onChange={e => setEditQuote({...editQuote, discount_reason: e.target.value})} placeholder="Pflicht bei Rabatt" /></div>
+            </div>
+            <div style={{marginTop:12}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                <label style={{fontWeight:600,fontSize:'.8125rem',color:'#fff'}}>Sonderpositionen</label>
+                <button type="button" className="adm-btn-sm" onClick={() => setEditQuote({...editQuote, special_items:[...(editQuote.special_items||[]), {description:'',amount_eur:0,type:'add'}]})}>+ Hinzufügen</button>
+              </div>
+              {(editQuote.special_items||[]).map((si, idx) => (
+                <div key={idx} style={{display:'grid',gridTemplateColumns:'2fr 1fr auto auto',gap:6,marginBottom:4,alignItems:'end'}}>
+                  <div className="adm-field"><input value={si.description} onChange={e => {const items=[...(editQuote.special_items||[])]; items[idx]={...items[idx],description:e.target.value}; setEditQuote({...editQuote,special_items:items});}} placeholder="Beschreibung" /></div>
+                  <div className="adm-field"><input type="number" min="0" step="0.01" value={si.amount_eur} onChange={e => {const items=[...(editQuote.special_items||[])]; items[idx]={...items[idx],amount_eur:parseFloat(e.target.value)||0}; setEditQuote({...editQuote,special_items:items});}} /></div>
+                  <select style={{padding:'7px',background:'rgba(19,26,34,0.6)',border:'1px solid rgba(255,255,255,0.06)',color:'#fff',borderRadius:4}} value={si.type} onChange={e => {const items=[...(editQuote.special_items||[])]; items[idx]={...items[idx],type:e.target.value}; setEditQuote({...editQuote,special_items:items});}}><option value="add">Zuschlag</option><option value="deduct">Abzug</option></select>
+                  <button type="button" className="adm-btn-sm" style={{color:'#ef4444'}} onClick={() => {const items=[...(editQuote.special_items||[])]; items.splice(idx,1); setEditQuote({...editQuote,special_items:items});}}>Entfernen</button>
+                </div>
+              ))}
+            </div>
+            <div className="adm-field" style={{marginTop:8}}><label>Notizen</label><textarea value={editQuote.notes} onChange={e => setEditQuote({...editQuote, notes: e.target.value})} rows={2} style={{width:'100%',resize:'vertical'}} placeholder="Interne Notizen..." /></div>
+            <div className="adm-modal-actions">
+              <button className="adm-btn-secondary" onClick={() => setEditQuote(null)}>Abbrechen</button>
+              <button className="adm-btn-primary" onClick={saveQuoteEdit} data-testid="save-quote-edit-btn">Speichern</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invoice Edit Modal */}
+      {editInvoice && (
+        <div className="adm-modal-overlay" onClick={e => e.target === e.currentTarget && setEditInvoice(null)}>
+          <div className="adm-modal" data-testid="invoice-edit-modal">
+            <h3>Rechnung bearbeiten: {editInvoice.invoice_id?.slice(0,12)}</h3>
+            <div className="adm-form-grid">
+              <div className="adm-field"><label>Status</label><select className="adm-select" value={editInvoice.status} onChange={e => setEditInvoice({...editInvoice, status: e.target.value})}>{Object.entries(INV_STATUS).map(([k,v])=><option key={k} value={k}>{v.l}</option>)}</select></div>
+              <div className="adm-field"><label>Zahlungsstatus</label><select className="adm-select" value={editInvoice.payment_status} onChange={e => setEditInvoice({...editInvoice, payment_status: e.target.value})}>{Object.entries(PAY_STATUS).map(([k,v])=><option key={k} value={k}>{v.l}</option>)}</select></div>
+            </div>
+            <div className="adm-field" style={{marginTop:8}}><label>Notizen</label><textarea value={editInvoice.notes} onChange={e => setEditInvoice({...editInvoice, notes: e.target.value})} rows={2} style={{width:'100%',resize:'vertical'}} placeholder="Interne Notizen..." /></div>
+            <div className="adm-modal-actions">
+              <button className="adm-btn-secondary" onClick={() => setEditInvoice(null)}>Abbrechen</button>
+              <button className="adm-btn-primary" onClick={saveInvoiceEdit} data-testid="save-invoice-edit-btn">Speichern</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-
-  /* ══════════ CHATS VIEW ══════════ */
   const ChatsView = () => (
     <div className="adm-chats" data-testid="admin-chats">
       {selectedChat ? (
