@@ -25,6 +25,7 @@ const BOOKING_STATUS = {
 };
 
 const Admin = () => {
+  useEffect(() => { document.body.classList.add('hide-wa'); return () => document.body.classList.remove('hide-wa'); }, []);
   const [token, setToken] = useState(() => localStorage.getItem('nx_admin_token') || '');
   const [view, setView] = useState('dashboard');
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
@@ -52,6 +53,9 @@ const Admin = () => {
   const [chatSessions, setChatSessions] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [timeline, setTimeline] = useState([]);
+  const [waStatus, setWaStatus] = useState(null);
+  const [conversations, setConversations] = useState([]);
+  const [selectedConvo, setSelectedConvo] = useState(null);
   const [quoteForm, setQuoteForm] = useState({ tier: 'starter', customer_name: '', customer_email: '', customer_company: '', customer_country: 'DE', customer_industry: '', use_case: '', notes: '' });
   const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [commBusy, setCommBusy] = useState('');
@@ -118,6 +122,18 @@ const Admin = () => {
   useEffect(() => {
     if (!token || view !== 'timeline') return;
     apiFetch('/api/admin/timeline?limit=50').then(d => d && setTimeline(d.events || []));
+  }, [token, view, apiFetch]);
+
+  /* Load WhatsApp status */
+  useEffect(() => {
+    if (!token || view !== 'whatsapp') return;
+    apiFetch('/api/admin/whatsapp/status').then(d => d && setWaStatus(d));
+  }, [token, view, apiFetch]);
+
+  /* Load conversations */
+  useEffect(() => {
+    if (!token || view !== 'conversations') return;
+    apiFetch('/api/admin/conversations?limit=30').then(d => d && setConversations(d.conversations || []));
   }, [token, view, apiFetch]);
 
   /* ── Update lead status ── */
@@ -720,12 +736,135 @@ const Admin = () => {
     </div>
   );
 
+  /* ══════════ WHATSAPP CONNECT VIEW ══════════ */
+  const WA_STATUS_MAP = {
+    unpaired: { l: 'Nicht verbunden', c: '#6b7b8d', i: 'link_off' },
+    pairing: { l: 'QR-Code bereit', c: '#f59e0b', i: 'qr_code_2' },
+    connected: { l: 'Verbunden', c: '#10b981', i: 'check_circle' },
+    reconnecting: { l: 'Verbindung wird hergestellt...', c: '#f59e0b', i: 'sync' },
+    disconnected: { l: 'Getrennt', c: '#ef4444', i: 'link_off' },
+    failed: { l: 'Fehlgeschlagen', c: '#ef4444', i: 'error' },
+  };
+  const waAction = async (action) => {
+    const d = await apiFetch(`/api/admin/whatsapp/${action}`, { method: 'POST' });
+    if (d) apiFetch('/api/admin/whatsapp/status').then(s => s && setWaStatus(s));
+    return d;
+  };
+  const WhatsAppView = () => {
+    const st = WA_STATUS_MAP[waStatus?.status] || WA_STATUS_MAP.unpaired;
+    return (
+      <div className="adm-wa" data-testid="admin-whatsapp">
+        <div className="adm-section-header">
+          <h2>WhatsApp Connect</h2>
+          <span className="adm-badge" style={{ background: st.c + '22', color: st.c }}><I n={st.i} /> {st.l}</span>
+        </div>
+        <div className="adm-wa-grid">
+          <div className="adm-wa-card">
+            <h3>Session-Status</h3>
+            <div className="adm-wa-status-row">
+              <div className="adm-wa-status-indicator" style={{ background: st.c }}></div>
+              <span>{st.l}</span>
+            </div>
+            {waStatus?.phone_number && <p>Telefon: {waStatus.phone_number}</p>}
+            {waStatus?.connected_at && <p>Verbunden seit: {fmtTime(waStatus.connected_at)}</p>}
+            {waStatus?.last_activity && <p>Letzte Aktivität: {fmtTime(waStatus.last_activity)}</p>}
+            {waStatus?.error && <p style={{ color: '#ef4444' }}>Fehler: {waStatus.error}</p>}
+            <div className="adm-wa-actions">
+              {(waStatus?.status === 'unpaired' || waStatus?.status === 'disconnected' || waStatus?.status === 'failed') && (
+                <button className="adm-btn adm-btn-primary" onClick={() => waAction('pair')} data-testid="wa-pair-btn"><I n="qr_code_2" /> QR-Code generieren</button>
+              )}
+              {waStatus?.status === 'connected' && (
+                <button className="adm-btn adm-btn-danger" onClick={() => waAction('disconnect')} data-testid="wa-disconnect-btn"><I n="link_off" /> Trennen</button>
+              )}
+              <button className="adm-btn adm-btn-secondary" onClick={() => waAction('reset')} data-testid="wa-reset-btn"><I n="restart_alt" /> Session zurücksetzen</button>
+            </div>
+          </div>
+          {waStatus?.status === 'pairing' && waStatus?.qr_code && (
+            <div className="adm-wa-card adm-wa-qr-card">
+              <h3>QR-Code scannen</h3>
+              <div className="adm-wa-qr-box" data-testid="wa-qr-code">
+                <I n="qr_code_2" />
+                <p className="adm-wa-qr-hint">Öffnen Sie WhatsApp auf Ihrem Telefon &rarr; Verknüpfte Geräte &rarr; Gerät hinzufügen &rarr; QR-Code scannen</p>
+                <p className="adm-wa-qr-note">In der Produktivumgebung erscheint hier der echte QR-Code.</p>
+              </div>
+            </div>
+          )}
+          <div className="adm-wa-card">
+            <h3>Architektur-Hinweis</h3>
+            <div className="adm-wa-arch-info">
+              <p><strong>Schicht A — Official Channel:</strong> WhatsApp Business API / Cloud API wird als Zielarchitektur vorbereitet.</p>
+              <p><strong>Schicht B — QR Bridge (aktuell):</strong> Isolierter Connector für Sofortbetrieb. Austauschbar gegen Official API ohne Rework der Kernlogik.</p>
+              <p><strong>API-First:</strong> Zentrale Messaging-Domain ist kanalunabhängig. WhatsApp, E-Mail, Chat und Portal teilen dieselbe Conversation-/Message-Struktur.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  /* ══════════ CONVERSATIONS VIEW ══════════ */
+  const ConversationsView = () => (
+    <div className="adm-convos" data-testid="admin-conversations">
+      {selectedConvo ? (
+        <div className="adm-convo-detail">
+          <button className="adm-back-btn" onClick={() => setSelectedConvo(null)}><I n="arrow_back" /> Zurück</button>
+          <div className="adm-chat-meta">
+            <span>ID: {selectedConvo.conversation_id}</span>
+            {selectedConvo.contact?.email && <span>Kontakt: {selectedConvo.contact.email}</span>}
+            <span>Kanäle: {(selectedConvo.channels || []).join(', ')}</span>
+            <span>Status: {selectedConvo.status}</span>
+          </div>
+          <div className="adm-chat-messages">
+            {(selectedConvo.messages || []).map((m, i) => (
+              <div key={i} className={`adm-chat-msg ${m.direction === 'inbound' ? 'user' : 'assistant'}`}>
+                <div className="adm-chat-msg-role">{m.direction === 'inbound' ? (m.sender || 'Kunde') : (m.ai_generated ? 'KI' : 'Admin')} <span style={{opacity:.5}}>({m.channel})</span></div>
+                <div className="adm-chat-msg-text">{m.content}</div>
+                <div className="adm-chat-msg-time">{fmtTime(m.timestamp)}</div>
+              </div>
+            ))}
+            {(!selectedConvo.messages || selectedConvo.messages.length === 0) && <div className="adm-empty">Keine Nachrichten</div>}
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="adm-section-header">
+            <h2>Unified Conversations</h2>
+            <span className="adm-count">{conversations.length} aktiv</span>
+          </div>
+          <div className="adm-table-wrap">
+            <table className="adm-table" data-testid="conversations-table">
+              <thead><tr><th>Kontakt</th><th>Kanäle</th><th>Status</th><th>Nachrichten</th><th>Letzte Aktivität</th><th></th></tr></thead>
+              <tbody>
+                {conversations.map(c => (
+                  <tr key={c.conversation_id} className="adm-row-click" onClick={async () => {
+                    const d = await apiFetch(`/api/admin/conversations/${c.conversation_id}`);
+                    if (d) setSelectedConvo(d);
+                  }}>
+                    <td>{c.contact?.email || c.contact?.first_name || '—'}</td>
+                    <td>{(c.channels || []).map(ch => <span key={ch} className="adm-channel-badge">{ch}</span>)}</td>
+                    <td><span className={`adm-status-dot ${c.status}`}></span> {c.status}</td>
+                    <td>{c.message_count}</td>
+                    <td>{fmtTime(c.last_message_at)}</td>
+                    <td><button className="adm-btn-sm"><I n="visibility" /></button></td>
+                  </tr>
+                ))}
+                {conversations.length === 0 && <tr><td colSpan="6" style={{textAlign:'center',padding:'32px',color:'#4a5568'}}>Keine Konversationen</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
   /* ══════════ MAIN LAYOUT ══════════ */
   const navItems = [
     { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
     { id: 'commercial', icon: 'receipt_long', label: 'Commercial' },
     { id: 'leads', icon: 'people', label: 'Leads' },
-    { id: 'chats', icon: 'forum', label: 'Chats' },
+    { id: 'conversations', icon: 'chat', label: 'Kommunikation' },
+    { id: 'chats', icon: 'forum', label: 'AI-Chats' },
+    { id: 'whatsapp', icon: 'smartphone', label: 'WhatsApp' },
     { id: 'timeline', icon: 'timeline', label: 'Timeline' },
     { id: 'calendar', icon: 'calendar_month', label: 'Kalender' },
     { id: 'customers', icon: 'person_search', label: 'Kunden' },
@@ -737,7 +876,7 @@ const Admin = () => {
         <div className="adm-sidebar-logo"><img src="/icon-mark.svg" alt="" width="28" height="28" /><span>NeXify<em>AI</em></span></div>
         <nav className="adm-sidebar-nav">
           {navItems.map(n => (
-            <button key={n.id} className={`adm-nav-item ${view === n.id ? 'active' : ''}`} onClick={() => { setView(n.id); setSelectedBooking(null); setCustDetail(null); setSelectedChat(null); }} data-testid={`nav-${n.id}`}>
+            <button key={n.id} className={`adm-nav-item ${view === n.id ? 'active' : ''}`} onClick={() => { setView(n.id); setSelectedBooking(null); setCustDetail(null); setSelectedChat(null); setSelectedConvo(null); }} data-testid={`nav-${n.id}`}>
               <I n={n.icon} /><span>{n.label}</span>
             </button>
           ))}
@@ -753,7 +892,9 @@ const Admin = () => {
           {view === 'dashboard' && <DashboardView />}
           {view === 'commercial' && <CommercialView />}
           {view === 'leads' && <LeadsView />}
+          {view === 'conversations' && <ConversationsView />}
           {view === 'chats' && <ChatsView />}
+          {view === 'whatsapp' && <WhatsAppView />}
           {view === 'timeline' && <TimelineView />}
           {view === 'calendar' && <CalendarView />}
           {view === 'customers' && <CustomersView />}

@@ -16,6 +16,7 @@ const QUOTE_STATUS = {
 };
 
 const CustomerPortal = () => {
+  useEffect(() => { document.body.classList.add('hide-wa'); return () => document.body.classList.remove('hide-wa'); }, []);
   const params = new URLSearchParams(window.location.search);
   const token = params.get('token');
   const [data, setData] = useState(null);
