@@ -1017,6 +1017,149 @@ def generate_quote_pdf(quote_data: dict) -> bytes:
     return buf.getvalue()
 
 
+def generate_contract_pdf(contract_data: dict, appendices: list = None, evidence: dict = None) -> bytes:
+    """Generate a CI-branded contract PDF with appendices and evidence package."""
+    buf = BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4, topMargin=28 * mm, bottomMargin=28 * mm,
+        leftMargin=20 * mm, rightMargin=20 * mm,
+    )
+    styles = _build_styles()
+    elements = []
+    c_num = contract_data.get("contract_number", "")
+    c_date = contract_data.get("created_at", "")
+    if hasattr(c_date, "strftime"):
+        c_date = c_date.strftime("%d.%m.%Y")
+    elif isinstance(c_date, str) and "T" in c_date:
+        try:
+            from datetime import datetime as _dt
+            c_date = _dt.fromisoformat(c_date.replace("Z", "+00:00")).strftime("%d.%m.%Y")
+        except Exception:
+            pass
+
+    def make_header(canvas_obj, doc_obj):
+        _header_footer(canvas_obj, doc_obj, "Vertrag", c_num, c_date)
+
+    # Title
+    elements.append(Paragraph("Vertrag", styles["BrandTitle"]))
+    elements.append(Paragraph(f"Vertragsnr. {c_num}", styles["BrandSub"]))
+    elements.append(Spacer(1, 12))
+
+    # Customer info
+    cust = contract_data.get("customer", {})
+    elements.append(Paragraph("Vertragspartner", styles["SectionHead"]))
+    cust_info = f"""
+    <b>{cust.get('name', cust.get('company', ''))}</b><br/>
+    {cust.get('company', '')}<br/>
+    E-Mail: {cust.get('email', '')}<br/>
+    """
+    if cust.get("phone"):
+        cust_info += f"Telefon: {cust['phone']}<br/>"
+    elements.append(Paragraph(cust_info, styles["BodyText2"]))
+    elements.append(Spacer(1, 8))
+
+    # Contract terms
+    elements.append(Paragraph("Vertragsgegenstand", styles["SectionHead"]))
+    tier = contract_data.get("tier", "")
+    c_type = contract_data.get("contract_type", "master")
+    desc = contract_data.get("description", f"Vertrag über KI-Agentenleistungen — Tarif {tier}")
+    elements.append(Paragraph(desc, styles["BodyText2"]))
+    elements.append(Spacer(1, 6))
+
+    # Financial summary
+    elements.append(Paragraph("Finanzübersicht", styles["SectionHead"]))
+    total = contract_data.get("total_value", 0)
+    monthly = contract_data.get("monthly_value", 0)
+    fin_data = [
+        ["Position", "Betrag"],
+        ["Gesamtvertragswert (netto)", _fmt_eur(total)],
+    ]
+    if monthly:
+        fin_data.append(["Monatliche Rate (netto)", _fmt_eur(monthly)])
+
+    fin_table = Table(fin_data, colWidths=[110 * mm, 50 * mm])
+    fin_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), CI_DARK),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+        ("GRID", (0, 0), (-1, -1), 0.3, CI_GRAY),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.Color(0.97, 0.97, 0.97)]),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(fin_table)
+    elements.append(Spacer(1, 12))
+
+    # Appendices
+    if appendices:
+        elements.append(Paragraph("Vertragsanlagen", styles["SectionHead"]))
+        for idx, app in enumerate(appendices, 1):
+            elements.append(Paragraph(f"<b>Anlage {idx}: {app.get('title', '')}</b>", styles["BodyText2"]))
+            if app.get("content", {}).get("description"):
+                elements.append(Paragraph(app["content"]["description"], styles["SmallGray"]))
+            if app.get("pricing", {}).get("amount"):
+                elements.append(Paragraph(f"Betrag: {_fmt_eur(app['pricing']['amount'])}", styles["BodyText2"]))
+            elements.append(Spacer(1, 4))
+        elements.append(Spacer(1, 8))
+
+    # Legal modules
+    legal_modules = contract_data.get("legal_modules", [])
+    if legal_modules:
+        elements.append(Paragraph("Rechtsmodule", styles["SectionHead"]))
+        for lm in legal_modules:
+            label = lm if isinstance(lm, str) else lm.get("label", lm.get("key", ""))
+            elements.append(Paragraph(f"• {label}", styles["BodyText2"]))
+        elements.append(Spacer(1, 8))
+
+    # Acceptance status
+    status = contract_data.get("status", "")
+    if status == "accepted":
+        elements.append(Paragraph("Vertragsannahme", styles["SectionHead"]))
+        accepted_at = contract_data.get("accepted_at", "")
+        if hasattr(accepted_at, "strftime"):
+            accepted_at = accepted_at.strftime("%d.%m.%Y %H:%M UTC")
+        elements.append(Paragraph(f"Vertrag digital angenommen am: {accepted_at}", styles["BodyText2"]))
+
+        if evidence:
+            elements.append(Spacer(1, 6))
+            elements.append(Paragraph("Evidenzpaket", styles["SectionHead"]))
+            ev_data = [
+                ["Feld", "Wert"],
+                ["Zeitstempel", str(evidence.get("timestamp", ""))],
+                ["IP-Adresse", evidence.get("ip_address", "")],
+                ["User-Agent", evidence.get("user_agent", "")[:60]],
+                ["Dokumentenhash", evidence.get("document_hash", "")[:32] + "..."],
+                ["Vertragsversion", str(evidence.get("contract_version", 1))],
+                ["Signaturtyp", evidence.get("signature_type", "")],
+            ]
+            ev_table = Table(ev_data, colWidths=[40 * mm, 120 * mm])
+            ev_table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), CI_DARK),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 7.5),
+                ("GRID", (0, 0), (-1, -1), 0.3, CI_GRAY),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ]))
+            elements.append(ev_table)
+
+    # Footer
+    elements.append(Spacer(1, 20))
+    elements.append(Paragraph(
+        f"{COMPANY_DATA['name']} | {COMPANY_DATA['address_nl']['street']}, "
+        f"{COMPANY_DATA['address_nl']['city']} | KvK: {COMPANY_DATA['kvk']} | "
+        f"USt-ID: {COMPANY_DATA['vat_id']}",
+        styles["SmallGray"],
+    ))
+
+    doc.build(elements, onFirstPage=make_header, onLaterPages=make_header)
+    return buf.getvalue()
+
+
+
 def generate_invoice_pdf(invoice_data: dict) -> bytes:
     """Generate a CI-branded invoice PDF"""
     buf = BytesIO()

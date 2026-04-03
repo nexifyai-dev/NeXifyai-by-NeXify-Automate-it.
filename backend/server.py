@@ -1332,7 +1332,7 @@ async def auth_request_magic_link(data: dict, request: Request):
                 magic_link,
                 "Zum Portal"
             )
-            await send_email([email], "Ihr Portalzugang — NeXifyAI", html)
+            await send_email([email], "Ihr Portalzugang — NeXifyAI", html, category="portal_access", ref_id=email)
         except Exception as e:
             logger.error(f"Magic Link E-Mail Fehler: {e}")
     
@@ -2064,7 +2064,7 @@ from commercial import (
     calc_contract, get_tariff, get_next_number,
     create_revolut_order, get_revolut_order,
     generate_access_token, verify_access_token,
-    generate_quote_pdf, generate_invoice_pdf,
+    generate_quote_pdf, generate_invoice_pdf, generate_contract_pdf,
     generate_tariff_sheet_pdf,
     get_commercial_faq,
     SERVICE_CATALOG, BUNDLE_CATALOG, PRODUCT_DESCRIPTIONS,
@@ -2670,6 +2670,8 @@ async def portal_accept_quote(quote_id: str, token: str, request: Request):
                     BIC: {COMM_COMPANY["bank"]["bic"]}<br/>
                     Verwendungszweck: {invoice_number}</p>''',
                 ),
+                category="invoice",
+                ref_id=invoice_number,
             ))
         except Exception as e:
             logger.error(f"Acceptance email error: {e}")
@@ -3281,7 +3283,7 @@ async def send_invoice_reminder(invoice_id: str, data: dict = None, current_user
                 <p style="margin:0;color:#ffb599;font-weight:600;">{invoice.get("totals", {}).get("gross", 0):,.2f} EUR</p></div>
                 <p>IBAN: {COMM_COMPANY["bank"]["iban"]}<br/>BIC: {COMM_COMPANY["bank"]["bic"]}<br/>Verwendungszweck: {invoice.get("invoice_number", "")}</p>'''
             )
-            await send_email([email], subjects.get(reminder_type, ""), html)
+            await send_email([email], subjects.get(reminder_type, ""), html, category="reminder", ref_id=invoice_id)
         except Exception as e:
             logger.error(f"Reminder email error: {e}")
 
@@ -5528,7 +5530,7 @@ async def send_contract(contract_id: str, data: dict = None, current_user: dict 
                 contract_link,
                 "Vertrag prüfen"
             )
-            await send_email([email], f"Ihr Vertrag {contract.get('contract_number', '')} — NeXifyAI", html)
+            await send_email([email], f"Ihr Vertrag {contract.get('contract_number', '')} — NeXifyAI", html, category="contract", ref_id=contract_id)
         except Exception as e:
             logger.error(f"Contract email error: {e}")
     await db.timeline_events.insert_one(create_timeline_event(
@@ -5549,6 +5551,37 @@ async def get_contract_evidence(contract_id: str, current_user: dict = Depends(g
 
 
 # Customer contract endpoints
+
+@app.post("/api/admin/contracts/{contract_id}/generate-pdf")
+async def admin_generate_contract_pdf(contract_id: str, current_user: dict = Depends(get_current_admin)):
+    """Vertrags-PDF generieren und archivieren."""
+    contract = await db.contracts.find_one({"contract_id": contract_id}, {"_id": 0})
+    if not contract:
+        raise HTTPException(404, "Vertrag nicht gefunden")
+    appendices = []
+    async for a in db.contract_appendices.find({"contract_id": contract_id}, {"_id": 0}).sort("created_at", 1):
+        appendices.append(a)
+    evidence = await db.contract_evidence.find_one(
+        {"contract_id": contract_id, "action": "accepted"}, {"_id": 0}
+    )
+    try:
+        pdf_bytes = generate_contract_pdf(contract, appendices=appendices, evidence=evidence)
+        await db.documents.update_one(
+            {"ref_id": contract_id, "type": "contract"},
+            {"$set": {
+                "ref_id": contract_id, "type": "contract",
+                "number": contract.get("contract_number", ""),
+                "pdf_data": pdf_bytes,
+                "version": contract.get("version", 1),
+                "generated_at": utcnow().isoformat(),
+            }},
+            upsert=True,
+        )
+        return {"generated": True, "contract_id": contract_id, "size_bytes": len(pdf_bytes)}
+    except Exception as e:
+        raise HTTPException(500, f"PDF-Generierung fehlgeschlagen: {str(e)}")
+
+
 @app.get("/api/customer/contracts")
 async def customer_contracts(current_user: dict = Depends(get_current_customer)):
     """Kundenverträge anzeigen."""
@@ -5708,6 +5741,30 @@ async def customer_accept_contract(contract_id: str, data: dict, request: Reques
             source="portal", source_ref=contract_id,
             verification_status="verifiziert",
         )
+    # PDF-Archivierung (P4: persistente Vertrags-PDF mit Evidenzpaket)
+    try:
+        appendices = []
+        async for a in db.contract_appendices.find({"contract_id": contract_id}, {"_id": 0}).sort("created_at", 1):
+            appendices.append(a)
+        updated_contract = await db.contracts.find_one({"contract_id": contract_id}, {"_id": 0})
+        pdf_bytes = generate_contract_pdf(updated_contract, appendices=appendices, evidence=evidence)
+        await db.documents.update_one(
+            {"ref_id": contract_id, "type": "contract"},
+            {"$set": {
+                "ref_id": contract_id,
+                "type": "contract",
+                "number": contract.get("contract_number", ""),
+                "pdf_data": pdf_bytes,
+                "version": contract.get("version", 1),
+                "generated_at": utcnow().isoformat(),
+                "evidence_id": evidence["evidence_id"],
+            }},
+            upsert=True,
+        )
+        logger.info(f"Contract PDF archived: {contract_id}")
+    except Exception as e:
+        logger.error(f"Contract PDF generation error: {e}")
+
     evidence.pop("_id", None)
     return {"accepted": True, "evidence_id": evidence["evidence_id"], "status": "accepted"}
 
