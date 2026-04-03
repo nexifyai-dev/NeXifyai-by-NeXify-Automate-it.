@@ -1080,6 +1080,43 @@ def generate_invoice_pdf(invoice_data: dict) -> bytes:
     elements.append(item_table)
     elements.append(Spacer(1, 6 * mm))
 
+    # Rabatt und Sonderpositionen (aus Quellangebot)
+    discount = invoice_data.get("discount", {})
+    discount_pct = discount.get("percent", 0)
+    special_items = invoice_data.get("special_items", [])
+    
+    if discount_pct > 0 or special_items:
+        adj_rows = []
+        if discount_pct > 0:
+            reason = discount.get("reason", "")
+            d_amount = totals.get("discount_amount_eur", round(totals.get("net", 0) * discount_pct / 100, 2))
+            desc = f"Rabatt ({discount_pct} %)"
+            if reason:
+                desc += f" — {reason}"
+            adj_rows.append([
+                Paragraph(f"<font color='#10b981'>{desc}</font>", styles["BodyText2"]),
+                Paragraph(f"<font color='#10b981'>-{_fmt_eur(d_amount)}</font>", styles["RightAligned"]),
+            ])
+        for si in special_items:
+            si_desc = si.get("description", "Sonderposition")
+            si_amt = si.get("amount_eur", 0)
+            si_type = si.get("type", "add")
+            prefix = "+" if si_type == "add" else "-"
+            color = "#3b82f6" if si_type == "add" else "#f59e0b"
+            adj_rows.append([
+                Paragraph(f"<font color='{color}'>{si_desc}</font>", styles["BodyText2"]),
+                Paragraph(f"<font color='{color}'>{prefix}{_fmt_eur(si_amt)}</font>", styles["RightAligned"]),
+            ])
+        if adj_rows:
+            adj_table = Table(adj_rows, colWidths=[doc.width * 0.65, doc.width * 0.35])
+            adj_table.setStyle(TableStyle([
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ]))
+            elements.append(adj_table)
+            elements.append(Spacer(1, 4 * mm))
+
     total_data = [
         [Paragraph("Nettobetrag", styles["BodyText2"]),
          Paragraph(_fmt_eur(totals.get("net", 0)), styles["RightAligned"])],

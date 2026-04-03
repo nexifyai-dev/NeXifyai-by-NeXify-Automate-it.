@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './UnifiedLogin.css';
 
 const API = process.env.REACT_APP_BACKEND_URL;
+const I = ({ n, c }) => <span className={`material-symbols-outlined ${c || ''}`}>{n}</span>;
 
 const UnifiedLogin = () => {
   const [step, setStep] = useState('email'); // email | admin_password | magic_link_sent | verifying
@@ -133,8 +134,12 @@ const UnifiedLogin = () => {
 
   return (
     <div className="ul-page" data-testid="unified-login-page">
+      <div className="ul-top-bar">
+        <a href="/" className="ul-home-link" data-testid="login-home-link">NeXifyAI</a>
+      </div>
       <div className="ul-card" data-testid="unified-login-card">
-        <div className="ul-logo">NeXifyAI</div>
+        <div className="ul-logo">Anmelden</div>
+        <p className="ul-card-sub">Admin-Bereich oder Kundenportal</p>
 
         {step === 'verifying' && (
           <div className="ul-step" data-testid="login-verifying">
@@ -145,8 +150,6 @@ const UnifiedLogin = () => {
 
         {step === 'email' && (
           <div className="ul-step" data-testid="login-email-step">
-            <h2>Anmelden</h2>
-            <p className="ul-sub">Admin oder Kundenportal — ein Einstieg.</p>
             <div className="ul-field">
               <label>E-Mail-Adresse</label>
               <input
@@ -163,7 +166,7 @@ const UnifiedLogin = () => {
 
         {step === 'admin_password' && (
           <div className="ul-step" data-testid="login-password-step">
-            <h2>Admin-Anmeldung</h2>
+            <div className="ul-role-badge"><span className="ul-role-icon"><I n="admin_panel_settings" /></span> Interner Zugang</div>
             <p className="ul-sub">{email}</p>
             <div className="ul-field">
               <label>Passwort</label>
@@ -182,17 +185,26 @@ const UnifiedLogin = () => {
 
         {step === 'magic_link_sent' && (
           <div className="ul-step" data-testid="login-magic-link-sent">
-            <div className="ul-check-icon">✓</div>
+            <div className="ul-check-icon"><I n="mark_email_read" /></div>
             <h2>Zugangslink gesendet</h2>
-            <p className="ul-info">Wir haben Ihnen einen sicheren Zugangslink an <strong>{email}</strong> gesendet. Bitte prüfen Sie Ihr Postfach.</p>
-            <p className="ul-muted">Der Link ist 24 Stunden gültig.</p>
+            <p className="ul-info">Wir haben einen sicheren Zugangslink an <strong>{email}</strong> gesendet.</p>
+            <p className="ul-muted">Der Link ist 24 Stunden gültig. Bitte prüfen Sie auch Ihren Spam-Ordner.</p>
             <button className="ul-link" onClick={() => { setStep('email'); setError(''); }}>Andere E-Mail verwenden</button>
           </div>
         )}
 
         {error && <div className="ul-error" data-testid="login-error">{error}</div>}
       </div>
-      <div className="ul-footer">NeXifyAI — nexifyai.de</div>
+      <div className="ul-legal" data-testid="login-legal-links">
+        <a href="/">Startseite</a>
+        <span className="ul-dot" />
+        <a href="/impressum">Impressum</a>
+        <span className="ul-dot" />
+        <a href="/datenschutz">Datenschutz</a>
+        <span className="ul-dot" />
+        <a href="/agb">AGB</a>
+      </div>
+      <div className="ul-footer">nexifyai.de</div>
     </div>
   );
 };

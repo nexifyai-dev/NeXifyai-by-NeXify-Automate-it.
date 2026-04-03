@@ -15,17 +15,18 @@ import Booking from './components/sections/BookingModal';
 import './App.css';
 
 /* ═══════════ NAVIGATION ═══════════ */
-const Nav = ({ onChat, t }) => {
+const Nav = ({ onChat, t, lang }) => {
   const [mob, setMob] = useState(false);
   const [sc, setSc] = useState(false);
   useEffect(() => { const h = () => setSc(window.scrollY > 50); window.addEventListener('scroll', h, { passive: true }); return () => window.removeEventListener('scroll', h); }, []);
   const links = [
     { l: t.nav.leistungen, h: '#loesungen' }, { l: t.nav.usecases, h: '#use-cases' },
     { l: t.nav.appdev, h: '#app-dev' }, { l: t.nav.integrationen, h: '#integrationen' },
-    { l: t.nav.tarife, h: '#preise' }, { l: t.lang === 'en' ? 'SEO' : 'KI-SEO', h: '#ki-seo' }, { l: t.lang === 'en' ? 'Services' : t.lang === 'nl' ? 'Diensten' : 'Services', h: '#services' }, { l: t.nav.faq, h: '#faq' }
+    { l: t.nav.tarife, h: '#preise' }, { l: lang === 'en' ? 'SEO' : 'KI-SEO', h: '#ki-seo' }, { l: lang === 'en' ? 'Services' : lang === 'nl' ? 'Diensten' : 'Services', h: '#services' }, { l: t.nav.faq, h: '#faq' }
   ];
   const go = (h) => { setMob(false); track('nav_click', { target: h }); };
-  const ctaLabel = t.lang === 'en' ? 'Start Consultation' : t.lang === 'nl' ? 'Advies starten' : 'Beratung starten';
+  const ctaLabel = lang === 'en' ? 'Start Consultation' : lang === 'nl' ? 'Advies starten' : 'Beratung starten';
+  const loginLabel = lang === 'en' ? 'Login' : lang === 'nl' ? 'Inloggen' : 'Anmelden';
   return (
     <nav className={`nav ${sc ? 'scrolled' : ''}`} role="navigation" data-testid="main-nav">
       <div className="container nav-inner">
@@ -35,6 +36,7 @@ const Nav = ({ onChat, t }) => {
         </div>
         <div className="nav-actions">
           <LanguageSwitcher />
+          <a href="/login" className="nav-login-link" data-testid="nav-login-btn" onClick={() => track('nav_click', { target: 'login' })}><I n="login" /><span>{loginLabel}</span></a>
           <button className="btn btn-primary nav-cta" onClick={() => { onChat(); track('cta_click', { loc: 'nav' }); }} data-testid="nav-book-btn">{ctaLabel}</button>
           <button className="nav-toggle" onClick={() => setMob(!mob)} aria-label={mob ? t.nav.menuClose : t.nav.menuOpen} aria-expanded={mob} data-testid="nav-toggle"><I n={mob ? 'close' : 'menu'} /></button>
         </div>
@@ -42,6 +44,7 @@ const Nav = ({ onChat, t }) => {
           {mob && (
             <motion.div className="nav-mobile" role="menu" data-testid="nav-mobile-menu" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               {links.map(l => <a key={l.h} href={l.h} role="menuitem" onClick={() => go(l.h)}>{l.l}</a>)}
+              <a href="/login" className="nav-mobile-login" onClick={() => { setMob(false); track('nav_click', { target: 'login' }); }}><I n="login" /> {loginLabel}</a>
               <LanguageSwitcher mobile />
               <button className="btn btn-primary nav-mobile-cta" onClick={() => { setMob(false); onChat(); }}>{ctaLabel}</button>
             </motion.div>
@@ -53,9 +56,9 @@ const Nav = ({ onChat, t }) => {
 };
 
 /* ═══════════ HERO ═══════════ */
-const Hero = ({ onChat, t }) => {
+const Hero = ({ onChat, t, lang }) => {
   useEffect(() => { track('page_view', { section: 'hero' }); }, []);
-  const ctaLabel = t.lang === 'en' ? 'Start Consultation' : t.lang === 'nl' ? 'Advies starten' : 'Beratung starten';
+  const ctaLabel = lang === 'en' ? 'Start Consultation' : lang === 'nl' ? 'Advies starten' : 'Beratung starten';
   return (
     <section id="hero" className="hero" aria-labelledby="hero-t" data-testid="hero-section">
       <HeroScene />
@@ -155,7 +158,7 @@ const UseCases = ({ t }) => (
 );
 
 /* ═══════════ APP DEVELOPMENT ═══════════ */
-const AppDev = ({ onChat, t }) => (
+const AppDev = ({ onChat, t, lang }) => (
   <AnimSection id="app-dev" className="section bg-s2" aria-labelledby="appdev-t" data-testid="appdev-section">
     <div className="container">
       <motion.header className="section-header" variants={fadeUp}>
@@ -179,7 +182,7 @@ const AppDev = ({ onChat, t }) => (
               <div key={i} className="appdev-metric"><div className="appdev-metric-val">{m.val}</div><div className="appdev-metric-label">{m.label}</div></div>
             ))}
           </div>
-          <button className="btn btn-primary btn-glow" onClick={() => { onChat(t.lang === 'en' ? 'I need an app developed' : t.lang === 'nl' ? 'Ik heb een app nodig' : 'Ich brauche eine App-Entwicklung'); track('cta_click', { loc: 'appdev' }); }} data-testid="appdev-book-btn">{t.lang === 'en' ? 'Start Consultation' : t.lang === 'nl' ? 'Advies starten' : 'Beratung starten'} <I n="forum" /></button>
+          <button className="btn btn-primary btn-glow" onClick={() => { onChat(lang === 'en' ? 'I need an app developed' : lang === 'nl' ? 'Ik heb een app nodig' : 'Ich brauche eine App-Entwicklung'); track('cta_click', { loc: 'appdev' }); }} data-testid="appdev-book-btn">{lang === 'en' ? 'Start Consultation' : lang === 'nl' ? 'Advies starten' : 'Beratung starten'} <I n="forum" /></button>
         </motion.div>
       </div>
     </div>
@@ -239,7 +242,7 @@ const Governance = ({ t }) => (
 );
 
 /* ═══════════ PRICING ═══════════ */
-const Pricing = ({ onChat, t }) => (
+const Pricing = ({ onChat, t, lang }) => (
   <AnimSection id="preise" className="section bg-dark" aria-labelledby="price-t" data-testid="pricing-section">
     <div className="container">
       <motion.header className="section-header centered" variants={fadeUp}>
@@ -254,7 +257,7 @@ const Pricing = ({ onChat, t }) => (
             <div className="price-name">{pl.name}</div>
             <div className="price-val">{pl.price}<span className="price-period"> {pl.period}</span></div>
             <ul className="price-features">{pl.features.map((f, fi) => <li key={fi} className="price-feat"><I n="check_circle" c="price-check" />{f}</li>)}</ul>
-            <button className={`btn ${pl.hl ? 'btn-primary btn-glow' : 'btn-secondary'} price-cta`} onClick={() => { onChat(t.lang === 'en' ? `I'm interested in ${pl.name}` : t.lang === 'nl' ? `Ik ben geïnteresseerd in ${pl.name}` : `Ich interessiere mich für ${pl.name}`); track('pricing_click', { plan: pl.name }); }} data-testid={`price-cta-${pl.name.toLowerCase()}`}>{pl.cta}</button>
+            <button className={`btn ${pl.hl ? 'btn-primary btn-glow' : 'btn-secondary'} price-cta`} onClick={() => { onChat(lang === 'en' ? `I'm interested in ${pl.name}` : lang === 'nl' ? `Ik ben geïnteresseerd in ${pl.name}` : `Ich interessiere mich für ${pl.name}`); track('pricing_click', { plan: pl.name }); }} data-testid={`price-cta-${pl.name.toLowerCase()}`}>{pl.cta}</button>
           </motion.article>
         ))}
       </div>
@@ -295,7 +298,7 @@ const FAQ = ({ t }) => {
 };
 
 /* ═══════════ CONTACT ═══════════ */
-const Contact = ({ onChat, t }) => {
+const Contact = ({ onChat, t, lang }) => {
   const [form, setForm] = useState({ vorname: '', nachname: '', email: '', telefon: '', unternehmen: '', nachricht: '', _hp: '' });
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
@@ -322,7 +325,7 @@ const Contact = ({ onChat, t }) => {
             <div className="contact-benefits">
               {t.contact.benefits.map((b, i) => <div key={i} className="contact-benefit"><I n="verified" /><span>{b}</span></div>)}
             </div>
-            <button className="btn btn-primary btn-lg btn-glow contact-cta-btn" onClick={() => { onChat(); track('cta_click', { loc: 'contact' }); }} data-testid="contact-book-btn">{t.lang === 'en' ? 'Start Consultation' : t.lang === 'nl' ? 'Advies starten' : 'Beratung starten'} <I n="forum" /></button>
+            <button className="btn btn-primary btn-lg btn-glow contact-cta-btn" onClick={() => { onChat(); track('cta_click', { loc: 'contact' }); }} data-testid="contact-book-btn">{lang === 'en' ? 'Start Consultation' : lang === 'nl' ? 'Advies starten' : 'Beratung starten'} <I n="forum" /></button>
           </motion.div>
           <motion.div className="contact-form-box" variants={fadeUp}>
             <form onSubmit={submit} className="contact-form" noValidate data-testid="contact-form">
@@ -370,8 +373,8 @@ const Ft = ({ onCookieSettings, t, lang }) => {
             <ul className="footer-links">
               <li><a href="#loesungen">{t.nav.leistungen}</a></li><li><a href="#use-cases">{t.nav.usecases}</a></li>
               <li><a href="#app-dev">{t.nav.appdev}</a></li><li><a href="#integrationen">{t.nav.integrationen}</a></li>
-              <li><a href="#preise">{t.nav.tarife}</a></li><li><a href="#ki-seo">{t.lang === 'en' ? 'SEO' : 'KI-SEO'}</a></li><li><a href="#services">{t.lang === 'en' ? 'Services' : t.lang === 'nl' ? 'Diensten' : 'Services'}</a></li>
-              <li><a href="#trust">{t.lang === 'en' ? 'Trust' : t.lang === 'nl' ? 'Vertrouwen' : 'Vertrauen'}</a></li><li><a href="#kontakt">{t.footer.kontakt}</a></li>
+              <li><a href="#preise">{t.nav.tarife}</a></li><li><a href="#ki-seo">{lang === 'en' ? 'SEO' : 'KI-SEO'}</a></li><li><a href="#services">{lang === 'en' ? 'Services' : lang === 'nl' ? 'Diensten' : 'Services'}</a></li>
+              <li><a href="#trust">{lang === 'en' ? 'Trust' : lang === 'nl' ? 'Vertrouwen' : 'Vertrauen'}</a></li><li><a href="#kontakt">{t.footer.kontakt}</a></li>
             </ul>
           </nav>
           <nav className="footer-nav-col">
@@ -477,21 +480,21 @@ function App() {
     <div className="app" data-testid="app-root">
       <SEOHead lang={lang} page="home" />
       <a href="#loesungen" className="skip-link">Skip to content</a>
-      <Nav onChat={openChat} t={t} />
+      <Nav onChat={openChat} t={t} lang={lang} />
       <main id="main-content">
-        <Hero onChat={openChat} t={t} />
+        <Hero onChat={openChat} t={t} lang={lang} />
         <Solutions t={t} />
         <UseCases t={t} />
-        <AppDev onChat={openChat} t={t} />
+        <AppDev onChat={openChat} t={t} lang={lang} />
         <Process t={t} />
         <Integrations onChat={openChat} t={t} />
         <Governance t={t} />
-        <Pricing onChat={openChat} t={t} />
+        <Pricing onChat={openChat} t={t} lang={lang} />
         <SEOProductSection onChat={openChat} />
         <ServicesAll onChat={openChat} />
         <TrustSection t={t} />
         <FAQ t={t} />
-        <Contact onChat={openChat} t={t} />
+        <Contact onChat={openChat} t={t} lang={lang} />
       </main>
       <Ft onCookieSettings={openCookieSettings} t={t} lang={lang} />
       <WhatsAppButton />

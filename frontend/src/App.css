@@ -73,6 +73,13 @@ h3{font-size:1.125rem;font-weight:700}
 .nav-link:hover{color:#fff}
 .nav-link:hover::after{width:100%}
 .nav-actions{display:flex;align-items:center;gap:10px}
+.nav-login-link{display:flex;align-items:center;gap:5px;font-family:var(--f-display);font-size:.8125rem;font-weight:600;color:var(--nx-muted);transition:color 200ms ease;padding:6px 12px;border-radius:6px;border:1px solid transparent}
+.nav-login-link:hover{color:#fff;border-color:rgba(255,255,255,0.08)}
+.nav-login-link .material-symbols-outlined{font-size:16px}
+@media(max-width:767px){.nav-login-link span{display:none}.nav-login-link{padding:8px;border:1px solid rgba(255,255,255,0.06)}}
+.nav-mobile-login{display:flex;align-items:center;gap:8px;color:var(--nx-muted);font-size:.9375rem;font-weight:500;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.nav-mobile-login .material-symbols-outlined{font-size:18px}
+.nav-mobile-login:hover{color:#fff}
 .nav-cta{display:none;border-radius:6px}
 @media(min-width:768px){.nav-cta{display:inline-flex}}
 .nav-toggle{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid var(--nx-border-h);color:#fff;backdrop-filter:blur(8px);border-radius:6px}

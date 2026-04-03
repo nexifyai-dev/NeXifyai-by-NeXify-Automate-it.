@@ -1,0 +1,79 @@
+{
+  "summary": "Iteration 24 testing completed successfully. All P0/P1/P2 features tested and working. Fixed a bug where login label i18n was not working (t.lang was undefined, changed to use lang prop). Admin login via /login → /admin redirect now works correctly after fixing token storage sync between UnifiedLogin and Admin pages.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration24.py",
+    "/app/test_reports/pytest/pytest_results_iter24.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/frontend/src/App.js - Fixed t.lang → lang prop for i18n login labels in Nav, Hero, AppDev, Pricing, Contact, Footer components",
+    "/app/frontend/src/pages/Admin.js - Added nx_auth localStorage check for token sync with UnifiedLogin"
+  ],
+  "success_rate": {
+    "backend": "100% (11/11 tests passed)",
+    "frontend": "100% (12/12 tests passed)"
+  },
+  "test_credentials": {
+    "admin": "p.courbois@icloud.com / NxAi#Secure2026!",
+    "customer": "max@testfirma.de (magic link flow)"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 24 features all working: 1) Login button 'Anmelden' in public header (desktop+mobile+burger menu) with i18n (DE/NL/EN), 2) /login page with home-link, legal links, role detection (admin→password, customer→magic link, unknown→error), 3) Admin login via /login redirects to /admin panel, 4) Role separation (customer JWT blocked from admin endpoints with 403), 5) Invoice PDF discount/special_items code verified. Fixed bugs: t.lang→lang prop for i18n, nx_auth token sync in Admin.js.",
+  "features_tested": {
+    "P0_login_button_header": {
+      "desktop": "✅ Login button 'Anmelden' with icon visible between language switcher and CTA",
+      "mobile_header": "✅ Login icon visible in mobile header",
+      "mobile_burger": "✅ 'Anmelden' with icon in burger menu",
+      "i18n_de": "✅ 'Anmelden'",
+      "i18n_nl": "✅ 'Inloggen'",
+      "i18n_en": "✅ 'Login'"
+    },
+    "P1_login_page": {
+      "home_link": "✅ NeXifyAI home-link at top left (data-testid=login-home-link)",
+      "legal_links": "✅ Startseite, Impressum, Datenschutz, AGB at bottom",
+      "admin_flow": "✅ Admin email → password step with 'Interner Zugang' badge → login → redirect to /admin",
+      "customer_flow": "✅ Customer email → magic link sent step with 'Zugangslink gesendet'",
+      "unknown_email": "✅ Error message 'Kein Konto für diese E-Mail gefunden'"
+    },
+    "P2_auth_ux": {
+      "admin_panel_functional": "✅ Admin panel loads with sidebar and dashboard after login",
+      "role_separation": "✅ Customer JWT blocked from admin endpoints with 403"
+    },
+    "P4_invoice_pdf": {
+      "discount_code": "✅ Verified in commercial.py lines 1084-1099",
+      "special_items_code": "✅ Verified in commercial.py lines 1100-1109"
+    },
+    "mobile_floating": {
+      "cookie_visible": "✅ CSS: body.cookie-visible .chat-trigger{bottom:120px}",
+      "cookie_hidden": "✅ CSS: .chat-trigger{bottom:24px}"
+    },
+    "customer_portal": {
+      "logout_button": "✅ data-testid=portal-logout",
+      "login_link_on_error": "✅ data-testid=portal-login-link"
+    }
+  },
+  "bugs_fixed_by_testing_agent": [
+    {
+      "file": "/app/frontend/src/App.js",
+      "issue": "Login label i18n not working - t.lang was undefined",
+      "fix": "Changed Nav, Hero, AppDev, Pricing, Contact, Footer components to receive 'lang' prop and use it instead of t.lang"
+    },
+    {
+      "file": "/app/frontend/src/pages/Admin.js",
+      "issue": "Admin panel showing login form after /login redirect because token was stored in nx_auth but Admin.js only checked nx_admin_token",
+      "fix": "Added check for nx_auth localStorage in Admin.js token initialization"
+    }
+  ]
+}
