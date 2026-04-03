@@ -49,6 +49,9 @@ const Admin = () => {
   const [quotes, setQuotes] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [commStats, setCommStats] = useState(null);
+  const [chatSessions, setChatSessions] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [timeline, setTimeline] = useState([]);
   const [quoteForm, setQuoteForm] = useState({ tier: 'starter', customer_name: '', customer_email: '', customer_company: '', customer_country: 'DE', customer_industry: '', use_case: '', notes: '' });
   const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [commBusy, setCommBusy] = useState('');
@@ -105,6 +108,18 @@ const Admin = () => {
     apiFetch('/api/admin/commercial/stats').then(d => d && setCommStats(d));
   }, [token, view, apiFetch]);
 
+  /* Load chat sessions */
+  useEffect(() => {
+    if (!token || view !== 'chats') return;
+    apiFetch('/api/admin/chat-sessions?limit=30').then(d => d && setChatSessions(d.sessions || []));
+  }, [token, view, apiFetch]);
+
+  /* Load timeline */
+  useEffect(() => {
+    if (!token || view !== 'timeline') return;
+    apiFetch('/api/admin/timeline?limit=50').then(d => d && setTimeline(d.events || []));
+  }, [token, view, apiFetch]);
+
   /* ── Update lead status ── */
   const updateLead = async (id, status, notes) => {
     await apiFetch(`/api/admin/leads/${id}`, { method: 'PATCH', body: JSON.stringify({ status, notes }) });
@@ -147,6 +162,12 @@ const Admin = () => {
   const loadCustomerDetail = async (email) => {
     const d = await apiFetch(`/api/admin/customers/${encodeURIComponent(email)}`);
     if (d) setCustDetail({ email, ...d });
+  };
+
+  /* ── Load chat detail ── */
+  const loadChatDetail = async (sessionId) => {
+    const d = await apiFetch(`/api/admin/chat-sessions/${sessionId}`);
+    if (d) setSelectedChat(d);
   };
 
   const logout = () => { setToken(''); localStorage.removeItem('nx_admin_token'); };
@@ -612,11 +633,100 @@ const Admin = () => {
     </div>
   );
 
+  /* ══════════ CHATS VIEW ══════════ */
+  const ChatsView = () => (
+    <div className="adm-chats" data-testid="admin-chats">
+      {selectedChat ? (
+        <div className="adm-chat-detail">
+          <button className="adm-back-btn" onClick={() => setSelectedChat(null)}><I n="arrow_back" /> Zurück</button>
+          <div className="adm-chat-meta">
+            <span>Session: {selectedChat.session_id}</span>
+            {selectedChat.customer_email && <span>Kunde: {selectedChat.customer_email}</span>}
+            <span>Erstellt: {fmtTime(selectedChat.created_at)}</span>
+          </div>
+          {selectedChat.qualification && Object.keys(selectedChat.qualification).length > 0 && (
+            <div className="adm-chat-qual">
+              <h4>Qualifizierung</h4>
+              {Object.entries(selectedChat.qualification).map(([k, v]) => (
+                <div key={k} className="adm-qual-item"><strong>{k}:</strong> {String(v)}</div>
+              ))}
+            </div>
+          )}
+          <div className="adm-chat-messages">
+            {(selectedChat.messages || []).map((m, i) => (
+              <div key={i} className={`adm-chat-msg ${m.role}`}>
+                <div className="adm-chat-msg-role">{m.role === 'user' ? 'Kunde' : 'KI'}</div>
+                <div className="adm-chat-msg-text">{m.content}</div>
+                {m.ts && <div className="adm-chat-msg-time">{typeof m.ts === 'number' ? new Date(m.ts).toLocaleTimeString('de-DE') : m.ts}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="adm-section-header">
+            <h2>Chat-Sessions</h2>
+            <span className="adm-count">{chatSessions.length} Sessions</span>
+          </div>
+          <div className="adm-table-wrap">
+            <table className="adm-table" data-testid="chats-table">
+              <thead><tr><th>Session</th><th>Kunde</th><th>Nachrichten</th><th>Letzte Nachricht</th><th>Datum</th><th></th></tr></thead>
+              <tbody>
+                {chatSessions.map(s => (
+                  <tr key={s.session_id} className="adm-row-click" onClick={() => loadChatDetail(s.session_id)}>
+                    <td style={{fontFamily:'monospace',fontSize:'11px'}}>{s.session_id.slice(0,16)}</td>
+                    <td>{s.customer_email || '—'}</td>
+                    <td>{s.message_count}</td>
+                    <td style={{maxWidth:'200px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{s.last_message}</td>
+                    <td>{fmtTime(s.created_at)}</td>
+                    <td><button className="adm-btn-sm"><I n="visibility" /></button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  /* ══════════ TIMELINE VIEW ══════════ */
+  const EVENT_ICONS = {
+    offer_generated: 'description', offer_sent: 'send', offer_opened: 'visibility',
+    offer_accepted: 'check_circle', offer_declined: 'cancel', offer_revision_requested: 'edit',
+    invoice_sent: 'receipt', payment_completed: 'paid', booking_created: 'event',
+    contact_created: 'person_add', lead_created: 'group_add',
+  };
+  const TimelineView = () => (
+    <div className="adm-timeline" data-testid="admin-timeline">
+      <div className="adm-section-header">
+        <h2>Activity Timeline</h2>
+        <span className="adm-count">{timeline.length} Events</span>
+      </div>
+      <div className="adm-timeline-list">
+        {timeline.map((ev, i) => (
+          <div key={i} className="adm-timeline-item">
+            <div className="adm-timeline-icon"><I n={EVENT_ICONS[ev.event] || 'circle'} /></div>
+            <div className="adm-timeline-content">
+              <div className="adm-timeline-event">{ev.event}</div>
+              {ev.ref_id && <div className="adm-timeline-ref">Ref: {ev.ref_id}</div>}
+              <div className="adm-timeline-actor">{ev.actor || '—'}</div>
+            </div>
+            <div className="adm-timeline-time">{fmtTime(ev.timestamp)}</div>
+          </div>
+        ))}
+        {timeline.length === 0 && <div className="adm-empty">Keine Events vorhanden</div>}
+      </div>
+    </div>
+  );
+
   /* ══════════ MAIN LAYOUT ══════════ */
   const navItems = [
     { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
     { id: 'commercial', icon: 'receipt_long', label: 'Commercial' },
     { id: 'leads', icon: 'people', label: 'Leads' },
+    { id: 'chats', icon: 'forum', label: 'Chats' },
+    { id: 'timeline', icon: 'timeline', label: 'Timeline' },
     { id: 'calendar', icon: 'calendar_month', label: 'Kalender' },
     { id: 'customers', icon: 'person_search', label: 'Kunden' },
   ];
@@ -627,7 +737,7 @@ const Admin = () => {
         <div className="adm-sidebar-logo"><img src="/icon-mark.svg" alt="" width="28" height="28" /><span>NeXify<em>AI</em></span></div>
         <nav className="adm-sidebar-nav">
           {navItems.map(n => (
-            <button key={n.id} className={`adm-nav-item ${view === n.id ? 'active' : ''}`} onClick={() => { setView(n.id); setSelectedBooking(null); setCustDetail(null); }} data-testid={`nav-${n.id}`}>
+            <button key={n.id} className={`adm-nav-item ${view === n.id ? 'active' : ''}`} onClick={() => { setView(n.id); setSelectedBooking(null); setCustDetail(null); setSelectedChat(null); }} data-testid={`nav-${n.id}`}>
               <I n={n.icon} /><span>{n.label}</span>
             </button>
           ))}
@@ -643,6 +753,8 @@ const Admin = () => {
           {view === 'dashboard' && <DashboardView />}
           {view === 'commercial' && <CommercialView />}
           {view === 'leads' && <LeadsView />}
+          {view === 'chats' && <ChatsView />}
+          {view === 'timeline' && <TimelineView />}
           {view === 'calendar' && <CalendarView />}
           {view === 'customers' && <CustomersView />}
         </div>

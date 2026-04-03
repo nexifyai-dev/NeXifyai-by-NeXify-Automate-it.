@@ -5,7 +5,7 @@ import { useLanguage } from '../../i18n/LanguageContext';
 import { INTEGRATION_CATEGORIES, getFeaturedDetail } from '../../data/integrations';
 import { AnimSection, I, fadeUp, stagger, scaleIn, track } from '../shared';
 
-const Integrations = ({ onBook, t }) => {
+const Integrations = ({ onChat, t }) => {
   const { lang } = useLanguage();
   const popularSlugs = ['salesforce', 'hubspot', 'sap', 'datev', 'slack', 'aws', 'shopify', 'openai', 'stripe'];
   const popularItems = popularSlugs.map(s => {
@@ -106,7 +106,7 @@ const Integrations = ({ onBook, t }) => {
               <h3>{lb.customTitle}</h3>
               <p>{lb.customDesc}</p>
             </div>
-            <button className="btn btn-primary btn-glow" onClick={() => { onBook(); track('cta_click', { loc: 'integrations_custom' }); }} data-testid="integ-custom-cta-btn">
+            <button className="btn btn-primary btn-glow" onClick={() => { onChat(lb.customCta); track('cta_click', { loc: 'integrations_custom' }); }} data-testid="integ-custom-cta-btn">
               {lb.customCta} <I n="arrow_forward" />
             </button>
           </div>

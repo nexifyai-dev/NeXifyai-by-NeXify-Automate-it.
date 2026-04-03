@@ -4,7 +4,7 @@ import { useLanguage } from '../../i18n/LanguageContext';
 import { FULL_SERVICES, BUNDLES } from '../../data/products';
 import { API, AnimSection, I, fadeUp, stagger, scaleIn, track } from '../shared';
 
-const ServicesAll = ({ onBook }) => {
+const ServicesAll = ({ onChat }) => {
   const { lang } = useLanguage();
   const cats = FULL_SERVICES.categories[lang] || FULL_SERVICES.categories.de;
   const bundleItems = BUNDLES.items[lang] || BUNDLES.items.de;
@@ -32,7 +32,7 @@ const ServicesAll = ({ onBook }) => {
                     <ul className="svc-features">
                       {s.features.map((f, fi) => <li key={fi}><I n="check" c="svc-check" />{f}</li>)}
                     </ul>
-                    <button className={`btn ${s.hl ? 'btn-primary' : 'btn-secondary'} svc-cta`} onClick={() => { onBook(); track('service_click', { service: s.name }); }}>{lang === 'en' ? 'Request quote' : lang === 'nl' ? 'Offerte aanvragen' : 'Angebot anfordern'}</button>
+                    <button className={`btn ${s.hl ? 'btn-primary' : 'btn-secondary'} svc-cta`} onClick={() => { onChat(lang === 'en' ? `I'm interested in ${s.name}` : lang === 'nl' ? `Ik ben geïnteresseerd in ${s.name}` : `Ich interessiere mich für ${s.name}`); track('service_click', { service: s.name }); }}>{lang === 'en' ? 'Request quote' : lang === 'nl' ? 'Offerte aanvragen' : 'Angebot anfordern'}</button>
                   </div>
                 ))}
               </div>
@@ -55,7 +55,7 @@ const ServicesAll = ({ onBook }) => {
                 <ul className="bundle-features">
                   {b.features.map((f, fi) => <li key={fi}><I n="check_circle" c="price-check" />{f}</li>)}
                 </ul>
-                <button className={`btn ${b.hl ? 'btn-primary btn-glow' : 'btn-secondary'} price-cta`} onClick={() => { onBook(); track('bundle_click', { bundle: b.name }); }} data-testid={`bundle-cta-${b.id}`}>{b.cta}</button>
+                <button className={`btn ${b.hl ? 'btn-primary btn-glow' : 'btn-secondary'} price-cta`} onClick={() => { onChat(lang === 'en' ? `I'm interested in the ${b.name} bundle` : lang === 'nl' ? `Ik ben geïnteresseerd in het ${b.name} bundel` : `Ich interessiere mich für das ${b.name} Bundle`); track('bundle_click', { bundle: b.name }); }} data-testid={`bundle-cta-${b.id}`}>{b.cta}</button>
               </motion.div>
             ))}
           </div>

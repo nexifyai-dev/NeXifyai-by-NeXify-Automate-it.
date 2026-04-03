@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { API, I, genSid, track, BrandName } from '../shared';
 
-const LiveChat = ({ isOpen, onClose, initialQ, t, lang }) => {
+const LiveChat = ({ isOpen, onClose, initialQ, onBook, t, lang }) => {
   const [msgs, setMsgs] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -12,11 +12,11 @@ const LiveChat = ({ isOpen, onClose, initialQ, t, lang }) => {
   const [qual, setQual] = useState({});
   const endRef = useRef(null);
   const inputRef = useRef(null);
-  const sentInitial = useRef(false);
+  const lastInitialQ = useRef('');
 
   useEffect(() => {
     setMsgs([]);
-    sentInitial.current = false;
+    lastInitialQ.current = '';
   }, [lang]);
 
   useEffect(() => {
@@ -27,9 +27,9 @@ const LiveChat = ({ isOpen, onClose, initialQ, t, lang }) => {
   }, [isOpen, msgs.length, t.chat.welcome]);
 
   useEffect(() => {
-    if (initialQ && isOpen && !sentInitial.current) {
-      sentInitial.current = true;
-      setTimeout(() => send(initialQ), 300);
+    if (initialQ && isOpen && initialQ !== lastInitialQ.current) {
+      lastInitialQ.current = initialQ;
+      setTimeout(() => send(initialQ), 400);
     }
   }, [initialQ, isOpen]);
 
@@ -76,7 +76,14 @@ const LiveChat = ({ isOpen, onClose, initialQ, t, lang }) => {
                 <button key={i} className="chat-preset" onClick={() => { track('preset_click', { q }); send(q); }} data-testid={`chat-preset-${i}`}><svg className="chat-preset-arrow" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h10M8 3.5L11.5 7 8 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg><span>{q}</span></button>
               ))}
             </div>
-            <div className="chat-sidebar-cta"><button className="btn btn-primary btn-glow" onClick={() => { track('chat_booking_click'); send(t.chat.presets[3] || 'Book a meeting'); }} style={{ width: '100%' }} data-testid="chat-sidebar-book-btn">{t.chat.bookBtn}</button></div>
+            <div className="chat-sidebar-cta">
+              <button className="btn btn-primary btn-glow" onClick={() => { track('chat_offer_click'); send(lang === 'en' ? 'I would like to request a quote' : lang === 'nl' ? 'Ik wil graag een offerte aanvragen' : 'Ich möchte ein Angebot anfordern'); }} style={{ width: '100%' }} data-testid="chat-sidebar-offer-btn">
+                <I n="description" /> {lang === 'en' ? 'Request Quote' : lang === 'nl' ? 'Offerte aanvragen' : 'Angebot anfordern'}
+              </button>
+              {onBook && <button className="btn btn-secondary" onClick={() => { track('chat_booking_fallback'); onBook(); }} style={{ width: '100%', marginTop: 8 }} data-testid="chat-sidebar-book-btn">
+                <I n="calendar_month" /> {lang === 'en' ? 'Book Meeting' : lang === 'nl' ? 'Gesprek boeken' : 'Termin buchen'}
+              </button>}
+            </div>
           </div>
           <div className="chat-main">
             <div className="chat-header"><div className="chat-status"><span className="status-dot on"></span>{t.chat.status}</div><span className="chat-topic">{t.chat.topicLabel}</span></div>

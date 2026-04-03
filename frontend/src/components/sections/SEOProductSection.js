@@ -4,7 +4,7 @@ import { useLanguage } from '../../i18n/LanguageContext';
 import { SEO_PRODUCT } from '../../data/products';
 import { AnimSection, I, fadeUp, scaleIn, track } from '../shared';
 
-const SEOProductSection = ({ onBook }) => {
+const SEOProductSection = ({ onChat }) => {
   const { lang } = useLanguage();
   const [faqOpen, setFaqOpen] = useState(0);
   const d = SEO_PRODUCT;
@@ -53,7 +53,7 @@ const SEOProductSection = ({ onBook }) => {
               <div className="price-val">{pl.price}<span className="price-period"> {pl.period}</span></div>
               <ul className="price-features">{pl.features.map((f, fi) => <li key={fi} className="price-feat"><I n="check_circle" c="price-check" />{f}</li>)}</ul>
               {pl.time && <div className="seo-tier-time"><I n="schedule" /> {pl.time}</div>}
-              <button className={`btn ${pl.hl ? 'btn-primary btn-glow' : 'btn-secondary'} price-cta`} onClick={() => { onBook(); track('seo_pricing_click', { plan: pl.name }); }} data-testid={`seo-price-cta-${pl.id}`}>{lang === 'en' ? 'Request quote' : lang === 'nl' ? 'Offerte aanvragen' : 'Angebot anfordern'}</button>
+              <button className={`btn ${pl.hl ? 'btn-primary btn-glow' : 'btn-secondary'} price-cta`} onClick={() => { onChat(lang === 'en' ? `I'm interested in ${pl.name}` : lang === 'nl' ? `Ik ben geïnteresseerd in ${pl.name}` : `Ich interessiere mich für ${pl.name}`); track('seo_pricing_click', { plan: pl.name }); }} data-testid={`seo-price-cta-${pl.id}`}>{lang === 'en' ? 'Request quote' : lang === 'nl' ? 'Offerte aanvragen' : 'Angebot anfordern'}</button>
             </motion.div>
           ))}
         </div>

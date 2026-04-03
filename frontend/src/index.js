@@ -8,6 +8,7 @@ import App from './App';
 import Admin from './pages/Admin';
 import LegalPage from './pages/LegalPages';
 import QuotePortal from './pages/QuotePortal';
+import CustomerPortal from './pages/CustomerPortal';
 import IntegrationDetail from './pages/IntegrationDetail';
 
 /* Language-aware redirect: / → /<detected lang> */
@@ -50,6 +51,9 @@ root.render(
 
             {/* Customer Offer Portal */}
             <Route path="/angebot" element={<QuotePortal />} />
+
+            {/* Customer Portal (Magic Link access) */}
+            <Route path="/portal" element={<CustomerPortal />} />
 
             {/* Backward compatibility: old routes without lang prefix */}
             <Route path="/impressum" element={<LegacyRedirect slug="impressum" />} />

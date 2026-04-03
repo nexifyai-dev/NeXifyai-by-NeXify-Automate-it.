@@ -15,7 +15,7 @@ import Booking from './components/sections/BookingModal';
 import './App.css';
 
 /* ═══════════ NAVIGATION ═══════════ */
-const Nav = ({ onBook, t }) => {
+const Nav = ({ onChat, t }) => {
   const [mob, setMob] = useState(false);
   const [sc, setSc] = useState(false);
   useEffect(() => { const h = () => setSc(window.scrollY > 50); window.addEventListener('scroll', h, { passive: true }); return () => window.removeEventListener('scroll', h); }, []);
@@ -25,6 +25,7 @@ const Nav = ({ onBook, t }) => {
     { l: t.nav.tarife, h: '#preise' }, { l: t.lang === 'en' ? 'SEO' : 'KI-SEO', h: '#ki-seo' }, { l: t.lang === 'en' ? 'Services' : t.lang === 'nl' ? 'Diensten' : 'Services', h: '#services' }, { l: t.nav.faq, h: '#faq' }
   ];
   const go = (h) => { setMob(false); track('nav_click', { target: h }); };
+  const ctaLabel = t.lang === 'en' ? 'Start Consultation' : t.lang === 'nl' ? 'Advies starten' : 'Beratung starten';
   return (
     <nav className={`nav ${sc ? 'scrolled' : ''}`} role="navigation" data-testid="main-nav">
       <div className="container nav-inner">
@@ -34,7 +35,7 @@ const Nav = ({ onBook, t }) => {
         </div>
         <div className="nav-actions">
           <LanguageSwitcher />
-          <button className="btn btn-primary nav-cta" onClick={() => { onBook(); track('cta_click', { loc: 'nav' }); }} data-testid="nav-book-btn">{t.nav.cta}</button>
+          <button className="btn btn-primary nav-cta" onClick={() => { onChat(); track('cta_click', { loc: 'nav' }); }} data-testid="nav-book-btn">{ctaLabel}</button>
           <button className="nav-toggle" onClick={() => setMob(!mob)} aria-label={mob ? t.nav.menuClose : t.nav.menuOpen} aria-expanded={mob} data-testid="nav-toggle"><I n={mob ? 'close' : 'menu'} /></button>
         </div>
         <AnimatePresence>
@@ -42,7 +43,7 @@ const Nav = ({ onBook, t }) => {
             <motion.div className="nav-mobile" role="menu" data-testid="nav-mobile-menu" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               {links.map(l => <a key={l.h} href={l.h} role="menuitem" onClick={() => go(l.h)}>{l.l}</a>)}
               <LanguageSwitcher mobile />
-              <button className="btn btn-primary nav-mobile-cta" onClick={() => { setMob(false); onBook(); }}>{t.nav.cta}</button>
+              <button className="btn btn-primary nav-mobile-cta" onClick={() => { setMob(false); onChat(); }}>{ctaLabel}</button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -52,8 +53,9 @@ const Nav = ({ onBook, t }) => {
 };
 
 /* ═══════════ HERO ═══════════ */
-const Hero = ({ onBook, t }) => {
+const Hero = ({ onChat, t }) => {
   useEffect(() => { track('page_view', { section: 'hero' }); }, []);
+  const ctaLabel = t.lang === 'en' ? 'Start Consultation' : t.lang === 'nl' ? 'Advies starten' : 'Beratung starten';
   return (
     <section id="hero" className="hero" aria-labelledby="hero-t" data-testid="hero-section">
       <HeroScene />
@@ -64,7 +66,7 @@ const Hero = ({ onBook, t }) => {
             <h1 id="hero-t">{t.hero.h1[0]} <span className="text-accent">{t.hero.h1[1]}</span><br />{t.hero.h1[2]}</h1>
             <p className="hero-desc">{t.hero.desc}</p>
             <motion.div className="hero-actions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
-              <button className="btn btn-primary btn-lg btn-glow" onClick={() => { onBook(); track('cta_click', { loc: 'hero' }); }} data-testid="hero-book-btn">{t.hero.cta1} <I n="arrow_forward" /></button>
+              <button className="btn btn-primary btn-lg btn-glow" onClick={() => { onChat(); track('cta_click', { loc: 'hero' }); }} data-testid="hero-book-btn">{ctaLabel} <I n="forum" /></button>
               <a href="#loesungen" className="btn btn-secondary btn-lg" onClick={() => track('cta_click', { loc: 'hero', t: 'explore' })}>{t.nav.leistungen}</a>
             </motion.div>
             <motion.div className="hero-stats" data-testid="hero-stats" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
@@ -153,7 +155,7 @@ const UseCases = ({ t }) => (
 );
 
 /* ═══════════ APP DEVELOPMENT ═══════════ */
-const AppDev = ({ onBook, t }) => (
+const AppDev = ({ onChat, t }) => (
   <AnimSection id="app-dev" className="section bg-s2" aria-labelledby="appdev-t" data-testid="appdev-section">
     <div className="container">
       <motion.header className="section-header" variants={fadeUp}>
@@ -177,7 +179,7 @@ const AppDev = ({ onBook, t }) => (
               <div key={i} className="appdev-metric"><div className="appdev-metric-val">{m.val}</div><div className="appdev-metric-label">{m.label}</div></div>
             ))}
           </div>
-          <button className="btn btn-primary btn-glow" onClick={() => { onBook(); track('cta_click', { loc: 'appdev' }); }} data-testid="appdev-book-btn">{t.hero.cta1} <I n="arrow_forward" /></button>
+          <button className="btn btn-primary btn-glow" onClick={() => { onChat(t.lang === 'en' ? 'I need an app developed' : t.lang === 'nl' ? 'Ik heb een app nodig' : 'Ich brauche eine App-Entwicklung'); track('cta_click', { loc: 'appdev' }); }} data-testid="appdev-book-btn">{t.lang === 'en' ? 'Start Consultation' : t.lang === 'nl' ? 'Advies starten' : 'Beratung starten'} <I n="forum" /></button>
         </motion.div>
       </div>
     </div>
@@ -237,7 +239,7 @@ const Governance = ({ t }) => (
 );
 
 /* ═══════════ PRICING ═══════════ */
-const Pricing = ({ onBook, t }) => (
+const Pricing = ({ onChat, t }) => (
   <AnimSection id="preise" className="section bg-dark" aria-labelledby="price-t" data-testid="pricing-section">
     <div className="container">
       <motion.header className="section-header centered" variants={fadeUp}>
@@ -252,7 +254,7 @@ const Pricing = ({ onBook, t }) => (
             <div className="price-name">{pl.name}</div>
             <div className="price-val">{pl.price}<span className="price-period"> {pl.period}</span></div>
             <ul className="price-features">{pl.features.map((f, fi) => <li key={fi} className="price-feat"><I n="check_circle" c="price-check" />{f}</li>)}</ul>
-            <button className={`btn ${pl.hl ? 'btn-primary btn-glow' : 'btn-secondary'} price-cta`} onClick={() => { onBook(); track('pricing_click', { plan: pl.name }); }} data-testid={`price-cta-${pl.name.toLowerCase()}`}>{pl.cta}</button>
+            <button className={`btn ${pl.hl ? 'btn-primary btn-glow' : 'btn-secondary'} price-cta`} onClick={() => { onChat(t.lang === 'en' ? `I'm interested in ${pl.name}` : t.lang === 'nl' ? `Ik ben geïnteresseerd in ${pl.name}` : `Ich interessiere mich für ${pl.name}`); track('pricing_click', { plan: pl.name }); }} data-testid={`price-cta-${pl.name.toLowerCase()}`}>{pl.cta}</button>
           </motion.article>
         ))}
       </div>
@@ -293,7 +295,7 @@ const FAQ = ({ t }) => {
 };
 
 /* ═══════════ CONTACT ═══════════ */
-const Contact = ({ onBook, t }) => {
+const Contact = ({ onChat, t }) => {
   const [form, setForm] = useState({ vorname: '', nachname: '', email: '', telefon: '', unternehmen: '', nachricht: '', _hp: '' });
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
@@ -320,7 +322,7 @@ const Contact = ({ onBook, t }) => {
             <div className="contact-benefits">
               {t.contact.benefits.map((b, i) => <div key={i} className="contact-benefit"><I n="verified" /><span>{b}</span></div>)}
             </div>
-            <button className="btn btn-primary btn-lg btn-glow contact-cta-btn" onClick={() => { onBook(); track('cta_click', { loc: 'contact' }); }} data-testid="contact-book-btn">{t.contact.ctaBtn} <I n="calendar_month" /></button>
+            <button className="btn btn-primary btn-lg btn-glow contact-cta-btn" onClick={() => { onChat(); track('cta_click', { loc: 'contact' }); }} data-testid="contact-book-btn">{t.lang === 'en' ? 'Start Consultation' : t.lang === 'nl' ? 'Advies starten' : 'Beratung starten'} <I n="forum" /></button>
           </motion.div>
           <motion.div className="contact-form-box" variants={fadeUp}>
             <form onSubmit={submit} className="contact-form" noValidate data-testid="contact-form">
@@ -401,6 +403,14 @@ const Ft = ({ onCookieSettings, t, lang }) => {
   );
 };
 
+/* ═══════════ WHATSAPP BUTTON ═══════════ */
+const WhatsAppButton = () => (
+  <a href="https://wa.me/31613318856" target="_blank" rel="noopener noreferrer" className="whatsapp-btn" data-testid="whatsapp-btn" aria-label="WhatsApp">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    <span>WhatsApp</span>
+  </a>
+);
+
 /* ═══════════ CHAT TRIGGER ═══════════ */
 const ChatTrigger = ({ onClick, t }) => (
   <motion.button className="chat-trigger" onClick={onClick} aria-label={t.hero.cta2} data-testid="chat-trigger" whileHover={{ y: -3, scale: 1.02 }} whileTap={{ scale: 0.98 }}>
@@ -446,6 +456,9 @@ function App() {
     return () => window.removeEventListener('scroll', h);
   }, [lang]);
 
+  const openChat = (msg = '') => { setChatQ(msg); setChatOpen(true); track('chat_open', { source: msg ? 'cta_contextual' : 'cta_generic', msg }); };
+  const openBooking = () => { setBookOpen(true); };
+
   const acceptCookies = () => { localStorage.setItem('nx_cookie_consent', 'all'); setShowCookie(false); };
   const rejectCookies = () => { localStorage.setItem('nx_cookie_consent', 'essential'); setShowCookie(false); };
   const openCookieSettings = () => { localStorage.removeItem('nx_cookie_consent'); setShowCookie(true); };
@@ -454,25 +467,26 @@ function App() {
     <div className="app" data-testid="app-root">
       <SEOHead lang={lang} page="home" />
       <a href="#loesungen" className="skip-link">Skip to content</a>
-      <Nav onBook={() => setBookOpen(true)} t={t} />
+      <Nav onChat={openChat} t={t} />
       <main id="main-content">
-        <Hero onBook={() => setBookOpen(true)} t={t} />
+        <Hero onChat={openChat} t={t} />
         <Solutions t={t} />
         <UseCases t={t} />
-        <AppDev onBook={() => setBookOpen(true)} t={t} />
+        <AppDev onChat={openChat} t={t} />
         <Process t={t} />
-        <Integrations onBook={() => setBookOpen(true)} t={t} />
+        <Integrations onChat={openChat} t={t} />
         <Governance t={t} />
-        <Pricing onBook={() => setBookOpen(true)} t={t} />
-        <SEOProductSection onBook={() => setBookOpen(true)} />
-        <ServicesAll onBook={() => setBookOpen(true)} />
+        <Pricing onChat={openChat} t={t} />
+        <SEOProductSection onChat={openChat} />
+        <ServicesAll onChat={openChat} />
         <TrustSection t={t} />
         <FAQ t={t} />
-        <Contact onBook={() => setBookOpen(true)} t={t} />
+        <Contact onChat={openChat} t={t} />
       </main>
       <Ft onCookieSettings={openCookieSettings} t={t} lang={lang} />
-      <ChatTrigger onClick={() => { setChatOpen(true); track('chat_trigger_click'); }} t={t} />
-      <LiveChat isOpen={chatOpen} onClose={() => setChatOpen(false)} initialQ={chatQ} t={t} lang={lang} />
+      <WhatsAppButton />
+      <ChatTrigger onClick={() => openChat()} t={t} />
+      <LiveChat isOpen={chatOpen} onClose={() => setChatOpen(false)} initialQ={chatQ} onBook={openBooking} t={t} lang={lang} />
       <Booking isOpen={bookOpen} onClose={() => setBookOpen(false)} t={t} lang={lang} />
       <CookieConsent show={showCookie} onAccept={acceptCookies} onReject={rejectCookies} t={t} lang={lang} />
     </div>

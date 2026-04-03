@@ -438,16 +438,35 @@ def email_template(title: str, content: str, cta_url: str = None, cta_text: str 
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;margin:0 auto;background:#12171e;border-radius:8px;overflow:hidden;">
 <tr><td style="background:#0c1117;padding:28px 32px;border-bottom:2px solid #ff9b7a;">
 <span style="color:#fff;font-size:20px;font-weight:700;">NeXify</span><span style="color:#ff9b7a;font-size:20px;font-weight:700;">AI</span>
+<span style="color:#555;font-size:11px;margin-left:12px;">by NeXify</span>
 </td></tr>
 <tr><td style="padding:36px 32px;color:#c5c9d2;font-size:14px;line-height:1.75;">
 {content}
 {cta_html}
 </td></tr>
-<tr><td style="background:#0a0f14;padding:28px 32px;text-align:center;color:#555;font-size:11px;line-height:1.8;">
-<p style="margin:0 0 6px;"><strong style="color:#78829a;">NeXify Automate</strong> — Graaf van Loonstraat 1E, 5921 JA Venlo, NL</p>
-<p style="margin:0 0 6px;">Tel: +31 6 133 188 56 | support@nexify-automate.com</p>
-<p style="margin:0 0 6px;">KvK: 90483944 | USt-ID: NL865786276B01</p>
-<p style="margin:12px 0 0;font-size:10px;color:#444;">Datenschutzorientiert für den europäischen Rechtsraum entwickelt. DSGVO (EU) 2016/679.</p>
+<tr><td style="padding:28px 32px;border-top:1px solid rgba(255,255,255,0.04);">
+<table width="100%" cellpadding="0" cellspacing="0"><tr>
+<td style="vertical-align:top;padding-right:16px;">
+<p style="margin:0 0 2px;color:#fff;font-weight:700;font-size:13px;">Pascal Courbois</p>
+<p style="margin:0 0 8px;color:#6b7b8d;font-size:11px;">Geschäftsführer</p>
+<p style="margin:0;color:#6b7b8d;font-size:11px;line-height:1.6;">
+Tel: <a href="tel:+31613318856" style="color:#6b7b8d;text-decoration:none;">+31 6 133 188 56</a><br>
+E-Mail: <a href="mailto:nexifyai@nexifyai.de" style="color:#ff9b7a;text-decoration:none;">nexifyai@nexifyai.de</a><br>
+Web: <a href="https://nexify-automate.com" style="color:#ff9b7a;text-decoration:none;">nexify-automate.com</a>
+</p>
+</td></tr></table>
+</td></tr>
+<tr><td style="background:#0a0f14;padding:20px 32px;">
+<p style="margin:0 0 12px;text-align:center;"><a href="https://nexify-automate.com" style="color:#ff9b7a;font-size:12px;text-decoration:none;font-weight:500;">KI-Agenten, Websites, Apps & SEO — nexify-automate.com</a></p>
+<p style="margin:0 0 6px;text-align:center;color:#444;font-size:10px;line-height:1.8;">
+NeXify Automate — Graaf van Loonstraat 1E, 5921 JA Venlo, NL | KvK: 90483944 | USt-ID: NL865786276B01
+</p>
+<p style="margin:0;text-align:center;font-size:10px;">
+<a href="https://nexify-automate.com/de/impressum" style="color:#555;text-decoration:none;">Impressum</a> &nbsp;|&nbsp;
+<a href="https://nexify-automate.com/de/datenschutz" style="color:#555;text-decoration:none;">Datenschutz</a> &nbsp;|&nbsp;
+<a href="https://nexify-automate.com/de/agb" style="color:#555;text-decoration:none;">AGB</a>
+</p>
+<p style="margin:8px 0 0;text-align:center;font-size:9px;color:#333;">Datenschutzorientiert für den europäischen Rechtsraum entwickelt. DSGVO (EU) 2016/679.</p>
 </td></tr>
 </table>
 </body>
@@ -651,6 +670,84 @@ async def create_booking(data: BookingRequest, request: Request):
     
     return {"success": True, "message": "Ihr Beratungstermin wurde bestätigt.", "booking_id": booking_id}
 
+async def _build_customer_memory(email: str, current_session_id: str = None) -> str:
+    """Build comprehensive customer memory context from all data sources."""
+    if not email:
+        return ""
+    
+    email_lower = email.lower()
+    parts = []
+    
+    # 1. Lead/Contact data
+    lead = await db.leads.find_one({"email": email_lower}, {"_id": 0})
+    if lead:
+        parts.append(f"Kontakt: {lead.get('vorname','')} {lead.get('nachname','')}, {lead.get('unternehmen','')}, Status: {lead.get('status','')}")
+        if lead.get("notes"):
+            recent_notes = lead["notes"][-3:] if isinstance(lead["notes"], list) else []
+            for n in recent_notes:
+                if isinstance(n, dict):
+                    parts.append(f"  Notiz ({n.get('date','')[:10]}): {n.get('text','')[:100]}")
+    
+    # 2. Quotes/Angebote
+    quotes = []
+    async for q in db.quotes.find({"customer.email": email_lower}, {"_id": 0}).sort("created_at", -1).limit(5):
+        status = q.get("status", "unknown")
+        tier = q.get("tier", "")
+        calc = q.get("calculation", {})
+        quotes.append(f"Angebot {q.get('quote_number','')}: {calc.get('tier_name',tier)} — {calc.get('total_contract_eur',0):,.2f} EUR, Status: {status}")
+    if quotes:
+        parts.append("Angebote: " + " | ".join(quotes))
+    
+    # 3. Invoices/Rechnungen
+    invoices = []
+    async for inv in db.invoices.find({"customer.email": email_lower}, {"_id": 0}).sort("created_at", -1).limit(5):
+        invoices.append(f"Rechnung {inv.get('invoice_number','')}: {inv.get('total_eur',0):,.2f} EUR, Status: {inv.get('status','')}")
+    if invoices:
+        parts.append("Rechnungen: " + " | ".join(invoices))
+    
+    # 4. Bookings/Termine
+    bookings = []
+    async for bk in db.bookings.find({"email": email_lower}, {"_id": 0}).sort("created_at", -1).limit(3):
+        bookings.append(f"Termin {bk.get('date','')} {bk.get('time','')}: {bk.get('status','')}")
+    if bookings:
+        parts.append("Termine: " + " | ".join(bookings))
+    
+    # 5. Previous chat sessions (not current)
+    prev_sessions = []
+    query = {"customer_email": email_lower}
+    if current_session_id:
+        query["session_id"] = {"$ne": current_session_id}
+    async for sess in db.chat_sessions.find(query, {"_id": 0, "messages": {"$slice": -4}, "qualification": 1, "created_at": 1}).sort("created_at", -1).limit(3):
+        qual = sess.get("qualification", {})
+        msgs = sess.get("messages", [])
+        last_user_msgs = [m["content"][:80] for m in msgs if m.get("role") == "user"][-2:]
+        if last_user_msgs:
+            prev_sessions.append(f"Vorheriges Gespräch: {', '.join(last_user_msgs)}")
+        if qual.get("use_case"):
+            prev_sessions.append(f"  Interesse: {qual['use_case']}")
+    if prev_sessions:
+        parts.append("Gesprächshistorie: " + " | ".join(prev_sessions))
+    
+    # 6. Contact form submissions
+    contact = await db.contacts.find_one({"email": email_lower}, {"_id": 0})
+    if contact:
+        parts.append(f"Kontaktformular: {contact.get('nachricht','')[:100]}")
+    
+    if not parts:
+        return ""
+    
+    return "Bekannter Kunde: " + email_lower + "\n" + "\n".join(parts)
+
+async def _log_event(db_ref, event_type: str, ref_id: str, user: str, details: dict = None):
+    """Log a commercial event to the audit trail."""
+    await db_ref.audit_log.insert_one({
+        "event_type": event_type,
+        "ref_id": ref_id,
+        "user": user,
+        "details": details or {},
+        "timestamp": datetime.now(timezone.utc)
+    })
+
 @app.post("/api/chat/message")
 async def chat_message(data: ChatMessage, request: Request):
     await check_rate_limit(request, limit=20, window=60)
@@ -661,9 +758,28 @@ async def chat_message(data: ChatMessage, request: Request):
             "session_id": data.session_id,
             "messages": [],
             "qualification": {},
+            "customer_email": None,
             "created_at": datetime.now(timezone.utc)
         }
         await db.chat_sessions.insert_one(session)
+    
+    # Build customer memory context if email is known
+    memory_context = ""
+    customer_email = session.get("customer_email")
+    if not customer_email:
+        # Try to detect email from qualification or recent messages
+        qual = session.get("qualification", {})
+        if qual.get("email"):
+            customer_email = qual["email"]
+    
+    if customer_email:
+        memory_context = await _build_customer_memory(customer_email, data.session_id)
+        if memory_context:
+            # Update session with customer email
+            await db.chat_sessions.update_one(
+                {"session_id": data.session_id},
+                {"$set": {"customer_email": customer_email}}
+            )
     
     user_msg = {"role": "user", "content": data.message, "ts": datetime.now(timezone.utc).isoformat()}
     
@@ -676,17 +792,36 @@ async def chat_message(data: ChatMessage, request: Request):
     try:
         if EMERGENT_LLM_KEY:
             if data.session_id not in llm_sessions:
+                system_prompt = get_system_prompt(data.language or "de")
+                if memory_context:
+                    system_prompt += f"\n\nKUNDENKONTEXT (NUR INTERN — NICHT ZITIEREN):\n{memory_context}"
                 chat = LlmChat(
                     api_key=EMERGENT_LLM_KEY,
                     session_id=data.session_id,
-                    system_message=get_system_prompt(data.language or "de")
+                    system_message=system_prompt
                 )
                 chat.with_model("openai", "gpt-4o-mini")
                 llm_sessions[data.session_id] = chat
+            elif memory_context and not session.get("_memory_injected"):
+                # Re-inject memory context if newly available
+                pass
             
             llm_chat = llm_sessions[data.session_id]
             user_message = UserMessage(text=data.message)
             response_text = await llm_chat.send_message(user_message)
+            
+            # Extract email from offer/booking requests for memory linking
+            offer_match_pre = re.search(r'\[OFFER_REQUEST\](.*?)\[/OFFER_REQUEST\]', response_text, re.DOTALL)
+            if offer_match_pre:
+                try:
+                    od = json.loads(offer_match_pre.group(1))
+                    if od.get("email"):
+                        await db.chat_sessions.update_one(
+                            {"session_id": data.session_id},
+                            {"$set": {"customer_email": od["email"].lower()}}
+                        )
+                except Exception:
+                    pass
             
             # Check for booking request in LLM response
             booking_match = re.search(r'\[BOOKING_REQUEST\](.*?)\[/BOOKING_REQUEST\]', response_text, re.DOTALL)
@@ -814,9 +949,9 @@ async def chat_message(data: ChatMessage, request: Request):
                                 [offer_data["email"]],
                                 f"Ihr Angebot von NeXifyAI — {calc.get('tier_name','')}",
                                 email_template("Ihr Angebot",
-                                    f'''<h1 style="color:#fff;font-size:22px;margin:0 0 16px;">Ihr persoenliches Angebot</h1>
+                                    f'''<h1 style="color:#fff;font-size:22px;margin:0 0 16px;">Ihr persönliches Angebot</h1>
                                     <p>Sehr geehrte/r {offer_data.get("name","")},</p>
-                                    <p>basierend auf unserem Gespraech haben wir Ihr individuelles Angebot erstellt.</p>
+                                    <p>basierend auf unserem Gespräch haben wir Ihr individuelles Angebot erstellt.</p>
                                     <div style="background:#252a32;padding:20px;margin:20px 0;border-left:3px solid #ffb599;">
                                     <p style="margin:0 0 4px;font-size:12px;color:#8f9095;">TARIF</p>
                                     <p style="margin:0 0 8px;color:#ffb599;font-weight:600;">{calc.get("tier_name","")}</p>
@@ -2079,17 +2214,207 @@ async def commercial_stats(current_user: dict = Depends(get_current_admin)):
     }
 
 
-# --- Event Logger ---
+# --- Admin: Activity Timeline ---
 
-async def _log_event(database, event: str, ref_id: str, actor: str, details: dict = None):
-    """Audit-log all commercial events"""
-    await database.commercial_events.insert_one({
-        "event": event,
-        "ref_id": ref_id,
-        "actor": actor,
-        "details": details or {},
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-    })
+@app.get("/api/admin/timeline")
+async def admin_timeline(
+    limit: int = 50,
+    email: str = None,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Unified timeline across all entities for a customer or global."""
+    events = []
+    
+    # Audit log events
+    query = {}
+    if email:
+        query["$or"] = [{"details.email": email.lower()}, {"actor": email.lower()}]
+    async for ev in db.audit_log.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit):
+        events.append({
+            "type": "audit",
+            "event": ev.get("event_type", ev.get("event", "")),
+            "ref_id": ev.get("ref_id", ""),
+            "actor": ev.get("user", ev.get("actor", "")),
+            "timestamp": ev.get("timestamp", ""),
+            "details": ev.get("details", {}),
+        })
+    
+    # Commercial events fallback
+    async for ev in db.commercial_events.find(query if email else {}, {"_id": 0}).sort("timestamp", -1).limit(limit):
+        events.append({
+            "type": "commercial",
+            "event": ev.get("event", ""),
+            "ref_id": ev.get("ref_id", ""),
+            "actor": ev.get("actor", ""),
+            "timestamp": ev.get("timestamp", ""),
+            "details": ev.get("details", {}),
+        })
+    
+    # Sort combined by timestamp desc
+    events.sort(key=lambda x: str(x.get("timestamp", "")), reverse=True)
+    return {"events": events[:limit]}
+
+
+# --- Admin: Chat Sessions ---
+
+@app.get("/api/admin/chat-sessions")
+async def admin_chat_sessions(
+    limit: int = 30,
+    email: str = None,
+    current_user: dict = Depends(get_current_admin)
+):
+    """List chat sessions with optional email filter."""
+    query = {}
+    if email:
+        query["customer_email"] = email.lower()
+    
+    sessions = []
+    async for s in db.chat_sessions.find(query, {"_id": 0}).sort("created_at", -1).limit(limit):
+        msgs = s.get("messages", [])
+        sessions.append({
+            "session_id": s["session_id"],
+            "customer_email": s.get("customer_email"),
+            "qualification": s.get("qualification", {}),
+            "message_count": len(msgs),
+            "last_message": msgs[-1]["content"][:100] if msgs else "",
+            "created_at": str(s.get("created_at", "")),
+        })
+    return {"sessions": sessions}
+
+
+@app.get("/api/admin/chat-sessions/{session_id}")
+async def admin_chat_session_detail(
+    session_id: str,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Full chat session with all messages."""
+    session = await db.chat_sessions.find_one({"session_id": session_id}, {"_id": 0})
+    if not session:
+        raise HTTPException(404, "Session nicht gefunden")
+    return session
+
+
+# --- Admin: Customer Memory ---
+
+@app.get("/api/admin/customer-memory/{email}")
+async def admin_customer_memory(
+    email: str,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Full customer memory context for admin view."""
+    memory = await _build_customer_memory(email)
+    
+    # Also get all related data separately
+    lead = await db.leads.find_one({"email": email.lower()}, {"_id": 0})
+    quotes = await db.quotes.find({"customer.email": email.lower()}, {"_id": 0}).sort("created_at", -1).to_list(20)
+    invoices = await db.invoices.find({"customer.email": email.lower()}, {"_id": 0}).sort("created_at", -1).to_list(20)
+    bookings = await db.bookings.find({"email": email.lower()}, {"_id": 0}).sort("created_at", -1).to_list(10)
+    chat_sessions = await db.chat_sessions.find({"customer_email": email.lower()}, {"_id": 0, "messages": {"$slice": -5}}).sort("created_at", -1).to_list(10)
+    
+    return {
+        "email": email.lower(),
+        "memory_context": memory,
+        "lead": lead,
+        "quotes": quotes,
+        "invoices": invoices,
+        "bookings": bookings,
+        "chat_sessions": [{
+            "session_id": s["session_id"],
+            "qualification": s.get("qualification", {}),
+            "message_count": len(s.get("messages", [])),
+            "recent_messages": s.get("messages", []),
+            "created_at": str(s.get("created_at", "")),
+        } for s in chat_sessions],
+    }
+
+
+# --- Admin: Lead Notes ---
+
+@app.post("/api/admin/leads/{lead_id}/notes")
+async def admin_add_lead_note(
+    lead_id: str,
+    data: dict,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Add a note to a lead."""
+    note = {
+        "text": data.get("text", ""),
+        "author": current_user["email"],
+        "date": datetime.now(timezone.utc).isoformat(),
+    }
+    result = await db.leads.update_one(
+        {"lead_id": lead_id},
+        {"$push": {"notes": note}, "$set": {"updated_at": datetime.now(timezone.utc)}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(404, "Lead nicht gefunden")
+    return {"status": "ok", "note": note}
+
+
+# --- Customer Portal: Enhanced ---
+
+@app.get("/api/portal/customer/{token}")
+async def customer_portal(token: str):
+    """Customer portal via magic link token — shows all customer data."""
+    link = await db.access_links.find_one({"token": token}, {"_id": 0})
+    if not link or link.get("expires_at", datetime.min.replace(tzinfo=timezone.utc)) < datetime.now(timezone.utc):
+        raise HTTPException(403, "Zugangslink ungültig oder abgelaufen")
+    
+    email = link.get("customer_email", "").lower()
+    if not email:
+        raise HTTPException(400, "Kein Kundenkonto verknüpft")
+    
+    # Quotes
+    quotes = []
+    async for q in db.quotes.find({"customer.email": email}, {"_id": 0}).sort("created_at", -1).limit(20):
+        quotes.append({
+            "quote_id": q["quote_id"],
+            "quote_number": q.get("quote_number", ""),
+            "status": q.get("status", ""),
+            "tier": q.get("tier", ""),
+            "calculation": q.get("calculation", {}),
+            "created_at": str(q.get("created_at", "")),
+        })
+    
+    # Invoices
+    invoices = []
+    async for inv in db.invoices.find({"customer.email": email}, {"_id": 0}).sort("created_at", -1).limit(20):
+        invoices.append({
+            "invoice_id": inv["invoice_id"],
+            "invoice_number": inv.get("invoice_number", ""),
+            "status": inv.get("status", ""),
+            "payment_status": inv.get("payment_status", ""),
+            "total_eur": inv.get("totals", {}).get("gross", 0),
+            "created_at": str(inv.get("created_at", "")),
+        })
+    
+    # Bookings
+    bookings = []
+    async for bk in db.bookings.find({"email": email}, {"_id": 0}).sort("created_at", -1).limit(10):
+        bookings.append({
+            "booking_id": bk.get("booking_id", ""),
+            "date": bk.get("date", ""),
+            "time": bk.get("time", ""),
+            "status": bk.get("status", ""),
+        })
+    
+    # Communication history (recent chat summaries)
+    chat_summaries = []
+    async for sess in db.chat_sessions.find({"customer_email": email}, {"_id": 0, "messages": {"$slice": -3}}).sort("created_at", -1).limit(5):
+        msgs = sess.get("messages", [])
+        chat_summaries.append({
+            "date": str(sess.get("created_at", "")),
+            "messages": [{"role": m["role"], "content": m["content"][:150]} for m in msgs],
+        })
+    
+    return {
+        "email": email,
+        "customer_name": link.get("customer_name", ""),
+        "quotes": quotes,
+        "invoices": invoices,
+        "bookings": bookings,
+        "communications": chat_summaries,
+    }
 
 
 if __name__ == "__main__":

@@ -757,5 +757,12 @@ a.integ-item-v2.popular{border-color:rgba(255,155,122,0.1);color:rgba(255,255,25
 .service-time{display:flex;align-items:center;gap:6px;color:var(--nx-muted);font-size:12px}
 .service-time-icon{font-size:14px;color:var(--nx-muted)}
 
+
+/* ═══════════ WHATSAPP BUTTON ═══════════ */
+.whatsapp-btn{position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:900;display:flex;align-items:center;gap:8px;background:#25d366;color:#fff;padding:10px 14px 10px 12px;border-radius:0 8px 8px 0;font-weight:600;font-size:13px;letter-spacing:.01em;text-decoration:none;box-shadow:0 4px 16px rgba(37,211,102,0.25);transition:transform .3s,box-shadow .3s,padding .3s}
+.whatsapp-btn:hover{transform:translateY(-50%) translateX(2px);box-shadow:0 6px 24px rgba(37,211,102,0.35);padding-right:18px}
+.whatsapp-btn svg{flex-shrink:0}
+.whatsapp-btn span{font-family:var(--f-display);white-space:nowrap}
+@media(max-width:768px){.whatsapp-btn{top:auto;bottom:90px;padding:8px 12px 8px 10px;font-size:12px;border-radius:0 6px 6px 0}.whatsapp-btn svg{width:16px;height:16px}}
 /* ═══════════ PRINT ═══════════ */
 @media print{.nav,.chat-trigger,.chat-overlay,.booking-overlay,.cookie-banner{display:none!important}body{background:#fff;color:#000}}
