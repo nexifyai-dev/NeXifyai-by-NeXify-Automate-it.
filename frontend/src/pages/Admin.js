@@ -2099,9 +2099,41 @@ const Admin = () => {
           </Card>
           <Card icon="report_problem" title="Dead Letter Queue" status={sys.dead_letter_queue?.status}>
             <span>Einträge: {sys.dead_letter_queue?.count}</span>
+            {sys.dead_letter_queue?.count > 0 && <span style={{color:'#f97316'}}>Manuelle Intervention empfohlen — Dead-letter-Jobs prüfen</span>}
+          </Card>
+          <Card icon="cloud_upload" title="Object Storage" status={sys.object_storage?.status}>
+            <span>Initialisiert: {sys.object_storage?.initialized ? 'Ja' : 'Nein'}</span>
+          </Card>
+          <Card icon="folder" title="Dokumente" status="ok">
+            <span>Gesamt: {sys.documents?.total}</span>
+            <span>Object Storage: {sys.documents?.in_storage}</span>
+            <span>MongoDB: {sys.documents?.in_mongodb}</span>
           </Card>
         </div>
         <p style={{marginTop:16,fontSize:'.6875rem',color:'#6b7b8d'}}>Stand: {fmtTime(monitorData.timestamp)}</p>
+
+        {/* Recovery / Self-Healing Status */}
+        <div style={{marginTop:24}} data-testid="monitor-recovery">
+          <h3 style={{marginBottom:12}}>Recovery & Self-Healing</h3>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))',gap:12}}>
+            {[
+              { label: 'LLM Fallback', status: sys.llm?.active_provider === 'deepseek' ? 'DeepSeek primär' : 'Fallback aktiv (Emergent GPT)', ok: sys.llm?.active_provider === 'deepseek', action: sys.llm?.active_provider !== 'deepseek' ? 'DEEPSEEK_API_KEY setzen für Zielarchitektur' : null },
+              { label: 'Dead Letter Queue', status: sys.dead_letter_queue?.count === 0 ? 'Leer — kein Handlungsbedarf' : `${sys.dead_letter_queue?.count} Jobs wartend`, ok: sys.dead_letter_queue?.count === 0, action: sys.dead_letter_queue?.count > 0 ? 'Dead-letter-Jobs in Admin prüfen und ggf. neu einreihen' : null },
+              { label: 'E-Mail Delivery', status: sys.email?.api_key_set ? `${sys.email?.total_failed} Fehler von ${sys.email?.total_sent + sys.email?.total_failed} gesamt` : 'Nicht konfiguriert', ok: sys.email?.api_key_set && sys.email?.total_failed === 0, action: sys.email?.total_failed > 0 ? 'Fehlgeschlagene E-Mails in Email-Stats prüfen' : null },
+              { label: 'Payment Provider', status: sys.payments?.stripe?.api_key_set && sys.payments?.revolut?.api_key_set ? 'Stripe + Revolut aktiv' : sys.payments?.stripe?.api_key_set ? 'Stripe aktiv' : sys.payments?.revolut?.api_key_set ? 'Revolut aktiv' : 'Kein Provider', ok: sys.payments?.stripe?.api_key_set || sys.payments?.revolut?.api_key_set },
+              { label: 'Object Storage', status: sys.object_storage?.initialized ? 'Initialisiert' : 'Nicht initialisiert — MongoDB-Fallback aktiv', ok: sys.object_storage?.initialized, action: !sys.object_storage?.initialized ? 'Wird bei nächster PDF-Generierung automatisch initialisiert' : null },
+            ].map((item, idx) => (
+              <div key={idx} className="adm-wa-card" style={{padding:'12px 16px'}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
+                  <span style={{width:8,height:8,borderRadius:'50%',background:item.ok?'#10b981':'#f59e0b',flexShrink:0}} />
+                  <span style={{fontWeight:600,fontSize:'.8125rem',color:'#fff'}}>{item.label}</span>
+                </div>
+                <p style={{margin:0,fontSize:'.75rem',color:'#c8d1dc'}}>{item.status}</p>
+                {item.action && <p style={{margin:'4px 0 0',fontSize:'.6875rem',color:'#f59e0b'}}>→ {item.action}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   };

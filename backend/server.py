@@ -366,6 +366,13 @@ async def lifespan(app: FastAPI):
     outbound_svc = OutboundLeadMachine(db, worker_manager=worker_mgr, comms_service=comms_svc)
     legal_svc = LegalGuardian(db, memory_svc=memory_svc)
 
+    # Object Storage Init
+    from services.storage import init_storage
+    try:
+        init_storage()
+    except Exception as e:
+        logger.warning(f"Object Storage init: {e}")
+
     # Legal/Compliance indexes
     await db.legal_audit.create_index("type")
     await db.legal_audit.create_index("timestamp")
@@ -557,6 +564,42 @@ async def get_current_customer(token: str = Depends(oauth2_scheme)):
     if not contact:
         raise HTTPException(status_code=404, detail="Kundenkonto nicht gefunden")
     return {"email": email.lower(), "contact": contact}
+
+
+async def archive_pdf_to_storage(doc_type: str, ref_id: str, number: str, pdf_bytes: bytes, version: int = 1, extra_meta: dict = None):
+    """PDF in Object Storage archivieren und DB-Referenz aktualisieren."""
+    storage_path = None
+    try:
+        from services.storage import put_object, is_available
+        if is_available():
+            path = f"nexifyai/documents/{doc_type}/{ref_id}_v{version}.pdf"
+            result = put_object(path, pdf_bytes, "application/pdf")
+            storage_path = result.get("path", path)
+            logger.info(f"PDF archived to Object Storage: {storage_path}")
+    except Exception as e:
+        logger.warning(f"Object Storage upload fallback: {e}")
+
+    doc_data = {
+        "ref_id": ref_id,
+        "type": doc_type,
+        "number": number,
+        "version": version,
+        "generated_at": utcnow().isoformat(),
+    }
+    if storage_path:
+        doc_data["storage_path"] = storage_path
+    else:
+        doc_data["pdf_data"] = pdf_bytes
+    if extra_meta:
+        doc_data.update(extra_meta)
+
+    await db.documents.update_one(
+        {"ref_id": ref_id, "type": doc_type},
+        {"$set": doc_data},
+        upsert=True,
+    )
+    return storage_path
+
 
 async def log_audit(action: str, user: str, details: dict = None):
     await db.audit_log.insert_one({
@@ -2968,7 +3011,7 @@ async def send_invoice(invoice_id: str, current_user: dict = Depends(get_current
 
 @app.get("/api/documents/{doc_type}/{ref_id}/pdf")
 async def download_document(doc_type: str, ref_id: str, token: str = None):
-    """Download document PDF (admin or magic-link access)"""
+    """Download document PDF — Object Storage primär, MongoDB-Fallback."""
     doc = await db.documents.find_one({"ref_id": ref_id, "type": doc_type})
     if not doc:
         raise HTTPException(404, "Dokument nicht gefunden")
@@ -2980,11 +3023,29 @@ async def download_document(doc_type: str, ref_id: str, token: str = None):
         await _log_event(db, "document_accessed", ref_id, "magic_link")
 
     filename = f"{doc_type}_{doc.get('number', ref_id).replace('.', '_')}.pdf"
-    return StreamingResponse(
-        BytesIO(doc["pdf_data"]),
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
+
+    # Object Storage primär
+    storage_path = doc.get("storage_path")
+    if storage_path:
+        try:
+            from services.storage import get_object
+            pdf_data, _ = get_object(storage_path)
+            return StreamingResponse(
+                BytesIO(pdf_data),
+                media_type="application/pdf",
+                headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+            )
+        except Exception as e:
+            logger.warning(f"Object Storage download fallback: {e}")
+
+    # MongoDB-Fallback
+    if doc.get("pdf_data"):
+        return StreamingResponse(
+            BytesIO(doc["pdf_data"]),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    raise HTTPException(404, "PDF-Daten nicht verfügbar")
 
 
 # --- Customer Magic Link Access ---
@@ -3100,27 +3161,162 @@ async def revolut_webhook(request: Request):
 
 # --- Stripe Webhook ---
 
+STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+
+
+@app.post("/api/admin/invoices/{invoice_id}/create-stripe-checkout")
+async def create_stripe_checkout(invoice_id: str, request: Request, current_user: dict = Depends(get_current_admin)):
+    """Stripe Checkout Session für eine Rechnung erstellen."""
+    if not STRIPE_API_KEY:
+        raise HTTPException(503, "Stripe nicht konfiguriert")
+    invoice = await db.invoices.find_one({"invoice_id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(404, "Rechnung nicht gefunden")
+    if invoice.get("payment_status") == "paid":
+        raise HTTPException(400, "Rechnung bereits bezahlt")
+
+    totals = invoice.get("totals", {})
+    gross = float(totals.get("gross", invoice.get("total_eur", 0)))
+    host_url = str(request.base_url).rstrip("/")
+
+    try:
+        from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
+        webhook_url = f"{host_url}api/webhooks/stripe"
+        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+
+        checkout_req = CheckoutSessionRequest(
+            amount=gross,
+            currency="eur",
+            success_url=f"{host_url}portal?payment=success&session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{host_url}portal?payment=cancelled",
+            metadata={"invoice_id": invoice_id, "invoice_number": invoice.get("invoice_number", "")},
+        )
+        session = await stripe_checkout.create_checkout_session(checkout_req)
+
+        # payment_transactions Collection
+        await db.payment_transactions.insert_one({
+            "session_id": session.session_id,
+            "invoice_id": invoice_id,
+            "invoice_number": invoice.get("invoice_number", ""),
+            "amount": gross,
+            "currency": "eur",
+            "provider": "stripe",
+            "payment_status": "initiated",
+            "customer_email": invoice.get("customer", {}).get("email", ""),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+
+        await db.invoices.update_one(
+            {"invoice_id": invoice_id},
+            {"$set": {
+                "stripe_checkout_session_id": session.session_id,
+                "checkout_url": session.url,
+            }},
+        )
+        await _log_event(db, "stripe_checkout_created", invoice_id, "billing")
+        return {"checkout_url": session.url, "session_id": session.session_id}
+    except Exception as e:
+        logger.error(f"Stripe checkout error: {e}")
+        raise HTTPException(500, f"Stripe Checkout-Fehler: {str(e)[:200]}")
+
+
+@app.get("/api/payments/checkout/status/{session_id}")
+async def checkout_status(session_id: str):
+    """Stripe Checkout Status abfragen — für Frontend-Polling."""
+    if not STRIPE_API_KEY:
+        raise HTTPException(503, "Stripe nicht konfiguriert")
+    try:
+        from emergentintegrations.payments.stripe.checkout import StripeCheckout
+        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="")
+        status = await stripe_checkout.get_checkout_status(session_id)
+
+        # Update payment_transactions
+        if status.payment_status == "paid":
+            existing = await db.payment_transactions.find_one({"session_id": session_id, "payment_status": "paid"})
+            if not existing:
+                await db.payment_transactions.update_one(
+                    {"session_id": session_id},
+                    {"$set": {"payment_status": "paid", "paid_at": datetime.now(timezone.utc).isoformat()}},
+                )
+                # Update invoice
+                tx = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+                if tx and tx.get("invoice_id"):
+                    now = datetime.now(timezone.utc)
+                    await db.invoices.update_one(
+                        {"invoice_id": tx["invoice_id"]},
+                        {"$set": {"payment_status": "paid", "paid_at": now.isoformat(), "status": "payment_completed"},
+                         "$push": {"history": {"action": "payment_received_stripe", "at": now.isoformat(), "by": "system"}}},
+                    )
+                    invoice = await db.invoices.find_one({"invoice_id": tx["invoice_id"]}, {"_id": 0})
+                    if invoice and invoice.get("quote_id"):
+                        await db.quotes.update_one(
+                            {"quote_id": invoice["quote_id"]},
+                            {"$set": {"payment_status": "deposit_paid"},
+                             "$push": {"history": {"action": "deposit_paid_stripe", "at": now.isoformat(), "by": "system"}}},
+                        )
+                    await _log_event(db, "payment_confirmed_stripe", tx["invoice_id"], "billing")
+
+        return {
+            "status": status.status,
+            "payment_status": status.payment_status,
+            "amount_total": status.amount_total,
+            "currency": status.currency,
+            "metadata": status.metadata,
+        }
+    except Exception as e:
+        logger.error(f"Stripe status check error: {e}")
+        raise HTTPException(500, f"Status-Abfrage fehlgeschlagen: {str(e)[:100]}")
+
 
 @app.post("/api/webhooks/stripe")
 async def stripe_webhook(request: Request):
-    """Handle Stripe payment webhooks — idempotent, dasselbe Statusmodell wie Revolut."""
+    """Handle Stripe payment webhooks — idempotent, signaturverifiziert, dasselbe Statusmodell wie Revolut."""
     body = await request.body()
     raw_body = body.decode("utf-8")
 
-    try:
-        data = json.loads(raw_body)
-    except Exception:
-        raise HTTPException(400, "Invalid JSON")
+    # Handle via emergentintegrations if available
+    if STRIPE_API_KEY:
+        try:
+            from emergentintegrations.payments.stripe.checkout import StripeCheckout
+            stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="")
+            sig_header = request.headers.get("Stripe-Signature", "")
+            webhook_response = await stripe_checkout.handle_webhook(body, sig_header)
+            if webhook_response:
+                event_type = webhook_response.event_type
+                event_id = webhook_response.event_id
+                session_id = webhook_response.session_id
+                payment_status = webhook_response.payment_status
+                metadata = webhook_response.metadata or {}
+            else:
+                data = json.loads(raw_body)
+                event_type = data.get("type", "")
+                event_id = data.get("id", "")
+                session_id = ""
+                payment_status = ""
+                metadata = {}
+        except Exception as e:
+            logger.warning(f"Stripe webhook handle error: {e}, falling back to raw parse")
+            data = json.loads(raw_body)
+            event_type = data.get("type", "")
+            event_id = data.get("id", "")
+            session_id = ""
+            payment_status = ""
+            metadata = {}
+    else:
+        try:
+            data = json.loads(raw_body)
+        except Exception:
+            raise HTTPException(400, "Invalid JSON")
+        event_type = data.get("type", "")
+        event_id = data.get("id", "")
+        session_id = ""
+        payment_status = ""
+        metadata = {}
 
-    event_type = data.get("type", "")
-    event_id = data.get("id", "")
-    obj = data.get("data", {}).get("object", {})
-    payment_intent_id = obj.get("id", "")
-    metadata = obj.get("metadata", {})
     invoice_id_ref = metadata.get("invoice_id", "")
 
-    logger.info(f"Stripe webhook: {event_type} for {payment_intent_id}")
+    logger.info(f"Stripe webhook: {event_type} event_id={event_id} session={session_id}")
 
     # Idempotenz-Check
     existing = await db.webhook_events.find_one({"order_id": event_id, "event": event_type, "provider": "stripe"})
@@ -3130,43 +3326,44 @@ async def stripe_webhook(request: Request):
     await db.webhook_events.insert_one({
         "order_id": event_id,
         "event": event_type,
-        "data": data,
         "provider": "stripe",
+        "session_id": session_id,
+        "payment_status": payment_status,
+        "metadata": metadata,
         "processed_at": datetime.now(timezone.utc).isoformat(),
     })
     await _log_event(db, "webhook_received", event_id, "stripe")
 
-    if billing_svc:
-        stripe_event_map = {
-            "payment_intent.succeeded": "payment_intent.succeeded",
-            "payment_intent.payment_failed": "payment_intent.payment_failed",
-        }
-        mapped_event = stripe_event_map.get(event_type, event_type)
-        result = await billing_svc.process_payment_webhook("stripe", {
-            "order_id": payment_intent_id or invoice_id_ref,
-            "event": mapped_event,
-            "amount": obj.get("amount", 0),
-        })
-    else:
-        # Fallback
-        if event_type == "payment_intent.succeeded":
-            invoice = await db.invoices.find_one({"$or": [
-                {"stripe_payment_intent_id": payment_intent_id},
-                {"invoice_id": invoice_id_ref},
-            ]})
-            if invoice:
-                now = datetime.now(timezone.utc)
+    # Update payment transaction and invoice
+    if payment_status == "paid" and session_id:
+        existing_paid = await db.payment_transactions.find_one({"session_id": session_id, "payment_status": "paid"})
+        if not existing_paid:
+            await db.payment_transactions.update_one(
+                {"session_id": session_id},
+                {"$set": {"payment_status": "paid", "paid_at": datetime.now(timezone.utc).isoformat()}},
+            )
+            tx = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+            if tx and tx.get("invoice_id"):
+                now_ts = datetime.now(timezone.utc)
                 await db.invoices.update_one(
-                    {"invoice_id": invoice["invoice_id"]},
-                    {"$set": {"payment_status": "paid", "paid_at": now.isoformat(), "status": "payment_completed"},
-                     "$push": {"history": {"action": "payment_received_stripe", "at": now.isoformat(), "by": "system"}}},
+                    {"invoice_id": tx["invoice_id"]},
+                    {"$set": {"payment_status": "paid", "paid_at": now_ts.isoformat(), "status": "payment_completed"},
+                     "$push": {"history": {"action": "payment_received_stripe_webhook", "at": now_ts.isoformat(), "by": "system"}}},
                 )
-                if invoice.get("quote_id"):
+                inv = await db.invoices.find_one({"invoice_id": tx["invoice_id"]}, {"_id": 0})
+                if inv and inv.get("quote_id"):
                     await db.quotes.update_one(
-                        {"quote_id": invoice["quote_id"]},
+                        {"quote_id": inv["quote_id"]},
                         {"$set": {"payment_status": "deposit_paid"},
-                         "$push": {"history": {"action": "deposit_paid_stripe", "at": now.isoformat(), "by": "system"}}},
+                         "$push": {"history": {"action": "deposit_paid_stripe_webhook", "at": now_ts.isoformat(), "by": "system"}}},
                     )
+    elif invoice_id_ref and event_type in ("payment_intent.succeeded",):
+        if billing_svc:
+            await billing_svc.process_payment_webhook("stripe", {
+                "order_id": invoice_id_ref,
+                "event": event_type,
+                "amount": 0,
+            })
 
     await _log_event(db, "webhook_processed", event_id, "stripe")
     return {"status": "ok"}
@@ -4944,6 +5141,43 @@ async def get_project(project_id: str, current_user: dict = Depends(get_current_
     project["chat"] = chat
     project["latest_version"] = latest_version
     project["section_definitions"] = PROJECT_SECTION_LABELS
+
+    # P5: Projektstatus aus echten Entitäten ableiten
+    derived_status = {}
+    qid = project.get("quote_id")
+    cid = project.get("contract_id")
+    customer_email = project.get("customer", {}).get("email", "")
+    if qid:
+        quote = await db.quotes.find_one({"quote_id": qid}, {"_id": 0, "status": 1, "payment_status": 1, "quote_number": 1})
+        if quote:
+            derived_status["quote"] = {"id": qid, "number": quote.get("quote_number"), "status": quote.get("status"), "payment_status": quote.get("payment_status")}
+    if cid:
+        contract = await db.contracts.find_one({"contract_id": cid}, {"_id": 0, "status": 1, "contract_number": 1, "accepted_at": 1})
+        if contract:
+            derived_status["contract"] = {"id": cid, "number": contract.get("contract_number"), "status": contract.get("status"), "accepted_at": str(contract.get("accepted_at", "")) if contract.get("accepted_at") else None}
+    if qid:
+        inv = await db.invoices.find_one({"quote_id": qid}, {"_id": 0, "invoice_id": 1, "invoice_number": 1, "payment_status": 1})
+        if inv:
+            derived_status["invoice"] = {"id": inv["invoice_id"], "number": inv.get("invoice_number"), "payment_status": inv.get("payment_status")}
+    if customer_email:
+        inv_count = await db.invoices.count_documents({"customer.email": customer_email, "payment_status": "paid"})
+        derived_status["payments_completed"] = inv_count
+
+    # Derive build readiness
+    is_build_ready = (
+        derived_status.get("contract", {}).get("status") == "accepted"
+        and derived_status.get("invoice", {}).get("payment_status") == "paid"
+    )
+    derived_status["build_ready"] = is_build_ready
+    derived_status["phase"] = (
+        "build_ready" if is_build_ready
+        else "payment_pending" if derived_status.get("contract", {}).get("status") == "accepted"
+        else "contract_pending" if derived_status.get("quote", {}).get("status") == "accepted"
+        else "quote_pending" if qid
+        else "discovery"
+    )
+    project["derived_status"] = derived_status
+
     return project
 
 
@@ -5291,6 +5525,41 @@ async def customer_project_detail(project_id: str, current_user: dict = Depends(
     done = sum(1 for v in sections_status.values() if v in ("freigegeben", "review"))
     project["completeness"] = round(done / total * 100) if total else 0
     project.pop("sections_status", None)
+
+    # P5: Projektstatus für Kunden aus echten Entitäten
+    derived = {}
+    qid = project.get("quote_id")
+    cid = project.get("contract_id")
+    if qid:
+        quote = await db.quotes.find_one({"quote_id": qid}, {"_id": 0, "status": 1, "payment_status": 1})
+        if quote:
+            derived["quote_status"] = quote.get("status")
+    if cid:
+        contract = await db.contracts.find_one({"contract_id": cid}, {"_id": 0, "status": 1, "accepted_at": 1})
+        if contract:
+            derived["contract_status"] = contract.get("status")
+    if qid:
+        inv = await db.invoices.find_one({"quote_id": qid}, {"_id": 0, "payment_status": 1})
+        if inv:
+            derived["payment_status"] = inv.get("payment_status")
+    is_build_ready = (derived.get("contract_status") == "accepted" and derived.get("payment_status") == "paid")
+    derived["phase"] = (
+        "build_ready" if is_build_ready
+        else "payment_pending" if derived.get("contract_status") == "accepted"
+        else "contract_pending" if derived.get("quote_status") == "accepted"
+        else "quote_pending" if qid
+        else "discovery"
+    )
+    phase_labels = {
+        "discovery": "Bedarfsanalyse",
+        "quote_pending": "Angebot in Prüfung",
+        "contract_pending": "Vertrag ausstehend",
+        "payment_pending": "Zahlung ausstehend",
+        "build_ready": "Build-Phase bereit",
+    }
+    derived["phase_label"] = phase_labels.get(derived["phase"], derived["phase"])
+    project["project_phase"] = derived
+
     return project
 
 
@@ -5570,16 +5839,9 @@ async def admin_generate_contract_pdf(contract_id: str, current_user: dict = Dep
     )
     try:
         pdf_bytes = generate_contract_pdf(contract, appendices=appendices, evidence=evidence)
-        await db.documents.update_one(
-            {"ref_id": contract_id, "type": "contract"},
-            {"$set": {
-                "ref_id": contract_id, "type": "contract",
-                "number": contract.get("contract_number", ""),
-                "pdf_data": pdf_bytes,
-                "version": contract.get("version", 1),
-                "generated_at": utcnow().isoformat(),
-            }},
-            upsert=True,
+        await archive_pdf_to_storage(
+            "contract", contract_id, contract.get("contract_number", ""),
+            pdf_bytes, version=contract.get("version", 1),
         )
         return {"generated": True, "contract_id": contract_id, "size_bytes": len(pdf_bytes)}
     except Exception as e:
@@ -5752,20 +6014,14 @@ async def customer_accept_contract(contract_id: str, data: dict, request: Reques
             appendices.append(a)
         updated_contract = await db.contracts.find_one({"contract_id": contract_id}, {"_id": 0})
         pdf_bytes = generate_contract_pdf(updated_contract, appendices=appendices, evidence=evidence)
-        await db.documents.update_one(
-            {"ref_id": contract_id, "type": "contract"},
-            {"$set": {
-                "ref_id": contract_id,
-                "type": "contract",
-                "number": contract.get("contract_number", ""),
-                "pdf_data": pdf_bytes,
-                "version": contract.get("version", 1),
-                "generated_at": utcnow().isoformat(),
-                "evidence_id": evidence["evidence_id"],
-            }},
-            upsert=True,
+        await archive_pdf_to_storage(
+            "contract", contract_id, contract.get("contract_number", ""),
+            pdf_bytes, version=contract.get("version", 1),
+            extra_meta={"evidence_id": evidence["evidence_id"]},
         )
         logger.info(f"Contract PDF archived: {contract_id}")
+    except Exception as e:
+        logger.error(f"Contract PDF generation error: {e}")
     except Exception as e:
         logger.error(f"Contract PDF generation error: {e}")
 
@@ -6020,9 +6276,10 @@ async def monitoring_status(current_user: dict = Depends(get_current_admin)):
 
     # Payment providers
     revolut_key = bool(os.environ.get("REVOLUT_SECRET_KEY", "").strip())
+    stripe_key = bool(os.environ.get("STRIPE_API_KEY", "").strip())
     payment_status = {
         "revolut": {"status": "configured" if revolut_key else "not_configured", "api_key_set": revolut_key},
-        "stripe": {"status": "not_configured", "api_key_set": False},
+        "stripe": {"status": "configured" if stripe_key else "not_configured", "api_key_set": stripe_key, "webhook_secret_set": bool(os.environ.get("STRIPE_WEBHOOK_SECRET", "").strip())},
     }
 
     # Webhooks
@@ -6042,6 +6299,17 @@ async def monitoring_status(current_user: dict = Depends(get_current_admin)):
     # Dead letter queue
     dead_letters = await db.dead_letter_queue.count_documents({}) if "dead_letter_queue" in await db.list_collection_names() else 0
 
+    # Object Storage
+    from services.storage import is_available as storage_available, _storage_key
+    storage_status = {
+        "status": "configured" if _storage_key else ("available" if storage_available() else "not_configured"),
+        "initialized": bool(_storage_key),
+    }
+
+    # Documents archived
+    docs_total = await db.documents.count_documents({})
+    docs_in_storage = await db.documents.count_documents({"storage_path": {"$exists": True, "$ne": None}})
+
     return {
         "timestamp": utcnow().isoformat(),
         "systems": {
@@ -6054,6 +6322,8 @@ async def monitoring_status(current_user: dict = Depends(get_current_admin)):
             "memory_audit": memory_status,
             "llm": llm_status_data,
             "dead_letter_queue": {"count": dead_letters, "status": "ok" if dead_letters == 0 else "attention"},
+            "object_storage": storage_status,
+            "documents": {"total": docs_total, "in_storage": docs_in_storage, "in_mongodb": docs_total - docs_in_storage},
         },
         "overall_status": "operational",
     }
