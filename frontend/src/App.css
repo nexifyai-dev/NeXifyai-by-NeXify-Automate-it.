@@ -63,6 +63,7 @@ h3{font-size:1.125rem;font-weight:700}
 
 /* ── NAVIGATION ── */
 .nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(12,17,23,.5);backdrop-filter:blur(24px) saturate(1.2);-webkit-backdrop-filter:blur(24px) saturate(1.2);border-bottom:1px solid rgba(255,255,255,0.04);transition:all 400ms cubic-bezier(0.25,0.4,0,1)}
+body.mobile-menu-open .nav{z-index:9999}
 .nav.scrolled{background:rgba(12,17,23,.88);box-shadow:0 1px 0 rgba(255,155,122,0.06),0 8px 48px rgba(0,0,0,.5)}
 .nav-inner{display:flex;justify-content:space-between;align-items:center;height:var(--nav-h)}
 .nav-logo{display:flex;align-items:center;gap:10px}
@@ -84,7 +85,8 @@ h3{font-size:1.125rem;font-weight:700}
 @media(min-width:768px){.nav-cta{display:inline-flex}}
 .nav-toggle{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid var(--nx-border-h);color:#fff;backdrop-filter:blur(8px);border-radius:6px}
 @media(min-width:1200px){.nav-toggle{display:none}}
-.nav-mobile{position:absolute;top:var(--nav-h);left:0;right:0;background:rgba(12,17,23,0.96);backdrop-filter:blur(24px);border-bottom:1px solid var(--nx-border-h);padding:16px var(--pad);display:flex;flex-direction:column;gap:4px}
+.nav-mobile{position:absolute;top:var(--nav-h);left:0;right:0;height:calc(100vh - var(--nav-h));height:calc(100dvh - var(--nav-h));background:#0a0e14;padding:16px var(--pad);display:flex;flex-direction:column;gap:4px;z-index:200;overflow-y:auto}
+.nav-mobile-backdrop{position:absolute;top:var(--nav-h);left:0;right:0;height:calc(100vh - var(--nav-h));height:calc(100dvh - var(--nav-h));background:rgba(0,0,0,0.85);z-index:199}
 .nav-mobile a{display:block;padding:12px 0;color:var(--nx-muted);border-bottom:1px solid var(--nx-border);font-size:.9375rem}
 .nav-mobile a:hover{color:#fff}
 .nav-mobile-cta{margin-top:12px;border-radius:6px}
@@ -901,5 +903,11 @@ a.integ-item-v2.popular{border-color:rgba(255,155,122,0.1);color:rgba(255,255,25
 
 /* Hide on admin/portal pages via body class */
 body.hide-wa .whatsapp-btn{display:none}
+
+/* ═══════════ MOBILE MENU OPEN → HIDE FLOATING ACTIONS ═══════════ */
+body.mobile-menu-open .whatsapp-btn{opacity:0!important;pointer-events:none!important;visibility:hidden!important;transition:opacity .15s,visibility .15s!important}
+body.mobile-menu-open .chat-trigger{opacity:0!important;pointer-events:none!important;visibility:hidden!important;transition:opacity .15s,visibility .15s!important}
+body.mobile-menu-open .cookie-banner{z-index:50!important}
+
 /* ═══════════ PRINT ═══════════ */
 @media print{.nav,.chat-trigger,.chat-overlay,.booking-overlay,.cookie-banner{display:none!important}body{background:#fff;color:#000}}

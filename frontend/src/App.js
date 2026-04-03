@@ -15,8 +15,7 @@ import Booking from './components/sections/BookingModal';
 import './App.css';
 
 /* ═══════════ NAVIGATION ═══════════ */
-const Nav = ({ onChat, t, lang }) => {
-  const [mob, setMob] = useState(false);
+const Nav = ({ onChat, t, lang, mobileMenuOpen, setMobileMenuOpen }) => {
   const [sc, setSc] = useState(false);
   useEffect(() => { const h = () => setSc(window.scrollY > 50); window.addEventListener('scroll', h, { passive: true }); return () => window.removeEventListener('scroll', h); }, []);
   const links = [
@@ -24,7 +23,7 @@ const Nav = ({ onChat, t, lang }) => {
     { l: t.nav.appdev, h: '#app-dev' }, { l: t.nav.integrationen, h: '#integrationen' },
     { l: t.nav.tarife, h: '#preise' }, { l: lang === 'en' ? 'SEO' : 'KI-SEO', h: '#ki-seo' }, { l: lang === 'en' ? 'Services' : lang === 'nl' ? 'Diensten' : 'Services', h: '#services' }, { l: t.nav.faq, h: '#faq' }
   ];
-  const go = (h) => { setMob(false); track('nav_click', { target: h }); };
+  const go = (h) => { setMobileMenuOpen(false); track('nav_click', { target: h }); };
   const ctaLabel = lang === 'en' ? 'Start Consultation' : lang === 'nl' ? 'Advies starten' : 'Beratung starten';
   const loginLabel = lang === 'en' ? 'Login' : lang === 'nl' ? 'Inloggen' : 'Anmelden';
   return (
@@ -38,16 +37,18 @@ const Nav = ({ onChat, t, lang }) => {
           <LanguageSwitcher />
           <a href="/login" className="nav-login-link" data-testid="nav-login-btn" onClick={() => track('nav_click', { target: 'login' })}><I n="login" /><span>{loginLabel}</span></a>
           <button className="btn btn-primary nav-cta" onClick={() => { onChat(); track('cta_click', { loc: 'nav' }); }} data-testid="nav-book-btn">{ctaLabel}</button>
-          <button className="nav-toggle" onClick={() => setMob(!mob)} aria-label={mob ? t.nav.menuClose : t.nav.menuOpen} aria-expanded={mob} data-testid="nav-toggle"><I n={mob ? 'close' : 'menu'} /></button>
+          <button className="nav-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label={mobileMenuOpen ? t.nav.menuClose : t.nav.menuOpen} aria-expanded={mobileMenuOpen} data-testid="nav-toggle"><I n={mobileMenuOpen ? 'close' : 'menu'} /></button>
         </div>
         <AnimatePresence>
-          {mob && (
-            <motion.div className="nav-mobile" role="menu" data-testid="nav-mobile-menu" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-              {links.map(l => <a key={l.h} href={l.h} role="menuitem" onClick={() => go(l.h)}>{l.l}</a>)}
-              <a href="/login" className="nav-mobile-login" onClick={() => { setMob(false); track('nav_click', { target: 'login' }); }}><I n="login" /> {loginLabel}</a>
-              <LanguageSwitcher mobile />
-              <button className="btn btn-primary nav-mobile-cta" onClick={() => { setMob(false); onChat(); }}>{ctaLabel}</button>
-            </motion.div>
+          {mobileMenuOpen && (
+            <>
+              <motion.div className="nav-mobile-backdrop" data-testid="nav-mobile-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} onClick={() => setMobileMenuOpen(false)} />
+              <motion.div className="nav-mobile" role="menu" data-testid="nav-mobile-menu" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                {links.map(l => <a key={l.h} href={l.h} role="menuitem" onClick={() => go(l.h)}>{l.l}</a>)}
+                <a href="/login" className="nav-mobile-login" onClick={() => { setMobileMenuOpen(false); track('nav_click', { target: 'login' }); }}><I n="login" /> {loginLabel}</a>
+                <button className="btn btn-primary nav-mobile-cta" onClick={() => { setMobileMenuOpen(false); onChat(); }}>{ctaLabel}</button>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
       </div>
@@ -448,6 +449,7 @@ function App() {
   const [bookOpen, setBookOpen] = useState(false);
   const [chatQ, setChatQ] = useState('');
   const [showCookie, setShowCookie] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     track('page_view', { page: 'landing', lang });
@@ -459,15 +461,14 @@ function App() {
     return () => window.removeEventListener('scroll', h);
   }, [lang]);
 
-  /* Dynamic floating action positioning based on cookie banner state */
+  /* Dynamic floating action positioning based on cookie banner and mobile menu state */
   useEffect(() => {
-    if (showCookie) {
-      document.body.classList.add('cookie-visible');
-    } else {
-      document.body.classList.remove('cookie-visible');
-    }
-    return () => document.body.classList.remove('cookie-visible');
-  }, [showCookie]);
+    if (showCookie) document.body.classList.add('cookie-visible');
+    else document.body.classList.remove('cookie-visible');
+    if (mobileMenuOpen) document.body.classList.add('mobile-menu-open');
+    else document.body.classList.remove('mobile-menu-open');
+    return () => { document.body.classList.remove('cookie-visible'); document.body.classList.remove('mobile-menu-open'); };
+  }, [showCookie, mobileMenuOpen]);
 
   const openChat = (msg = '') => { setChatQ(msg); setChatOpen(true); track('chat_open', { source: msg ? 'cta_contextual' : 'cta_generic', msg }); };
   const openBooking = () => { setBookOpen(true); };
@@ -480,7 +481,7 @@ function App() {
     <div className="app" data-testid="app-root">
       <SEOHead lang={lang} page="home" />
       <a href="#loesungen" className="skip-link">Skip to content</a>
-      <Nav onChat={openChat} t={t} lang={lang} />
+      <Nav onChat={openChat} t={t} lang={lang} mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
       <main id="main-content">
         <Hero onChat={openChat} t={t} lang={lang} />
         <Solutions t={t} />

@@ -3,29 +3,42 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, MeshDistortMaterial, Sphere, Box, Torus, Icosahedron, Octahedron } from '@react-three/drei';
 import * as THREE from 'three';
 
-/* ═══════════ HERO — Neural Network Constellation ═══════════ */
-const NODE_COUNT = 120;
-const EDGE_COUNT = 150;
+/* ═══════════ HERO — Deep 3D Neural Network ═══════════ */
+const NODE_COUNT = 160;
+const EDGE_COUNT = 200;
 
 function NetworkNodes() {
   const meshRef = useRef();
   const positions = useMemo(() => {
     const pos = new Float32Array(NODE_COUNT * 3);
     for (let i = 0; i < NODE_COUNT; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 10;
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 7;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 5;
+      // Spherische Verteilung für echte 3D-Tiefe
+      const phi = Math.acos(2 * Math.random() - 1);
+      const theta = Math.random() * Math.PI * 2;
+      const r = 2 + Math.random() * 4;
+      pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta) * 0.6;
+      pos[i * 3 + 2] = r * Math.cos(phi);
     }
     return pos;
   }, []);
 
+  const sizes = useMemo(() => {
+    const s = new Float32Array(NODE_COUNT);
+    for (let i = 0; i < NODE_COUNT; i++) {
+      s[i] = 0.03 + Math.random() * 0.06;
+    }
+    return s;
+  }, []);
+
   useFrame(({ clock }) => {
     if (!meshRef.current) return;
-    const t = clock.getElapsedTime() * 0.12;
+    const t = clock.getElapsedTime() * 0.15;
     const posArr = meshRef.current.geometry.attributes.position.array;
     for (let i = 0; i < NODE_COUNT; i++) {
-      posArr[i * 3] += Math.sin(t + i * 0.4) * 0.0008;
-      posArr[i * 3 + 1] += Math.cos(t + i * 0.25) * 0.0008;
+      posArr[i * 3] += Math.sin(t + i * 0.3) * 0.002;
+      posArr[i * 3 + 1] += Math.cos(t + i * 0.2) * 0.002;
+      posArr[i * 3 + 2] += Math.sin(t * 0.5 + i * 0.15) * 0.001;
     }
     meshRef.current.geometry.attributes.position.needsUpdate = true;
   });
@@ -35,7 +48,7 @@ function NetworkNodes() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" count={NODE_COUNT} array={positions} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial size={0.05} color="#ff9b7a" transparent opacity={0.7} sizeAttenuation />
+      <pointsMaterial size={0.06} color="#ff9b7a" transparent opacity={0.85} sizeAttenuation depthWrite={false} />
     </points>
   );
 }
@@ -45,8 +58,15 @@ function NetworkEdges() {
   const positions = useMemo(() => {
     const pos = [];
     for (let i = 0; i < EDGE_COUNT; i++) {
-      const x1 = (Math.random() - 0.5) * 10, y1 = (Math.random() - 0.5) * 7, z1 = (Math.random() - 0.5) * 5;
-      const x2 = x1 + (Math.random() - 0.5) * 2.5, y2 = y1 + (Math.random() - 0.5) * 1.8, z2 = z1 + (Math.random() - 0.5) * 1.5;
+      const phi = Math.acos(2 * Math.random() - 1);
+      const theta = Math.random() * Math.PI * 2;
+      const r1 = 2 + Math.random() * 3.5;
+      const x1 = r1 * Math.sin(phi) * Math.cos(theta);
+      const y1 = r1 * Math.sin(phi) * Math.sin(theta) * 0.6;
+      const z1 = r1 * Math.cos(phi);
+      const x2 = x1 + (Math.random() - 0.5) * 2.5;
+      const y2 = y1 + (Math.random() - 0.5) * 1.8;
+      const z2 = z1 + (Math.random() - 0.5) * 2;
       pos.push(x1, y1, z1, x2, y2, z2);
     }
     return new Float32Array(pos);
@@ -54,8 +74,9 @@ function NetworkEdges() {
 
   useFrame(({ clock }) => {
     if (linesRef.current) {
-      linesRef.current.rotation.y = clock.getElapsedTime() * 0.015;
-      linesRef.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.008) * 0.03;
+      linesRef.current.rotation.y = clock.getElapsedTime() * 0.025;
+      linesRef.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.012) * 0.08;
+      linesRef.current.rotation.z = Math.cos(clock.getElapsedTime() * 0.008) * 0.03;
     }
   });
 
@@ -64,54 +85,88 @@ function NetworkEdges() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" count={EDGE_COUNT * 2} array={positions} itemSize={3} />
       </bufferGeometry>
-      <lineBasicMaterial color="#ff9b7a" transparent opacity={0.06} />
+      <lineBasicMaterial color="#ff9b7a" transparent opacity={0.12} />
     </lineSegments>
   );
 }
 
 function FloatingCore() {
-  const ref = useRef();
+  const groupRef = useRef();
+  const outerRef = useRef();
   const innerRef = useRef();
+  const shellRef = useRef();
+
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
-    if (ref.current) {
-      ref.current.rotation.x = t * 0.08;
-      ref.current.rotation.y = t * 0.12;
+    if (groupRef.current) {
+      groupRef.current.rotation.y = t * 0.06;
+      groupRef.current.position.y = Math.sin(t * 0.4) * 0.15;
+    }
+    if (outerRef.current) {
+      outerRef.current.rotation.x = t * 0.12;
+      outerRef.current.rotation.y = t * 0.18;
+      outerRef.current.rotation.z = t * 0.08;
     }
     if (innerRef.current) {
-      innerRef.current.rotation.x = t * -0.05;
-      innerRef.current.rotation.z = t * 0.07;
+      innerRef.current.rotation.x = t * -0.08;
+      innerRef.current.rotation.z = t * 0.1;
+    }
+    if (shellRef.current) {
+      shellRef.current.rotation.y = -t * 0.05;
+      shellRef.current.rotation.x = t * 0.03;
     }
   });
+
   return (
-    <group position={[1.5, 0, 0]}>
-      <group ref={ref}>
-        <Icosahedron args={[1.6, 1]}>
-          <meshBasicMaterial color="#ff9b7a" wireframe transparent opacity={0.12} />
+    <group ref={groupRef} position={[1.5, 0, 0]}>
+      {/* Outer wireframe shell — visible 3D structure */}
+      <group ref={outerRef}>
+        <Icosahedron args={[2, 1]}>
+          <meshBasicMaterial color="#ff9b7a" wireframe transparent opacity={0.18} />
         </Icosahedron>
       </group>
+      {/* Mid shell — counter-rotating for depth */}
+      <group ref={shellRef}>
+        <Icosahedron args={[1.5, 2]}>
+          <meshBasicMaterial color="#ffb59e" wireframe transparent opacity={0.08} />
+        </Icosahedron>
+      </group>
+      {/* Inner distorted sphere */}
       <group ref={innerRef}>
-        <Icosahedron args={[1.15, 0]}>
-          <MeshDistortMaterial color="#ff9b7a" transparent opacity={0.05} distort={0.3} speed={1.5} />
+        <Icosahedron args={[1.1, 0]}>
+          <MeshDistortMaterial color="#ff9b7a" transparent opacity={0.1} distort={0.4} speed={2} />
         </Icosahedron>
       </group>
-      <Sphere args={[0.25, 16, 16]}>
-        <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={1.2} transparent opacity={0.2} />
+      {/* Bright core */}
+      <Sphere args={[0.35, 24, 24]}>
+        <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={2} transparent opacity={0.35} />
       </Sphere>
+      {/* Core inner glow */}
+      <Sphere args={[0.15, 16, 16]}>
+        <meshStandardMaterial color="#ffffff" emissive="#ff9b7a" emissiveIntensity={3} transparent opacity={0.6} />
+      </Sphere>
+      {/* Orbiting ring */}
+      <Torus args={[1.8, 0.015, 8, 64]} rotation={[1.2, 0.5, 0]}>
+        <meshBasicMaterial color="#ff9b7a" transparent opacity={0.25} />
+      </Torus>
+      <Torus args={[1.3, 0.01, 8, 48]} rotation={[0.5, 1.5, 0.3]}>
+        <meshBasicMaterial color="#ffb59e" transparent opacity={0.15} />
+      </Torus>
     </group>
   );
 }
 
 function DataStreams() {
   const ref = useRef();
-  const count = 500;
+  const count = 600;
   const positions = useMemo(() => {
     const p = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
-      const angle = (i / count) * Math.PI * 10;
-      const radius = 1.5 + Math.random() * 4;
+      const angle = (i / count) * Math.PI * 12;
+      const radius = 1 + Math.random() * 5;
+      const heightSpread = (Math.random() - 0.5) * 8;
       p[i * 3] = Math.cos(angle) * radius;
-      p[i * 3 + 1] = (Math.random() - 0.5) * 7;
+      p[i * 3 + 1] = heightSpread * 0.6;
       p[i * 3 + 2] = Math.sin(angle) * radius;
     }
     return p;
@@ -119,7 +174,8 @@ function DataStreams() {
 
   useFrame(({ clock }) => {
     if (ref.current) {
-      ref.current.rotation.y = clock.getElapsedTime() * 0.03;
+      ref.current.rotation.y = clock.getElapsedTime() * 0.04;
+      ref.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.02) * 0.05;
     }
   });
 
@@ -128,37 +184,55 @@ function DataStreams() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial size={0.015} color="#ffb59e" transparent opacity={0.3} sizeAttenuation />
+      <pointsMaterial size={0.025} color="#ffb59e" transparent opacity={0.45} sizeAttenuation depthWrite={false} />
     </points>
   );
 }
 
 function AccentGeometries() {
+  const ref1 = useRef();
+  const ref2 = useRef();
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    if (ref1.current) { ref1.current.rotation.x = t * 0.15; ref1.current.rotation.y = t * 0.1; }
+    if (ref2.current) { ref2.current.rotation.z = t * 0.12; ref2.current.rotation.x = t * 0.08; }
+  });
+
   return (
     <>
-      <Float speed={0.5} rotationIntensity={0.2} floatIntensity={0.3}>
-        <Sphere args={[0.12, 16, 16]} position={[4, 2.5, -1.5]}>
-          <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={0.6} transparent opacity={0.5} />
+      <Float speed={0.6} rotationIntensity={0.3} floatIntensity={0.4}>
+        <Sphere args={[0.18, 16, 16]} position={[4.5, 2.5, -2]}>
+          <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={1.2} transparent opacity={0.65} />
         </Sphere>
       </Float>
-      <Float speed={0.8} rotationIntensity={0.3} floatIntensity={0.4}>
-        <Box args={[0.18, 0.18, 0.18]} position={[-4, -2, 0.5]} rotation={[0.5, 0.5, 0]}>
-          <meshBasicMaterial color="#ff9b7a" transparent opacity={0.08} wireframe />
-        </Box>
+      <Float speed={0.5} rotationIntensity={0.2} floatIntensity={0.3}>
+        <group ref={ref1} position={[-4.5, -2, 1]}>
+          <Octahedron args={[0.35, 0]}>
+            <meshBasicMaterial color="#ff9b7a" wireframe transparent opacity={0.2} />
+          </Octahedron>
+        </group>
       </Float>
-      <Float speed={0.6} rotationIntensity={0.15} floatIntensity={0.2}>
-        <Torus args={[0.25, 0.06, 8, 24]} position={[4.5, -2.5, -1]} rotation={[1, 0.5, 0]}>
-          <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={0.2} transparent opacity={0.2} />
+      <Float speed={0.7} rotationIntensity={0.25} floatIntensity={0.35}>
+        <Torus args={[0.35, 0.08, 8, 24]} position={[4.5, -2.5, -1.5]} rotation={[1, 0.5, 0]}>
+          <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={0.5} transparent opacity={0.3} />
         </Torus>
       </Float>
-      <Float speed={0.4} rotationIntensity={0.1} floatIntensity={0.15}>
-        <Icosahedron args={[0.1, 0]} position={[-3, 2, -1]}>
-          <meshBasicMaterial color="#ff9b7a" wireframe transparent opacity={0.12} />
-        </Icosahedron>
+      <Float speed={0.4} rotationIntensity={0.15} floatIntensity={0.2}>
+        <group ref={ref2} position={[-3.5, 2.5, -1.5]}>
+          <Icosahedron args={[0.2, 0]}>
+            <meshBasicMaterial color="#ff9b7a" wireframe transparent opacity={0.2} />
+          </Icosahedron>
+        </group>
       </Float>
-      <Float speed={0.7} rotationIntensity={0.2} floatIntensity={0.25}>
-        <Sphere args={[0.06, 8, 8]} position={[2, -3, 0]}>
-          <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={1} transparent opacity={0.4} />
+      <Float speed={0.8} rotationIntensity={0.3} floatIntensity={0.3}>
+        <Sphere args={[0.1, 8, 8]} position={[2.5, -3.5, 0.5]}>
+          <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={2} transparent opacity={0.55} />
+        </Sphere>
+      </Float>
+      <Float speed={0.3} rotationIntensity={0.1} floatIntensity={0.2}>
+        <Sphere args={[0.08, 8, 8]} position={[-2, -3, 1]}>
+          <meshStandardMaterial color="#ffb59e" emissive="#ffb59e" emissiveIntensity={1.5} transparent opacity={0.5} />
         </Sphere>
       </Float>
     </>
@@ -169,14 +243,15 @@ export function HeroScene() {
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
       <Canvas
-        camera={{ position: [0, 0, 6], fov: 60 }}
-        dpr={[1, 1.5]}
+        camera={{ position: [0, 0.5, 7], fov: 55 }}
+        dpr={[1, 2]}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       >
-        <ambientLight intensity={0.25} />
-        <pointLight position={[5, 5, 5]} intensity={0.5} color="#ff9b7a" distance={20} decay={2} />
-        <pointLight position={[-4, -3, 3]} intensity={0.2} color="#ff9b7a" distance={15} decay={2} />
-        <pointLight position={[0, -5, 4]} intensity={0.12} color="#ffb59e" distance={12} decay={2} />
+        <ambientLight intensity={0.35} />
+        <pointLight position={[6, 4, 6]} intensity={0.8} color="#ff9b7a" distance={25} decay={2} />
+        <pointLight position={[-5, -3, 4]} intensity={0.4} color="#ff9b7a" distance={18} decay={2} />
+        <pointLight position={[0, -6, 5]} intensity={0.25} color="#ffb59e" distance={15} decay={2} />
+        <pointLight position={[3, 5, -2]} intensity={0.2} color="#ff6b4a" distance={12} decay={2} />
         <Suspense fallback={null}>
           <FloatingCore />
           <NetworkNodes />
@@ -189,38 +264,38 @@ export function HeroScene() {
   );
 }
 
-/* ═══════════ INTEGRATIONS GLOBE — Premium Wireframe ═══════════ */
+/* ═══════════ INTEGRATIONS GLOBE — Deep 3D Wireframe ═══════════ */
 function GlobeWireframe() {
   const ref = useRef();
   useFrame(({ clock }) => {
     if (ref.current) {
-      ref.current.rotation.y = clock.getElapsedTime() * 0.05;
-      ref.current.rotation.x = 0.2;
+      ref.current.rotation.y = clock.getElapsedTime() * 0.06;
+      ref.current.rotation.x = 0.25 + Math.sin(clock.getElapsedTime() * 0.02) * 0.05;
     }
   });
   return (
     <group ref={ref}>
       <Sphere args={[2, 32, 32]}>
-        <meshBasicMaterial color="#ff9b7a" wireframe transparent opacity={0.07} />
+        <meshBasicMaterial color="#ff9b7a" wireframe transparent opacity={0.12} />
       </Sphere>
-      <Sphere args={[2.1, 20, 20]}>
-        <meshBasicMaterial color="#ff9b7a" wireframe transparent opacity={0.03} />
+      <Sphere args={[2.15, 20, 20]}>
+        <meshBasicMaterial color="#ff9b7a" wireframe transparent opacity={0.05} />
       </Sphere>
       {/* Equatorial ring */}
-      <Torus args={[2.06, 0.012, 8, 64]} rotation={[Math.PI / 2, 0, 0]}>
-        <meshBasicMaterial color="#ff9b7a" transparent opacity={0.18} />
+      <Torus args={[2.08, 0.018, 8, 64]} rotation={[Math.PI / 2, 0, 0]}>
+        <meshBasicMaterial color="#ff9b7a" transparent opacity={0.3} />
       </Torus>
       {/* Polar ring */}
-      <Torus args={[2.06, 0.008, 8, 64]} rotation={[0, 0, 0]}>
-        <meshBasicMaterial color="#ff9b7a" transparent opacity={0.08} />
+      <Torus args={[2.08, 0.012, 8, 64]} rotation={[0, 0, 0]}>
+        <meshBasicMaterial color="#ff9b7a" transparent opacity={0.15} />
       </Torus>
       {/* Angled ring */}
-      <Torus args={[2.06, 0.006, 8, 64]} rotation={[Math.PI / 3, Math.PI / 4, 0]}>
-        <meshBasicMaterial color="#ff9b7a" transparent opacity={0.06} />
+      <Torus args={[2.08, 0.01, 8, 64]} rotation={[Math.PI / 3, Math.PI / 4, 0]}>
+        <meshBasicMaterial color="#ff9b7a" transparent opacity={0.1} />
       </Torus>
-      {/* Central glow */}
-      <Sphere args={[0.15, 12, 12]}>
-        <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={1.2} transparent opacity={0.2} />
+      {/* Central glow — much brighter */}
+      <Sphere args={[0.25, 16, 16]}>
+        <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={2} transparent opacity={0.4} />
       </Sphere>
     </group>
   );
@@ -228,13 +303,13 @@ function GlobeWireframe() {
 
 function GlobeNodes() {
   const ref = useRef();
-  const count = 90;
+  const count = 120;
   const positions = useMemo(() => {
     const p = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       const phi = Math.acos(2 * Math.random() - 1);
       const theta = Math.random() * Math.PI * 2;
-      const r = 2.06;
+      const r = 2.08;
       p[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       p[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       p[i * 3 + 2] = r * Math.cos(phi);
@@ -244,8 +319,8 @@ function GlobeNodes() {
 
   useFrame(({ clock }) => {
     if (ref.current) {
-      ref.current.rotation.y = clock.getElapsedTime() * 0.05;
-      ref.current.rotation.x = 0.2;
+      ref.current.rotation.y = clock.getElapsedTime() * 0.06;
+      ref.current.rotation.x = 0.25 + Math.sin(clock.getElapsedTime() * 0.02) * 0.05;
     }
   });
 
@@ -254,7 +329,7 @@ function GlobeNodes() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial size={0.08} color="#ff9b7a" transparent opacity={0.9} sizeAttenuation />
+      <pointsMaterial size={0.1} color="#ff9b7a" transparent opacity={0.95} sizeAttenuation />
     </points>
   );
 }
@@ -263,15 +338,15 @@ function ConnectionArcs() {
   const ref = useRef();
   const arcs = useMemo(() => {
     const lines = [];
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 40; i++) {
       const phi1 = Math.acos(2 * Math.random() - 1);
       const theta1 = Math.random() * Math.PI * 2;
       const phi2 = Math.acos(2 * Math.random() - 1);
       const theta2 = Math.random() * Math.PI * 2;
-      const r = 2.06;
-      for (let t = 0; t <= 16; t++) {
-        const f = t / 16;
-        const p = 1 + 0.2 * Math.sin(f * Math.PI);
+      const r = 2.08;
+      for (let t = 0; t <= 20; t++) {
+        const f = t / 20;
+        const p = 1 + 0.25 * Math.sin(f * Math.PI);
         const ph = phi1 + (phi2 - phi1) * f;
         const th = theta1 + (theta2 - theta1) * f;
         lines.push(p * r * Math.sin(ph) * Math.cos(th), p * r * Math.sin(ph) * Math.sin(th), p * r * Math.cos(ph));
@@ -282,8 +357,8 @@ function ConnectionArcs() {
 
   useFrame(({ clock }) => {
     if (ref.current) {
-      ref.current.rotation.y = clock.getElapsedTime() * 0.05;
-      ref.current.rotation.x = 0.2;
+      ref.current.rotation.y = clock.getElapsedTime() * 0.06;
+      ref.current.rotation.x = 0.25 + Math.sin(clock.getElapsedTime() * 0.02) * 0.05;
     }
   });
 
@@ -292,21 +367,20 @@ function ConnectionArcs() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" count={arcs.length / 3} array={arcs} itemSize={3} />
       </bufferGeometry>
-      <lineBasicMaterial color="#ff9b7a" transparent opacity={0.15} />
+      <lineBasicMaterial color="#ff9b7a" transparent opacity={0.25} />
     </line>
   );
 }
 
-/* Floating data particles around globe */
 function GlobeParticles() {
   const ref = useRef();
-  const count = 180;
+  const count = 220;
   const positions = useMemo(() => {
     const p = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       const phi = Math.acos(2 * Math.random() - 1);
       const theta = Math.random() * Math.PI * 2;
-      const r = 2.2 + Math.random() * 0.8;
+      const r = 2.3 + Math.random() * 1;
       p[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       p[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       p[i * 3 + 2] = r * Math.cos(phi);
@@ -316,8 +390,8 @@ function GlobeParticles() {
 
   useFrame(({ clock }) => {
     if (ref.current) {
-      ref.current.rotation.y = clock.getElapsedTime() * 0.03;
-      ref.current.rotation.x = 0.2;
+      ref.current.rotation.y = clock.getElapsedTime() * 0.04;
+      ref.current.rotation.x = 0.25;
     }
   });
 
@@ -326,7 +400,7 @@ function GlobeParticles() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial size={0.02} color="#ffb59e" transparent opacity={0.4} sizeAttenuation />
+      <pointsMaterial size={0.03} color="#ffb59e" transparent opacity={0.55} sizeAttenuation />
     </points>
   );
 }
@@ -335,13 +409,14 @@ export function IntegrationsGlobe() {
   return (
     <div style={{ width: '100%', height: '420px', position: 'relative' }}>
       <Canvas
-        camera={{ position: [0, 0, 5.5], fov: 50 }}
-        dpr={[1, 1.5]}
+        camera={{ position: [0, 0.3, 5.5], fov: 50 }}
+        dpr={[1, 2]}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       >
-        <ambientLight intensity={0.15} />
-        <pointLight position={[5, 3, 5]} intensity={0.35} color="#ff9b7a" distance={15} decay={2} />
-        <pointLight position={[-3, -2, 4]} intensity={0.15} color="#ffb59e" distance={12} decay={2} />
+        <ambientLight intensity={0.2} />
+        <pointLight position={[5, 3, 5]} intensity={0.6} color="#ff9b7a" distance={18} decay={2} />
+        <pointLight position={[-3, -2, 4]} intensity={0.3} color="#ffb59e" distance={15} decay={2} />
+        <pointLight position={[0, 0, 6]} intensity={0.15} color="#ff6b4a" distance={10} decay={2} />
         <Suspense fallback={null}>
           <GlobeWireframe />
           <GlobeNodes />
@@ -353,52 +428,60 @@ export function IntegrationsGlobe() {
   );
 }
 
-/* ═══════════ PROCESS PIPELINE — Premium Flow Visualization ═══════════ */
+/* ═══════════ PROCESS PIPELINE — Deep 3D Flow ═══════════ */
 
-/* Central process hub */
 function ProcessHub({ position }) {
   const ref = useRef();
   const ringRef = useRef();
+  const ring2Ref = useRef();
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
     if (ref.current) {
-      ref.current.rotation.x = t * 0.15;
-      ref.current.rotation.z = t * 0.1;
+      ref.current.rotation.x = t * 0.2;
+      ref.current.rotation.z = t * 0.15;
     }
     if (ringRef.current) {
-      ringRef.current.rotation.z = t * 0.3;
+      ringRef.current.rotation.z = t * 0.4;
+    }
+    if (ring2Ref.current) {
+      ring2Ref.current.rotation.x = t * 0.3;
+      ring2Ref.current.rotation.z = -t * 0.2;
     }
   });
   return (
     <group position={position}>
-      {/* Outer glow sphere */}
-      <Sphere args={[0.65, 20, 20]}>
-        <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={0.15} transparent opacity={0.04} />
+      {/* Outer glow */}
+      <Sphere args={[0.7, 20, 20]}>
+        <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={0.25} transparent opacity={0.06} />
       </Sphere>
       {/* Wireframe icosahedron */}
       <group ref={ref}>
-        <Icosahedron args={[0.45, 1]}>
-          <meshBasicMaterial color="#ff9b7a" wireframe transparent opacity={0.15} />
+        <Icosahedron args={[0.5, 1]}>
+          <meshBasicMaterial color="#ff9b7a" wireframe transparent opacity={0.25} />
         </Icosahedron>
       </group>
-      {/* Inner solid core */}
-      <Sphere args={[0.12, 12, 12]}>
-        <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={1.5} transparent opacity={0.6} />
+      {/* Inner bright core */}
+      <Sphere args={[0.15, 16, 16]}>
+        <meshStandardMaterial color="#ff9b7a" emissive="#ff9b7a" emissiveIntensity={2.5} transparent opacity={0.7} />
       </Sphere>
-      {/* Orbiting ring */}
+      {/* Orbiting rings — two axes for clear 3D */}
       <group ref={ringRef}>
-        <Torus args={[0.55, 0.008, 6, 40]} rotation={[Math.PI / 2.5, 0, 0]}>
-          <meshBasicMaterial color="#ff9b7a" transparent opacity={0.2} />
+        <Torus args={[0.6, 0.01, 6, 40]} rotation={[Math.PI / 2.5, 0, 0]}>
+          <meshBasicMaterial color="#ff9b7a" transparent opacity={0.3} />
+        </Torus>
+      </group>
+      <group ref={ring2Ref}>
+        <Torus args={[0.55, 0.008, 6, 36]} rotation={[0.8, 1.2, 0]}>
+          <meshBasicMaterial color="#ffb59e" transparent opacity={0.15} />
         </Torus>
       </group>
     </group>
   );
 }
 
-/* Data flow particle streams between nodes */
 function FlowStream({ from, to }) {
   const ref = useRef();
-  const particleCount = 20;
+  const particleCount = 30;
 
   const positions = useMemo(() => {
     const p = new Float32Array(particleCount * 3);
@@ -407,7 +490,7 @@ function FlowStream({ from, to }) {
     for (let i = 0; i < particleCount; i++) {
       const t = i / particleCount;
       const pos = start.clone().lerp(end, t);
-      pos.y += Math.sin(t * Math.PI) * 0.3;
+      pos.y += Math.sin(t * Math.PI) * 0.4;
       p[i * 3] = pos.x;
       p[i * 3 + 1] = pos.y;
       p[i * 3 + 2] = pos.z;
@@ -422,9 +505,10 @@ function FlowStream({ from, to }) {
     const start = new THREE.Vector3(...from);
     const end = new THREE.Vector3(...to);
     for (let i = 0; i < particleCount; i++) {
-      const phase = ((i / particleCount) + t * 0.4) % 1;
+      const phase = ((i / particleCount) + t * 0.5) % 1;
       const pos = start.clone().lerp(end, phase);
-      pos.y += Math.sin(phase * Math.PI) * 0.35;
+      pos.y += Math.sin(phase * Math.PI) * 0.45;
+      pos.z += Math.sin(phase * Math.PI * 2) * 0.15; // Z-depth wave for 3D
       posArr[i * 3] = pos.x;
       posArr[i * 3 + 1] = pos.y;
       posArr[i * 3 + 2] = pos.z;
@@ -437,52 +521,48 @@ function FlowStream({ from, to }) {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" count={particleCount} array={positions} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial size={0.04} color="#ff9b7a" transparent opacity={0.7} sizeAttenuation />
+      <pointsMaterial size={0.06} color="#ff9b7a" transparent opacity={0.85} sizeAttenuation depthWrite={false} />
     </points>
   );
 }
 
-/* Connection line with glow */
 function FlowConnector({ from, to }) {
   const points = useMemo(() => {
-    const segments = 20;
+    const segments = 24;
     const pts = [];
     const start = new THREE.Vector3(...from);
     const end = new THREE.Vector3(...to);
     for (let i = 0; i <= segments; i++) {
       const t = i / segments;
       const pos = start.clone().lerp(end, t);
-      pos.y += Math.sin(t * Math.PI) * 0.25;
+      pos.y += Math.sin(t * Math.PI) * 0.3;
       pts.push(pos);
     }
     return pts;
   }, [from, to]);
   const geo = useMemo(() => new THREE.BufferGeometry().setFromPoints(points), [points]);
   return (
-    <group>
-      <line geometry={geo}>
-        <lineBasicMaterial color="#ff9b7a" transparent opacity={0.2} />
-      </line>
-    </group>
+    <line geometry={geo}>
+      <lineBasicMaterial color="#ff9b7a" transparent opacity={0.3} />
+    </line>
   );
 }
 
-/* Ambient environment particles */
 function ProcessAmbient() {
   const ref = useRef();
-  const count = 60;
+  const count = 80;
   const positions = useMemo(() => {
     const p = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
-      p[i * 3] = (Math.random() - 0.5) * 10;
-      p[i * 3 + 1] = (Math.random() - 0.5) * 3;
-      p[i * 3 + 2] = (Math.random() - 0.5) * 3;
+      p[i * 3] = (Math.random() - 0.5) * 12;
+      p[i * 3 + 1] = (Math.random() - 0.5) * 4;
+      p[i * 3 + 2] = (Math.random() - 0.5) * 4;
     }
     return p;
   }, []);
   useFrame(({ clock }) => {
     if (ref.current) {
-      ref.current.rotation.y = clock.getElapsedTime() * 0.01;
+      ref.current.rotation.y = clock.getElapsedTime() * 0.015;
     }
   });
   return (
@@ -490,27 +570,27 @@ function ProcessAmbient() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial size={0.02} color="#ff9b7a" transparent opacity={0.25} sizeAttenuation />
+      <pointsMaterial size={0.03} color="#ff9b7a" transparent opacity={0.35} sizeAttenuation />
     </points>
   );
 }
 
 export function ProcessScene() {
-  const nodes = [[-3.5, 0, 0], [-1.2, 0, 0], [1.2, 0, 0], [3.5, 0, 0]];
+  const nodes = [[-3.5, 0, 0], [-1.2, 0.2, 0.5], [1.2, -0.1, -0.3], [3.5, 0.15, 0.2]];
   return (
-    <div style={{ width: '100%', height: '220px' }}>
+    <div style={{ width: '100%', height: '260px' }}>
       <Canvas
-        camera={{ position: [0, 0.5, 6], fov: 50 }}
-        dpr={[1, 1.5]}
+        camera={{ position: [0, 1.2, 7], fov: 45 }}
+        dpr={[1, 2]}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       >
-        <ambientLight intensity={0.25} />
-        <pointLight position={[0, 3, 4]} intensity={0.5} color="#ff9b7a" distance={15} decay={2} />
-        <pointLight position={[-4, -1, 3]} intensity={0.15} color="#ffb59e" distance={10} decay={2} />
-        <pointLight position={[4, -1, 3]} intensity={0.15} color="#ffb59e" distance={10} decay={2} />
+        <ambientLight intensity={0.3} />
+        <pointLight position={[0, 4, 5]} intensity={0.7} color="#ff9b7a" distance={18} decay={2} />
+        <pointLight position={[-5, -1, 4]} intensity={0.25} color="#ffb59e" distance={12} decay={2} />
+        <pointLight position={[5, -1, 4]} intensity={0.25} color="#ffb59e" distance={12} decay={2} />
         <Suspense fallback={null}>
           {nodes.map((pos, i) => (
-            <Float key={i} speed={0.8 + i * 0.15} floatIntensity={0.15}>
+            <Float key={i} speed={0.8 + i * 0.15} floatIntensity={0.2}>
               <ProcessHub position={pos} />
             </Float>
           ))}
@@ -527,7 +607,7 @@ export function ProcessScene() {
   );
 }
 
-/* ═══════════ FLOATING ACCENT SHAPES (reusable) ═══════════ */
+/* ═══════════ FLOATING ACCENT SHAPES ═══════════ */
 export function AccentShapes() {
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
@@ -535,12 +615,12 @@ export function AccentShapes() {
         <Suspense fallback={null}>
           <Float speed={0.4} rotationIntensity={0.5} floatIntensity={0.6}>
             <Torus args={[1, 0.04, 8, 30]} position={[4, 2, -2]} rotation={[1, 0, 0.5]}>
-              <meshBasicMaterial color="#ff9b7a" transparent opacity={0.06} />
+              <meshBasicMaterial color="#ff9b7a" transparent opacity={0.08} />
             </Torus>
           </Float>
           <Float speed={0.3} rotationIntensity={0.3} floatIntensity={0.4}>
             <Box args={[0.4, 0.4, 0.4]} position={[-4, -1, -1]} rotation={[0.7, 0.3, 0]}>
-              <meshBasicMaterial color="#ff9b7a" transparent opacity={0.04} wireframe />
+              <meshBasicMaterial color="#ff9b7a" transparent opacity={0.06} wireframe />
             </Box>
           </Float>
         </Suspense>

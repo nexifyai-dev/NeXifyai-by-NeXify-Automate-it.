@@ -307,34 +307,15 @@ const Admin = () => {
   const logout = () => { setToken(''); localStorage.removeItem('nx_admin_token'); localStorage.removeItem('nx_auth'); };
 
   /* ══════════ LOGIN SCREEN ══════════ */
-  if (!token) return (
-    <div className="adm-login" data-testid="admin-login">
-      <div className="adm-login-left">
-        <div className="adm-login-brand">
-          <div className="adm-login-logo"><img src="/icon-mark.svg" alt="" width="44" height="44" /><span>NeXify<em>AI</em></span></div>
-          <p className="adm-login-tagline">Intelligente Automatisierung für Ihr Unternehmen</p>
-        </div>
-        <div className="adm-login-features">
-          <div className="adm-login-feature"><I n="smart_toy" /><div><strong>9 KI-Agenten</strong><span>Automatisiertes Lead-Management, Outreach und Support</span></div></div>
-          <div className="adm-login-feature"><I n="forum" /><div><strong>Zentrale Kommunikation</strong><span>Chat, E-Mail, WhatsApp und Portal in einer Timeline</span></div></div>
-          <div className="adm-login-feature"><I n="verified" /><div><strong>Echtzeit-Audit</strong><span>Systemgesundheit und Aktivitäten live überwachen</span></div></div>
-        </div>
+  if (!token) {
+    // Security by Obscurity: Keine internen Details offenlegen, neutral zu /login redirecten
+    window.location.href = '/login';
+    return (
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',background:'#080c12',color:'rgba(255,255,255,0.4)',fontSize:'0.875rem'}}>
+        Weiterleitung...
       </div>
-      <div className="adm-login-right">
-        <div className="adm-login-box">
-          <h1>Willkommen zurück</h1>
-          <p className="adm-login-subtitle">Melden Sie sich an, um fortzufahren</p>
-          <form onSubmit={login} data-testid="admin-login-form">
-            <div className="adm-field"><label>E-Mail-Adresse</label><input type="email" value={loginForm.email} onChange={e => setLoginForm({ ...loginForm, email: e.target.value })} required placeholder="admin@nexifyai.de" data-testid="admin-email" /></div>
-            <div className="adm-field"><label>Passwort</label><input type="password" value={loginForm.password} onChange={e => setLoginForm({ ...loginForm, password: e.target.value })} required placeholder="Ihr Passwort" data-testid="admin-password" /></div>
-            {loginErr && <div className="adm-err" data-testid="admin-login-error">{loginErr}</div>}
-            <button type="submit" className="adm-btn-primary" disabled={loginBusy} data-testid="admin-login-btn">{loginBusy ? 'Anmeldung läuft...' : 'Anmelden'}</button>
-          </form>
-          <p className="adm-login-footer">Geschützter Bereich — Nur autorisierte Nutzer</p>
-        </div>
-      </div>
-    </div>
-  );
+    );
+  }
 
   /* ══════════ DASHBOARD VIEW ══════════ */
   const DashboardView = () => (
