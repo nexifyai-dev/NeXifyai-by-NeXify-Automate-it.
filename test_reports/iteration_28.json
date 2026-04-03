@@ -1,0 +1,85 @@
+{
+  "summary": "P1: Projektchat/Build-Handover-Kontext testing completed. Backend: 33/33 tests passed (100%). Frontend: All critical features verified. All 22 section cards display correctly, section editor modal works, build-handover generation works with Geheimhaltung (startprompt_emergent excluded from markdown), project chat UI functional.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Project Detail",
+        "issues": ["Minor: CORS warning for ipapi.co (non-blocking, geo-location feature)"]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_project_context_p1.py",
+    "/app/test_reports/pytest/pytest_results_iter28.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "✅ All 22 PROJECT_SECTIONS defined in domain.py with proper labels",
+    "✅ Geheimhaltung implemented: startprompt_emergent excluded from build-handover markdown (server.py line 4456-4457)",
+    "✅ Customer endpoint excludes startprompt_emergent from sections (server.py line 4565-4568)",
+    "✅ Customer version excludes start_prompt field via MongoDB projection (server.py line 4581)",
+    "✅ Section versioning works correctly - version increments on update",
+    "✅ Completeness calculation counts only 'review' and 'freigegeben' status sections",
+    "✅ Admin UI shows startprompt_emergent marked as '(intern)' with red styling",
+    "✅ All data-testid attributes present for testing"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_project_context_p1.py"
+  ],
+  "success_rate": {
+    "backend": "100% (33/33 tests passed)",
+    "frontend": "100% (all critical features verified)"
+  },
+  "test_credentials": {
+    "admin": "p.courbois@icloud.com / NxAi#Secure2026!",
+    "customer": "max@testfirma.de (magic link flow)"
+  },
+  "seed_data_creation": "Test projects created with prefix 'TEST_' for backend tests",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "P1 Projektchat/Build-Handover fully tested. Backend endpoints: POST/GET/PATCH projects, sections CRUD with versioning, review comments, project chat, build-handover generation, version history, completeness check, customer endpoints with Geheimhaltung. Frontend: Projekte nav, project list table with all columns, project detail with 22 section cards, section editor modal, build-handover button and markdown display, project chat input/send. Geheimhaltung verified: startprompt_emergent NOT visible in customer endpoints or build-handover markdown.",
+  "features_tested": {
+    "backend_endpoints": {
+      "POST /api/admin/projects": "✅ Create project with all 22 sections initialized as 'leer'",
+      "GET /api/admin/projects": "✅ List projects with completeness percentage",
+      "GET /api/admin/projects/{id}": "✅ Project detail with sections, chat, versions, section_definitions",
+      "PATCH /api/admin/projects/{id}": "✅ Update status/metadata with validation",
+      "POST /api/admin/projects/{id}/sections": "✅ Upsert section with versioning",
+      "GET /api/admin/projects/{id}/sections": "✅ List sections with definitions",
+      "POST /api/admin/projects/{id}/sections/{key}/review": "✅ Add review comment with status change",
+      "POST /api/admin/projects/{id}/chat": "✅ Add chat message",
+      "GET /api/admin/projects/{id}/chat": "✅ Get chat history",
+      "POST /api/admin/projects/{id}/build-handover": "✅ Generate versioned markdown (excludes startprompt)",
+      "GET /api/admin/projects/{id}/versions": "✅ Version history sorted descending",
+      "GET /api/admin/projects/{id}/completeness": "✅ Completeness check with missing sections",
+      "GET /api/customer/projects": "✅ Requires auth (401 without token)",
+      "GET /api/customer/projects/{id}": "✅ Requires auth, excludes startprompt_emergent section",
+      "POST /api/customer/projects/{id}/chat": "✅ Requires auth"
+    },
+    "frontend_ui": {
+      "Projekte nav item": "✅ Visible and navigable",
+      "Project list table": "✅ Shows Titel, Kunde, Tarif, Status, Vollst., Version, Erstellt columns",
+      "Create project button": "✅ Opens form with title, email, tier, classification fields",
+      "Project detail view": "✅ Shows all 22 sections as cards with status badges",
+      "Section editor modal": "✅ Opens on click with textarea, status select, save button",
+      "Build-Handover button": "✅ Generates and displays markdown",
+      "Project chat": "✅ Input and send button visible and functional",
+      "Startprompt internal marking": "✅ Marked in red with '(intern)' label"
+    },
+    "geheimhaltung": {
+      "startprompt_emergent in admin UI": "✅ Visible but marked as internal",
+      "startprompt_emergent in build-handover markdown": "✅ NOT included (verified)",
+      "startprompt_emergent in customer endpoints": "✅ Excluded from sections list",
+      "start_prompt in customer version": "✅ Excluded via MongoDB projection"
+    }
+  },
+  "mocked_apis": {
+    "DeepSeek LLM": "MOCKED via Emergent GPT-5.2 temporary provider"
+  }
+}

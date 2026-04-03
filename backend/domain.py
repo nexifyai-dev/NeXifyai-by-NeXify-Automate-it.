@@ -80,6 +80,18 @@ class WhatsAppSessionStatus(str, Enum):
     DISCONNECTED = "disconnected"
     FAILED = "failed"
 
+class ProjectStatus(str, Enum):
+    DRAFT = "draft"
+    DISCOVERY = "discovery"
+    PLANNING = "planning"
+    APPROVED = "approved"
+    BUILD = "build"
+    REVIEW = "review"
+    HANDOVER = "handover"
+    LIVE = "live"
+    PAUSED = "paused"
+    CLOSED = "closed"
+
 
 # ══════════════════════════════════════════
 # HELPER
@@ -197,6 +209,126 @@ def create_memory(contact_id: str, fact: str, **kwargs) -> dict:
         "verification_status": kwargs.get("verification_status", "nicht verifiziert"),
         "created_at": utcnow(),
         "expires_at": kwargs.get("expires_at"),
+    }
+
+
+# Pflicht-Sektionen für abgeschlossene Projektplanung
+PROJECT_SECTIONS = [
+    "projektsteckbrief",
+    "scope_dokument",
+    "projektklassifikation",
+    "zielgruppen_funnel_matrix",
+    "discovery_ergebnis",
+    "prozesslandkarte",
+    "rollen_rechtekonzept",
+    "systemarchitektur_integrationsplan",
+    "datenquellen_datenmodell_matrix",
+    "work_packages",
+    "aufwandsschaetzung",
+    "milestones_ressourcenplan",
+    "risiko_register",
+    "angebotsentwurf",
+    "design_content_seo_konzept",
+    "qa_compliance_freigabeplan",
+    "finance_logik",
+    "audit_dokumentationsstruktur",
+    "build_ready_markdown",
+    "startprompt_emergent",
+    "kommunikations_statuslogik",
+    "fortschrittslink_strategie",
+]
+
+PROJECT_SECTION_LABELS = {
+    "projektsteckbrief": "Projektsteckbrief",
+    "scope_dokument": "Scope-Dokument",
+    "projektklassifikation": "Projektklassifikation",
+    "zielgruppen_funnel_matrix": "Zielgruppen- und Funnel-Matrix",
+    "discovery_ergebnis": "Discovery-Ergebnis",
+    "prozesslandkarte": "Prozesslandkarte",
+    "rollen_rechtekonzept": "Rollen- und Rechtekonzept",
+    "systemarchitektur_integrationsplan": "Systemarchitektur und Integrationsplan",
+    "datenquellen_datenmodell_matrix": "Datenquellen- und Datenmodell-Matrix",
+    "work_packages": "Work Packages",
+    "aufwandsschaetzung": "Aufwandsschätzung",
+    "milestones_ressourcenplan": "Milestones und Ressourcenplan",
+    "risiko_register": "Risiko-Register",
+    "angebotsentwurf": "Angebotsentwurf",
+    "design_content_seo_konzept": "Design-/Content-/SEO-Konzept",
+    "qa_compliance_freigabeplan": "QA-/Compliance-/Freigabeplan",
+    "finance_logik": "Finance-Logik",
+    "audit_dokumentationsstruktur": "Audit- und Dokumentationsstruktur",
+    "build_ready_markdown": "Build-Ready-Markdown",
+    "startprompt_emergent": "Startprompt",
+    "kommunikations_statuslogik": "Kommunikations- und Statuslogik",
+    "fortschrittslink_strategie": "Fortschrittslink-Strategie",
+}
+
+
+def create_project(customer_email: str, title: str, **kwargs) -> dict:
+    """Projektkontext — führende operative Kontextebene pro Kundenprojekt."""
+    return {
+        "project_id": new_id("prj"),
+        "customer_email": customer_email.lower().strip(),
+        "contact_id": kwargs.get("contact_id", ""),
+        "title": title,
+        "tier": kwargs.get("tier", ""),
+        "quote_id": kwargs.get("quote_id", ""),
+        "contract_id": kwargs.get("contract_id", ""),
+        "status": ProjectStatus.DRAFT.value,
+        "classification": kwargs.get("classification", ""),
+        "tags": kwargs.get("tags", []),
+        "risks": [],
+        "sections_status": {s: "leer" for s in PROJECT_SECTIONS},
+        "build_handover_version": 0,
+        "created_by": kwargs.get("created_by", "admin"),
+        "assigned_to": kwargs.get("assigned_to", ""),
+        "created_at": utcnow(),
+        "updated_at": utcnow(),
+    }
+
+
+def create_project_section(project_id: str, section_key: str, content: str, **kwargs) -> dict:
+    """Einzelne Projekt-Sektion mit Versionierung."""
+    return {
+        "section_id": new_id("sec"),
+        "project_id": project_id,
+        "section_key": section_key,
+        "label": PROJECT_SECTION_LABELS.get(section_key, section_key),
+        "content": content,
+        "version": kwargs.get("version", 1),
+        "status": kwargs.get("status", "entwurf"),
+        "review_comments": [],
+        "author": kwargs.get("author", "admin"),
+        "created_at": utcnow(),
+        "updated_at": utcnow(),
+    }
+
+
+def create_project_chat_message(project_id: str, sender: str, content: str, **kwargs) -> dict:
+    """Projektchat-Nachricht."""
+    return {
+        "message_id": new_id("pcm"),
+        "project_id": project_id,
+        "sender": sender,
+        "sender_type": kwargs.get("sender_type", "admin"),
+        "content": content,
+        "attachments": kwargs.get("attachments", []),
+        "metadata": kwargs.get("metadata", {}),
+        "timestamp": utcnow(),
+    }
+
+
+def create_project_version(project_id: str, version_num: int, markdown: str, **kwargs) -> dict:
+    """Versioniertes Build-Ready-Markdown."""
+    return {
+        "version_id": new_id("pv"),
+        "project_id": project_id,
+        "version": version_num,
+        "markdown": markdown,
+        "start_prompt": kwargs.get("start_prompt", ""),
+        "changelog": kwargs.get("changelog", ""),
+        "author": kwargs.get("author", "admin"),
+        "created_at": utcnow(),
     }
 
 

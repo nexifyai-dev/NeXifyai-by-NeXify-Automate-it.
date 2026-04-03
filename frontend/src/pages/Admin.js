@@ -94,6 +94,14 @@ const Admin = () => {
   const [editInvoice, setEditInvoice] = useState(null);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [bookingForm, setBookingForm] = useState({ vorname:'', nachname:'', email:'', telefon:'', unternehmen:'', thema:'', date:'', time:'' });
+  const [projects, setProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [projectDetail, setProjectDetail] = useState(null);
+  const [showProjectForm, setShowProjectForm] = useState(false);
+  const [projectForm, setProjectForm] = useState({ title:'', customer_email:'', tier:'', classification:'' });
+  const [projectSectionEdit, setProjectSectionEdit] = useState(null);
+  const [projectChatMsg, setProjectChatMsg] = useState('');
+  const [projectChatSending, setProjectChatSending] = useState(false);
 
   const headers = useMemo(() => ({ 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
@@ -303,6 +311,57 @@ const Admin = () => {
     if (!token || view !== 'audit') return;
     loadAudit();
   }, [token, view, loadAudit]);
+
+  /* Load projects */
+  useEffect(() => {
+    if (!token || view !== 'projects') return;
+    apiFetch('/api/admin/projects').then(d => d && setProjects(d.projects || []));
+  }, [token, view, apiFetch]);
+
+  const loadProjectDetail = async (projectId) => {
+    const d = await apiFetch(`/api/admin/projects/${projectId}`);
+    if (d) { setProjectDetail(d); setSelectedProject(projectId); }
+  };
+
+  const createProject = async () => {
+    if (!projectForm.title.trim() || !projectForm.customer_email.trim()) return;
+    const d = await apiFetch('/api/admin/projects', { method: 'POST', body: JSON.stringify(projectForm) });
+    if (d) {
+      setShowProjectForm(false);
+      setProjectForm({ title:'', customer_email:'', tier:'', classification:'' });
+      apiFetch('/api/admin/projects').then(r => r && setProjects(r.projects || []));
+    }
+  };
+
+  const updateProjectStatus = async (projectId, status) => {
+    await apiFetch(`/api/admin/projects/${projectId}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+    if (projectDetail?.project_id === projectId) {
+      setProjectDetail(prev => ({ ...prev, status }));
+    }
+    apiFetch('/api/admin/projects').then(d => d && setProjects(d.projects || []));
+  };
+
+  const saveProjectSection = async (projectId, sectionKey, content, sectionStatus) => {
+    const d = await apiFetch(`/api/admin/projects/${projectId}/sections`, {
+      method: 'POST', body: JSON.stringify({ section_key: sectionKey, content, status: sectionStatus || 'entwurf' })
+    });
+    if (d) { loadProjectDetail(projectId); setProjectSectionEdit(null); }
+  };
+
+  const sendProjectChat = async (projectId) => {
+    if (!projectChatMsg.trim()) return;
+    setProjectChatSending(true);
+    try {
+      await apiFetch(`/api/admin/projects/${projectId}/chat`, { method: 'POST', body: JSON.stringify({ content: projectChatMsg }) });
+      setProjectChatMsg('');
+      loadProjectDetail(projectId);
+    } catch (e) { console.error(e); } finally { setProjectChatSending(false); }
+  };
+
+  const generateBuildHandover = async (projectId) => {
+    const d = await apiFetch(`/api/admin/projects/${projectId}/build-handover`, { method: 'POST', body: JSON.stringify({}) });
+    if (d) { loadProjectDetail(projectId); }
+  };
 
   const logout = () => { setToken(''); localStorage.removeItem('nx_admin_token'); localStorage.removeItem('nx_auth'); };
 
@@ -1426,9 +1485,196 @@ const Admin = () => {
     </div>
   );
 
+  /* ══════════ PROJECTS VIEW ══════════ */
+  const PROJECT_STATUS_MAP = {
+    draft: { l: 'Entwurf', c: '#6b7b8d' }, discovery: { l: 'Discovery', c: '#3b82f6' },
+    planning: { l: 'Planung', c: '#f59e0b' }, approved: { l: 'Freigegeben', c: '#10b981' },
+    build: { l: 'Build', c: '#8b5cf6' }, review: { l: 'Review', c: '#ec4899' },
+    handover: { l: 'Handover', c: '#06b6d4' }, live: { l: 'Live', c: '#22c55e' },
+    paused: { l: 'Pausiert', c: '#f97316' }, closed: { l: 'Geschlossen', c: '#64748b' },
+  };
+  const SEC_STATUS_MAP = {
+    leer: { l: 'Ausstehend', c: '#4a5568' }, entwurf: { l: 'Entwurf', c: '#f59e0b' },
+    review: { l: 'Review', c: '#3b82f6' }, freigegeben: { l: 'Freigegeben', c: '#10b981' },
+  };
+
+  const ProjectsView = () => {
+    if (projectDetail && selectedProject) {
+      const pd = projectDetail;
+      const sectionDefs = pd.section_definitions || {};
+      const sectionsMap = {};
+      (pd.sections || []).forEach(s => { sectionsMap[s.section_key] = s; });
+      const allKeys = Object.keys(sectionDefs).filter(k => k !== 'startprompt_emergent');
+      const internalKeys = ['startprompt_emergent'];
+      const completeness = pd.completeness || 0;
+
+      return (
+        <div className="adm-project-detail" data-testid="project-detail">
+          <button className="adm-back-btn" onClick={() => { setSelectedProject(null); setProjectDetail(null); setProjectSectionEdit(null); }} data-testid="project-back-btn"><I n="arrow_back" /> Alle Projekte</button>
+          <div style={{display:'flex',gap:16,alignItems:'center',marginBottom:16,flexWrap:'wrap'}}>
+            <h2 style={{margin:0,fontSize:'1.25rem'}}>{pd.title}</h2>
+            <span className="adm-badge" style={{background:(PROJECT_STATUS_MAP[pd.status]?.c||'#6b7b8d')+'22',color:PROJECT_STATUS_MAP[pd.status]?.c||'#6b7b8d'}}>{PROJECT_STATUS_MAP[pd.status]?.l||pd.status}</span>
+            <select className="adm-select-sm" value={pd.status} onChange={e => updateProjectStatus(pd.project_id, e.target.value)} data-testid="project-status-select">
+              {Object.entries(PROJECT_STATUS_MAP).map(([k,v])=><option key={k} value={k}>{v.l}</option>)}
+            </select>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:8,marginBottom:20}}>
+            <div className="adm-stat-card" style={{padding:'12px 16px'}}><div style={{fontSize:'.6875rem',color:'#6b7b8d',textTransform:'uppercase'}}>Kunde</div><div style={{color:'#fff',fontSize:'.8125rem',fontWeight:600}}>{pd.customer_email}</div></div>
+            <div className="adm-stat-card" style={{padding:'12px 16px'}}><div style={{fontSize:'.6875rem',color:'#6b7b8d',textTransform:'uppercase'}}>Tarif</div><div style={{color:'#fff',fontSize:'.8125rem',fontWeight:600}}>{pd.tier || '-'}</div></div>
+            <div className="adm-stat-card" style={{padding:'12px 16px'}}><div style={{fontSize:'.6875rem',color:'#6b7b8d',textTransform:'uppercase'}}>Version</div><div style={{color:'#fff',fontSize:'.8125rem',fontWeight:600}}>v{pd.build_handover_version || 0}</div></div>
+            <div className="adm-stat-card" style={{padding:'12px 16px'}}><div style={{fontSize:'.6875rem',color:'#6b7b8d',textTransform:'uppercase'}}>Vollständigkeit</div><div style={{color:'#ff9b7a',fontSize:'1rem',fontWeight:700}}>{completeness}%</div></div>
+          </div>
+
+          {/* Progress Bar */}
+          <div style={{background:'rgba(255,255,255,0.04)',borderRadius:6,height:8,marginBottom:20,overflow:'hidden'}}>
+            <div style={{background:'linear-gradient(90deg,#ff9b7a,#ffb599)',height:'100%',width:`${completeness}%`,borderRadius:6,transition:'width .5s'}}></div>
+          </div>
+
+          {/* Sections Grid */}
+          <h3 style={{fontSize:'.9375rem',color:'#fff',marginBottom:12}}>Planungssektionen</h3>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:10,marginBottom:24}}>
+            {allKeys.map(key => {
+              const sec = sectionsMap[key];
+              const st = sec ? (SEC_STATUS_MAP[sec.status] || SEC_STATUS_MAP.entwurf) : SEC_STATUS_MAP.leer;
+              return (
+                <div key={key} className="adm-wa-card" style={{padding:'14px 16px',cursor:'pointer',borderLeft:`3px solid ${st.c}`}} onClick={() => setProjectSectionEdit({ key, content: sec?.content || '', status: sec?.status || 'entwurf' })} data-testid={`section-${key}`}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <span style={{fontSize:'.8125rem',color:'#fff',fontWeight:600}}>{sectionDefs[key] || key}</span>
+                    <span className="adm-badge" style={{background:st.c+'22',color:st.c,fontSize:'.625rem'}}>{st.l}{sec ? ` v${sec.version}` : ''}</span>
+                  </div>
+                  {sec?.content && <p style={{fontSize:'.75rem',color:'#6b7b8d',marginTop:6,overflow:'hidden',textOverflow:'ellipsis',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{sec.content.slice(0,120)}</p>}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Internal section: Startprompt */}
+          {internalKeys.map(key => {
+            const sec = sectionsMap[key];
+            return (
+              <div key={key} style={{marginBottom:16}}>
+                <div className="adm-wa-card" style={{padding:'14px 16px',cursor:'pointer',borderLeft:'3px solid #ef4444',opacity:.7}} onClick={() => setProjectSectionEdit({ key, content: sec?.content || '', status: sec?.status || 'entwurf' })} data-testid={`section-${key}`}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <span style={{fontSize:'.8125rem',color:'#ef4444',fontWeight:600}}>{sectionDefs[key] || key} (intern)</span>
+                    <span className="adm-badge" style={{background:'#ef444422',color:'#ef4444',fontSize:'.625rem'}}>{sec ? `v${sec.version}` : 'leer'}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Section Editor Modal */}
+          {projectSectionEdit && (
+            <div className="adm-modal-overlay" onClick={e => e.target === e.currentTarget && setProjectSectionEdit(null)}>
+              <div className="adm-modal" style={{maxWidth:720}} data-testid="section-editor-modal">
+                <h3>{sectionDefs[projectSectionEdit.key] || projectSectionEdit.key}</h3>
+                <textarea value={projectSectionEdit.content} onChange={e => setProjectSectionEdit({...projectSectionEdit, content: e.target.value})} rows={12} style={{width:'100%',resize:'vertical',background:'rgba(19,26,34,0.6)',border:'1px solid rgba(255,255,255,0.06)',color:'#fff',padding:12,fontSize:'.8125rem',fontFamily:'monospace',borderRadius:6}} placeholder="Inhalt der Sektion..." data-testid="section-content-textarea" />
+                <div style={{display:'flex',gap:8,marginTop:12,alignItems:'center'}}>
+                  <select className="adm-select" value={projectSectionEdit.status} onChange={e => setProjectSectionEdit({...projectSectionEdit, status: e.target.value})} style={{width:140}} data-testid="section-status-select">
+                    <option value="entwurf">Entwurf</option>
+                    <option value="review">Review</option>
+                    <option value="freigegeben">Freigegeben</option>
+                  </select>
+                  <button className="adm-btn adm-btn-primary" style={{width:'auto',padding:'8px 20px'}} onClick={() => saveProjectSection(pd.project_id, projectSectionEdit.key, projectSectionEdit.content, projectSectionEdit.status)} disabled={!projectSectionEdit.content.trim()} data-testid="section-save-btn"><I n="check" /> Speichern</button>
+                  <button className="adm-btn adm-btn-secondary" onClick={() => setProjectSectionEdit(null)}>Abbrechen</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Build Handover */}
+          <div style={{display:'flex',gap:8,marginBottom:20,flexWrap:'wrap'}}>
+            <button className="adm-btn adm-btn-primary" style={{width:'auto',padding:'10px 20px'}} onClick={() => generateBuildHandover(pd.project_id)} data-testid="generate-handover-btn"><I n="construction" /> Build-Handover generieren</button>
+          </div>
+          {pd.latest_version && (
+            <div className="adm-wa-card" style={{marginBottom:20}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                <h3 style={{margin:0,fontSize:'.9375rem'}}>Build-Ready-Markdown (v{pd.latest_version.version})</h3>
+                <span style={{fontSize:'.6875rem',color:'#6b7b8d'}}>{fmtTime(pd.latest_version.created_at)}</span>
+              </div>
+              <pre style={{background:'rgba(12,17,23,0.8)',padding:16,borderRadius:6,fontSize:'.75rem',color:'#c8d1dc',overflow:'auto',maxHeight:400,whiteSpace:'pre-wrap',wordBreak:'break-word'}} data-testid="build-handover-content">{pd.latest_version.markdown}</pre>
+            </div>
+          )}
+
+          {/* Project Chat */}
+          <h3 style={{fontSize:'.9375rem',color:'#fff',marginBottom:12}}>Projektchat</h3>
+          <div className="adm-wa-card" style={{marginBottom:16}}>
+            <div style={{maxHeight:320,overflowY:'auto',marginBottom:12}}>
+              {(pd.chat || []).map(m => (
+                <div key={m.message_id} style={{marginBottom:10,padding:'8px 12px',background:m.sender_type==='customer'?'rgba(59,130,246,0.08)':'rgba(255,155,122,0.06)',borderRadius:6,borderLeft:`3px solid ${m.sender_type==='customer'?'#3b82f6':'#ff9b7a'}`}}>
+                  <div style={{display:'flex',justifyContent:'space-between',fontSize:'.6875rem',color:'#6b7b8d',marginBottom:4}}>
+                    <span>{m.sender} ({m.sender_type})</span>
+                    <span>{fmtTime(m.timestamp)}</span>
+                  </div>
+                  <div style={{fontSize:'.8125rem',color:'#c8d1dc',whiteSpace:'pre-wrap'}}>{m.content}</div>
+                </div>
+              ))}
+              {(!pd.chat || pd.chat.length === 0) && <div style={{textAlign:'center',padding:20,color:'#4a5568',fontSize:'.8125rem'}}>Noch keine Nachrichten</div>}
+            </div>
+            <div style={{display:'flex',gap:8}}>
+              <input style={{flex:1,background:'rgba(19,26,34,0.6)',border:'1px solid rgba(255,255,255,0.06)',color:'#fff',padding:'10px 14px',fontSize:'.8125rem',borderRadius:4}} value={projectChatMsg} onChange={e => setProjectChatMsg(e.target.value)} placeholder="Nachricht schreiben..." onKeyDown={e => { if (e.key==='Enter'&&!e.shiftKey) { e.preventDefault(); sendProjectChat(pd.project_id); }}} data-testid="project-chat-input" />
+              <button className="adm-btn adm-btn-primary" style={{width:'auto',padding:'10px 20px',flexShrink:0}} onClick={() => sendProjectChat(pd.project_id)} disabled={projectChatSending || !projectChatMsg.trim()} data-testid="project-chat-send"><I n="send" /></button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Project List
+    return (
+      <div className="adm-projects" data-testid="admin-projects">
+        <div className="adm-section-header">
+          <h2>Projekte ({projects.length})</h2>
+          <button className="adm-btn adm-btn-primary" style={{padding:'8px 16px',width:'auto'}} onClick={() => setShowProjectForm(true)} data-testid="create-project-btn"><I n="add_circle" /> Neues Projekt</button>
+        </div>
+
+        {showProjectForm && (
+          <div className="adm-form-card" data-testid="project-create-form">
+            <h3>Projekt anlegen</h3>
+            <div className="adm-form-grid">
+              <div className="adm-field"><label>Titel *</label><input value={projectForm.title} onChange={e => setProjectForm({...projectForm, title: e.target.value})} placeholder="KI-Agenten für Vertrieb" data-testid="project-title-input" /></div>
+              <div className="adm-field"><label>Kunden-E-Mail *</label><input type="email" value={projectForm.customer_email} onChange={e => setProjectForm({...projectForm, customer_email: e.target.value})} placeholder="kunde@firma.de" data-testid="project-email-input" /></div>
+              <div className="adm-field"><label>Tarif</label><select className="adm-select" value={projectForm.tier} onChange={e => setProjectForm({...projectForm, tier: e.target.value})} data-testid="project-tier-select"><option value="">—</option><option value="starter">Starter AI Agenten AG</option><option value="growth">Growth AI Agenten AG</option><option value="website_starter">Website Starter</option><option value="website_professional">Website Professional</option><option value="website_enterprise">Website Enterprise</option><option value="seo_starter">SEO Starter</option><option value="seo_growth">SEO Growth</option><option value="bundle">Bundle</option></select></div>
+              <div className="adm-field"><label>Klassifikation</label><input value={projectForm.classification} onChange={e => setProjectForm({...projectForm, classification: e.target.value})} placeholder="z.B. Standard, Enterprise..." data-testid="project-class-input" /></div>
+            </div>
+            <div className="adm-form-actions">
+              <button className="adm-btn adm-btn-primary" style={{width:'auto',padding:'8px 20px'}} onClick={createProject} disabled={!projectForm.title.trim()||!projectForm.customer_email.trim()} data-testid="project-save-btn"><I n="check" /> Erstellen</button>
+              <button className="adm-btn adm-btn-secondary" onClick={() => setShowProjectForm(false)}>Abbrechen</button>
+            </div>
+          </div>
+        )}
+
+        <div className="adm-table-wrap">
+          <table className="adm-table" data-testid="projects-table">
+            <thead><tr><th>Titel</th><th>Kunde</th><th>Tarif</th><th>Status</th><th>Vollst.</th><th>Version</th><th>Erstellt</th><th></th></tr></thead>
+            <tbody>
+              {projects.map(p => {
+                const st = PROJECT_STATUS_MAP[p.status] || PROJECT_STATUS_MAP.draft;
+                return (
+                  <tr key={p.project_id} className="adm-row-click" onClick={() => loadProjectDetail(p.project_id)} data-testid={`project-row-${p.project_id}`}>
+                    <td style={{fontWeight:600,color:'#fff'}}>{p.title}</td>
+                    <td>{p.customer_email}</td>
+                    <td>{p.tier || '-'}</td>
+                    <td><span className="adm-badge" style={{background:st.c+'22',color:st.c}}>{st.l}</span></td>
+                    <td><span style={{color:p.completeness>=80?'#10b981':p.completeness>=40?'#f59e0b':'#6b7b8d',fontWeight:600}}>{p.completeness||0}%</span></td>
+                    <td>v{p.build_handover_version||0}</td>
+                    <td>{fmtDate(p.created_at)}</td>
+                    <td><button className="adm-btn-sm"><I n="visibility" /></button></td>
+                  </tr>
+                );
+              })}
+              {projects.length === 0 && <tr><td colSpan="8" style={{textAlign:'center',padding:32,color:'#4a5568'}}>Noch keine Projekte angelegt</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   /* ══════════ MAIN LAYOUT ══════════ */
   const navItems = [
     { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
+    { id: 'projects', icon: 'folder_special', label: 'Projekte' },
     { id: 'commercial', icon: 'receipt_long', label: 'Angebote & Rechnungen' },
     { id: 'leads', icon: 'people', label: 'Leads' },
     { id: 'conversations', icon: 'chat', label: 'Kommunikation' },
@@ -1461,6 +1707,7 @@ const Admin = () => {
         </header>
         <div className="adm-content">
           {view === 'dashboard' && <DashboardView />}
+          {view === 'projects' && <ProjectsView />}
           {view === 'commercial' && <CommercialView />}
           {view === 'leads' && <LeadsView />}
           {view === 'conversations' && <ConversationsView />}
