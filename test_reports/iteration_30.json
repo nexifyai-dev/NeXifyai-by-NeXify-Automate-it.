@@ -1,0 +1,91 @@
+{
+  "summary": "P3: Billing/Webhooks testing completed. Backend: 27/27 tests passed (100%). All webhook endpoints (Revolut, Stripe), manual payment (mark-paid), reminder/Mahnlogik, and billing status dashboard working correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/api/admin/invoices/{id}/mark-paid",
+        "issue": "Duplicate endpoint defined at lines 2939 and 3161 in server.py. First endpoint (line 2939) doesn't check for already_paid status and always returns {paid: True}. Second endpoint (line 3161) has proper idempotency check but is never reached due to FastAPI route matching.",
+        "priority": "LOW"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_billing_webhooks_p3.py",
+    "/app/test_reports/pytest/pytest_results_iter30.xml"
+  ],
+  "action_items": [
+    "OPTIONAL: Remove duplicate mark-paid endpoint at line 2939 in server.py (the one at line 3161 has better idempotency handling)"
+  ],
+  "critical_code_review_comments": [
+    "✅ Revolut webhook (ORDER_COMPLETED, ORDER_PAYMENT_FAILED) working with idempotency",
+    "✅ Stripe webhook (payment_intent.succeeded, payment_intent.payment_failed) working with idempotency",
+    "✅ Webhook idempotency enforced via db.webhook_events collection",
+    "✅ Manual payment (mark-paid) supports bank_transfer, bar, and other methods",
+    "✅ Reminder/Mahnlogik escalation: erinnerung (1) → 1_mahnung (2) → 2_mahnung (3+)",
+    "✅ Billing status dashboard (global and per-customer) working",
+    "✅ Invoice CRUD (create, list, detail) working",
+    "✅ Timeline events created for payment actions",
+    "✅ All admin endpoints require authentication (401 without token)",
+    "⚠️ Duplicate mark-paid endpoint (lines 2939 and 3161) - first one lacks idempotency check"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_billing_webhooks_p3.py"
+  ],
+  "success_rate": {
+    "backend": "100% (27/27 tests passed)",
+    "frontend": "N/A (backend-only testing requested)"
+  },
+  "test_credentials": {
+    "admin": "p.courbois@icloud.com / NxAi#Secure2026!"
+  },
+  "seed_data_creation": "Test invoices created with prefix 'TEST_' for backend tests",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "P3 Billing/Webhooks fully tested. Endpoints: POST /api/webhooks/revolut (idempotent), POST /api/webhooks/stripe (idempotent), POST /api/admin/invoices/{id}/mark-paid (manual payment), POST /api/admin/invoices/{id}/send-reminder (escalation: erinnerung→1_mahnung→2_mahnung), GET /api/admin/billing/status (global and per-customer). All webhooks use db.webhook_events for idempotency. MOCKED: Revolut API (no secret key), Stripe API (no key), Resend email.",
+  "features_tested": {
+    "revolut_webhook": {
+      "ORDER_COMPLETED": "✅ Processes payment, syncs invoice/quote/contract status",
+      "ORDER_PAYMENT_FAILED": "✅ Marks invoice as failed",
+      "idempotency": "✅ Same order_id + event returns already_processed"
+    },
+    "stripe_webhook": {
+      "payment_intent.succeeded": "✅ Processes payment, syncs invoice/quote status",
+      "payment_intent.payment_failed": "✅ Marks invoice as failed",
+      "idempotency": "✅ Same event_id + type returns already_processed"
+    },
+    "manual_payment": {
+      "bank_transfer": "✅ Marks invoice as paid with method=bank_transfer",
+      "bar": "✅ Marks invoice as paid with method=bar",
+      "quote_sync": "✅ Syncs quote payment_status to deposit_paid",
+      "contract_sync": "✅ Syncs contract payment_status to deposit_paid"
+    },
+    "reminder_mahnlogik": {
+      "erinnerung": "✅ First reminder (count=1)",
+      "1_mahnung": "✅ Second reminder (count=2)",
+      "2_mahnung": "✅ Third+ reminder (count>=3)",
+      "paid_invoice": "✅ Returns error for already paid invoices"
+    },
+    "billing_status": {
+      "global": "✅ Returns quotes, invoices, contracts, revenue aggregates",
+      "per_customer": "✅ Returns customer-specific quotes, invoices, summary"
+    },
+    "invoice_crud": {
+      "create": "✅ POST /api/admin/invoices",
+      "list": "✅ GET /api/admin/invoices",
+      "detail": "✅ GET /api/admin/invoices/{id}"
+    },
+    "timeline_events": "✅ Created for all payment actions",
+    "authentication": "✅ All admin endpoints require Bearer token"
+  },
+  "mocked_apis": {
+    "Revolut API": "MOCKED - no REVOLUT_SECRET_KEY configured",
+    "Stripe API": "MOCKED - no STRIPE_WEBHOOK_SECRET configured",
+    "Resend email": "MOCKED - may not be configured"
+  }
+}

@@ -3001,7 +3001,7 @@ async def create_access_link(customer_email: str = "", current_user: dict = Depe
 
 @app.post("/api/webhooks/revolut")
 async def revolut_webhook(request: Request):
-    """Handle Revolut payment webhooks — idempotent"""
+    """Handle Revolut payment webhooks — idempotent, synchronisiert über Billing-Service."""
     body = await request.body()
     raw_body = body.decode("utf-8")
 
@@ -3015,6 +3015,7 @@ async def revolut_webhook(request: Request):
 
     logger.info(f"Revolut webhook: {event} for order {order_id}")
 
+    # Idempotenz-Check
     existing = await db.webhook_events.find_one({"order_id": order_id, "event": event})
     if existing:
         return {"status": "already_processed"}
@@ -3023,43 +3024,299 @@ async def revolut_webhook(request: Request):
         "order_id": order_id,
         "event": event,
         "data": data,
+        "provider": "revolut",
         "processed_at": datetime.now(timezone.utc).isoformat(),
     })
     await _log_event(db, "webhook_received", order_id, "revolut")
 
-    if event == "ORDER_COMPLETED":
-        invoice = await db.invoices.find_one({"revolut_order_id": order_id})
-        if invoice:
-            now = datetime.now(timezone.utc)
-            await db.invoices.update_one(
-                {"invoice_id": invoice["invoice_id"]},
-                {"$set": {"payment_status": "paid", "paid_at": now.isoformat(), "status": "payment_completed"},
-                 "$push": {"history": {"action": "payment_received_revolut", "at": now.isoformat(), "by": "system"}}},
-            )
-            if invoice.get("quote_id"):
-                await db.quotes.update_one(
-                    {"quote_id": invoice["quote_id"]},
-                    {"$set": {"payment_status": "deposit_paid"},
-                     "$push": {"history": {"action": "deposit_paid_revolut", "at": now.isoformat(), "by": "system"}}},
+    if billing_svc:
+        result = await billing_svc.process_payment_webhook("revolut", {
+            "order_id": order_id, "event": event,
+            "amount": data.get("amount", 0),
+        })
+        # Contract sync
+        if event == "ORDER_COMPLETED":
+            invoice = await db.invoices.find_one({"revolut_order_id": order_id}, {"_id": 0})
+            if invoice and invoice.get("quote_id"):
+                contract = await db.contracts.find_one({"quote_id": invoice["quote_id"]}, {"_id": 0})
+                if contract and contract.get("status") in ("sent", "viewed", "accepted"):
+                    await db.contracts.update_one(
+                        {"contract_id": contract["contract_id"]},
+                        {"$set": {"payment_status": "deposit_paid", "updated_at": utcnow()}}
+                    )
+                    await db.timeline_events.insert_one(create_timeline_event(
+                        "contract", contract["contract_id"], "contract_payment_received",
+                        actor="webhook:revolut", actor_type="system",
+                        details={"order_id": order_id, "invoice_id": invoice.get("invoice_id", "")},
+                    ))
+    else:
+        # Fallback (ohne BillingService)
+        if event == "ORDER_COMPLETED":
+            invoice = await db.invoices.find_one({"revolut_order_id": order_id})
+            if invoice:
+                now = datetime.now(timezone.utc)
+                await db.invoices.update_one(
+                    {"invoice_id": invoice["invoice_id"]},
+                    {"$set": {"payment_status": "paid", "paid_at": now.isoformat(), "status": "payment_completed"},
+                     "$push": {"history": {"action": "payment_received_revolut", "at": now.isoformat(), "by": "system"}}},
                 )
-            await _log_event(db, "payment_completed", invoice["invoice_id"], "revolut_webhook")
-            logger.info(f"Invoice {invoice['invoice_id']} marked as paid via Revolut")
+                if invoice.get("quote_id"):
+                    await db.quotes.update_one(
+                        {"quote_id": invoice["quote_id"]},
+                        {"$set": {"payment_status": "deposit_paid"},
+                         "$push": {"history": {"action": "deposit_paid_revolut", "at": now.isoformat(), "by": "system"}}},
+                    )
+                await _log_event(db, "payment_completed", invoice["invoice_id"], "revolut_webhook")
 
-    elif event == "ORDER_PAYMENT_FAILED":
-        invoice = await db.invoices.find_one({"revolut_order_id": order_id})
-        if invoice:
-            await db.invoices.update_one(
-                {"invoice_id": invoice["invoice_id"]},
-                {"$set": {"payment_status": "failed"},
-                 "$push": {"history": {"action": "payment_failed", "at": datetime.now(timezone.utc).isoformat(), "by": "system"}}},
-            )
-            await _log_event(db, "payment_failed", invoice["invoice_id"], "revolut_webhook")
+        elif event == "ORDER_PAYMENT_FAILED":
+            invoice = await db.invoices.find_one({"revolut_order_id": order_id})
+            if invoice:
+                await db.invoices.update_one(
+                    {"invoice_id": invoice["invoice_id"]},
+                    {"$set": {"payment_status": "failed"},
+                     "$push": {"history": {"action": "payment_failed", "at": datetime.now(timezone.utc).isoformat(), "by": "system"}}},
+                )
+                await _log_event(db, "payment_failed", invoice["invoice_id"], "revolut_webhook")
 
     await _log_event(db, "webhook_processed", order_id, "system")
     return {"status": "ok"}
 
 
-# --- Commercial Stats (Admin) ---
+# --- Stripe Webhook ---
+
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+
+@app.post("/api/webhooks/stripe")
+async def stripe_webhook(request: Request):
+    """Handle Stripe payment webhooks — idempotent, dasselbe Statusmodell wie Revolut."""
+    body = await request.body()
+    raw_body = body.decode("utf-8")
+
+    try:
+        data = json.loads(raw_body)
+    except Exception:
+        raise HTTPException(400, "Invalid JSON")
+
+    event_type = data.get("type", "")
+    event_id = data.get("id", "")
+    obj = data.get("data", {}).get("object", {})
+    payment_intent_id = obj.get("id", "")
+    metadata = obj.get("metadata", {})
+    invoice_id_ref = metadata.get("invoice_id", "")
+
+    logger.info(f"Stripe webhook: {event_type} for {payment_intent_id}")
+
+    # Idempotenz-Check
+    existing = await db.webhook_events.find_one({"order_id": event_id, "event": event_type, "provider": "stripe"})
+    if existing:
+        return {"status": "already_processed"}
+
+    await db.webhook_events.insert_one({
+        "order_id": event_id,
+        "event": event_type,
+        "data": data,
+        "provider": "stripe",
+        "processed_at": datetime.now(timezone.utc).isoformat(),
+    })
+    await _log_event(db, "webhook_received", event_id, "stripe")
+
+    if billing_svc:
+        stripe_event_map = {
+            "payment_intent.succeeded": "payment_intent.succeeded",
+            "payment_intent.payment_failed": "payment_intent.payment_failed",
+        }
+        mapped_event = stripe_event_map.get(event_type, event_type)
+        result = await billing_svc.process_payment_webhook("stripe", {
+            "order_id": payment_intent_id or invoice_id_ref,
+            "event": mapped_event,
+            "amount": obj.get("amount", 0),
+        })
+    else:
+        # Fallback
+        if event_type == "payment_intent.succeeded":
+            invoice = await db.invoices.find_one({"$or": [
+                {"stripe_payment_intent_id": payment_intent_id},
+                {"invoice_id": invoice_id_ref},
+            ]})
+            if invoice:
+                now = datetime.now(timezone.utc)
+                await db.invoices.update_one(
+                    {"invoice_id": invoice["invoice_id"]},
+                    {"$set": {"payment_status": "paid", "paid_at": now.isoformat(), "status": "payment_completed"},
+                     "$push": {"history": {"action": "payment_received_stripe", "at": now.isoformat(), "by": "system"}}},
+                )
+                if invoice.get("quote_id"):
+                    await db.quotes.update_one(
+                        {"quote_id": invoice["quote_id"]},
+                        {"$set": {"payment_status": "deposit_paid"},
+                         "$push": {"history": {"action": "deposit_paid_stripe", "at": now.isoformat(), "by": "system"}}},
+                    )
+
+    await _log_event(db, "webhook_processed", event_id, "stripe")
+    return {"status": "ok"}
+
+
+# --- Manuelle Zahlung / Banküberweisung ---
+
+@app.post("/api/admin/invoices/{invoice_id}/mark-paid")
+async def mark_invoice_paid(invoice_id: str, data: dict = None, current_user: dict = Depends(get_current_admin)):
+    """Manuelle Zahlungsbestätigung (Banküberweisung, Bar, etc.)."""
+    invoice = await db.invoices.find_one({"invoice_id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(404, "Rechnung nicht gefunden")
+    if invoice.get("payment_status") == "paid":
+        return {"already_paid": True}
+
+    now = utcnow()
+    method = (data or {}).get("method", "bank_transfer")
+    reference = (data or {}).get("reference", "")
+    notes = (data or {}).get("notes", "")
+
+    await db.invoices.update_one(
+        {"invoice_id": invoice_id},
+        {"$set": {
+            "payment_status": "paid", "paid_at": now.isoformat(),
+            "status": "payment_completed",
+            "payment_method": method,
+            "payment_reference_manual": reference,
+        },
+         "$push": {"history": {"action": f"manual_paid_{method}", "at": now.isoformat(), "by": current_user["email"], "notes": notes}}},
+    )
+    # Sync Quote
+    if invoice.get("quote_id"):
+        await db.quotes.update_one(
+            {"quote_id": invoice["quote_id"]},
+            {"$set": {"payment_status": "deposit_paid"},
+             "$push": {"history": {"action": f"deposit_paid_{method}", "at": now.isoformat(), "by": current_user["email"]}}},
+        )
+    # Sync Contract
+    contract = await db.contracts.find_one({"quote_id": invoice.get("quote_id", "---")}, {"_id": 0})
+    if contract:
+        await db.contracts.update_one(
+            {"contract_id": contract["contract_id"]},
+            {"$set": {"payment_status": "deposit_paid", "updated_at": now}}
+        )
+    await db.timeline_events.insert_one(create_timeline_event(
+        "invoice", invoice_id, "manual_payment_confirmed",
+        actor=current_user["email"], actor_type="admin",
+        details={"method": method, "reference": reference, "amount": invoice.get("totals", {}).get("gross", 0)},
+    ))
+    if memory_svc:
+        email = invoice.get("customer", {}).get("email", "")
+        if email:
+            await memory_svc.write(
+                email, f"Zahlung bestätigt: {invoice.get('invoice_number', '')} via {method}",
+                agent_id="finance_agent", category="payment",
+                source="admin", source_ref=invoice_id,
+                verification_status="verifiziert",
+            )
+    return {"marked_paid": True, "method": method}
+
+
+# --- Reminder/Mahnlogik ---
+
+@app.post("/api/admin/invoices/{invoice_id}/send-reminder")
+async def send_invoice_reminder(invoice_id: str, data: dict = None, current_user: dict = Depends(get_current_admin)):
+    """Zahlungserinnerung senden. Eskalation: Erinnerung → 1. Mahnung → 2. Mahnung."""
+    invoice = await db.invoices.find_one({"invoice_id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(404, "Rechnung nicht gefunden")
+    if invoice.get("payment_status") == "paid":
+        return {"error": "Rechnung ist bereits bezahlt"}
+
+    reminder_count = invoice.get("reminder_count", 0) + 1
+    reminder_type = "erinnerung"
+    if reminder_count == 2:
+        reminder_type = "1_mahnung"
+    elif reminder_count >= 3:
+        reminder_type = "2_mahnung"
+
+    now = utcnow()
+    await db.invoices.update_one(
+        {"invoice_id": invoice_id},
+        {"$set": {
+            "reminder_count": reminder_count,
+            "last_reminder_at": now.isoformat(),
+            "last_reminder_type": reminder_type,
+        },
+         "$push": {"history": {"action": f"reminder_{reminder_type}", "at": now.isoformat(), "by": current_user["email"]}}},
+    )
+    # Email
+    email = invoice.get("customer", {}).get("email", "")
+    if email and RESEND_API_KEY:
+        subjects = {
+            "erinnerung": f"Zahlungserinnerung — Rechnung {invoice.get('invoice_number', '')}",
+            "1_mahnung": f"1. Mahnung — Rechnung {invoice.get('invoice_number', '')}",
+            "2_mahnung": f"2. Mahnung — Rechnung {invoice.get('invoice_number', '')}",
+        }
+        bodies = {
+            "erinnerung": "dies ist eine freundliche Erinnerung an die ausstehende Zahlung.",
+            "1_mahnung": "leider konnten wir bisher keinen Zahlungseingang feststellen. Wir bitten Sie, die offene Rechnung umgehend zu begleichen.",
+            "2_mahnung": "trotz unserer vorherigen Erinnerungen steht die Zahlung weiterhin aus. Wir bitten um sofortige Begleichung.",
+        }
+        try:
+            html = email_template(
+                subjects.get(reminder_type, "Zahlungserinnerung"),
+                f'''<h1 style="color:#fff;font-size:20px;margin:0 0 16px;">{subjects.get(reminder_type, "")}</h1>
+                <p>Guten Tag,</p>
+                <p>{bodies.get(reminder_type, "")}</p>
+                <div style="background:#252a32;padding:20px;margin:20px 0;border-left:3px solid #ffb599;">
+                <p style="margin:0 0 4px;font-size:12px;color:#8f9095;">RECHNUNG</p>
+                <p style="margin:0 0 8px;color:#fff;font-weight:600;">{invoice.get("invoice_number", "")}</p>
+                <p style="margin:0 0 4px;font-size:12px;color:#8f9095;">OFFENER BETRAG</p>
+                <p style="margin:0;color:#ffb599;font-weight:600;">{invoice.get("totals", {}).get("gross", 0):,.2f} EUR</p></div>
+                <p>IBAN: {COMM_COMPANY["bank"]["iban"]}<br/>BIC: {COMM_COMPANY["bank"]["bic"]}<br/>Verwendungszweck: {invoice.get("invoice_number", "")}</p>'''
+            )
+            await send_email([email], subjects.get(reminder_type, ""), html)
+        except Exception as e:
+            logger.error(f"Reminder email error: {e}")
+
+    await db.timeline_events.insert_one(create_timeline_event(
+        "invoice", invoice_id, f"reminder_{reminder_type}",
+        actor=current_user["email"], actor_type="admin",
+        details={"reminder_count": reminder_count, "type": reminder_type},
+    ))
+    return {"reminder_sent": True, "type": reminder_type, "count": reminder_count}
+
+
+# --- Billing Status Dashboard ---
+
+@app.get("/api/admin/billing/status")
+async def admin_billing_status(customer_email: str = None, current_user: dict = Depends(get_current_admin)):
+    """Einheitliche Billing-Statusübersicht. Gleiche Quelle für Portal/Admin/Timeline."""
+    if customer_email and billing_svc:
+        return await billing_svc.get_billing_status(customer_email)
+
+    # Global overview
+    total_quotes = await db.quotes.count_documents({})
+    accepted_quotes = await db.quotes.count_documents({"status": "accepted"})
+    total_invoices = await db.invoices.count_documents({})
+    paid_invoices = await db.invoices.count_documents({"payment_status": "paid"})
+    pending_invoices = await db.invoices.count_documents({"payment_status": {"$in": ["pending", "unpaid"]}})
+    overdue_invoices = await db.invoices.count_documents({"payment_status": {"$nin": ["paid"]}, "reminder_count": {"$gte": 1}})
+    total_contracts = await db.contracts.count_documents({})
+    active_contracts = await db.contracts.count_documents({"status": "accepted"})
+
+    pipeline = [
+        {"$match": {"payment_status": "paid"}},
+        {"$group": {"_id": None, "total": {"$sum": "$totals.gross"}}},
+    ]
+    revenue_agg = await db.invoices.aggregate(pipeline).to_list(1)
+    total_revenue = revenue_agg[0]["total"] if revenue_agg else 0
+
+    pipeline_open = [
+        {"$match": {"payment_status": {"$nin": ["paid"]}}},
+        {"$group": {"_id": None, "total": {"$sum": "$totals.gross"}}},
+    ]
+    open_agg = await db.invoices.aggregate(pipeline_open).to_list(1)
+    total_open = open_agg[0]["total"] if open_agg else 0
+
+    return {
+        "quotes": {"total": total_quotes, "accepted": accepted_quotes},
+        "invoices": {"total": total_invoices, "paid": paid_invoices, "pending": pending_invoices, "overdue": overdue_invoices},
+        "contracts": {"total": total_contracts, "active": active_contracts},
+        "revenue": {"total_gross": round(total_revenue, 2), "total_open": round(total_open, 2), "currency": "EUR"},
+    }
 
 @app.get("/api/admin/commercial/stats")
 async def commercial_stats(current_user: dict = Depends(get_current_admin)):
