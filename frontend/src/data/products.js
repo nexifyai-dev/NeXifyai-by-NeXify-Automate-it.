@@ -12,7 +12,7 @@ export const SEO_PRODUCT = {
     en: 'Our AI-driven SEO combines machine learning, semantic analysis, and automated content optimization to systematically and sustainably increase your organic visibility.',
   },
   forWhom: {
-    de: 'Für B2B-Unternehmen, SaaS-Anbieter, E-Commerce-Shops und Dienstleister, die organisches Wachstum ohne Abhaengigkeit von Paid Ads anstreben.',
+    de: 'Für B2B-Unternehmen, SaaS-Anbieter, E-Commerce-Shops und Dienstleister, die organisches Wachstum ohne Abhängigkeit von Paid Ads anstreben.',
     nl: 'Voor B2B-bedrijven, SaaS-aanbieders, e-commerceshops en dienstverleners die organische groei nastreven zonder afhankelijkheid van betaalde advertenties.',
     en: 'For B2B companies, SaaS providers, e-commerce shops, and service providers seeking organic growth without dependency on paid ads.',
   },
@@ -20,10 +20,10 @@ export const SEO_PRODUCT = {
     de: [
       { icon: 'trending_up', title: 'Organisches Wachstum', desc: 'Systematischer Aufbau von Rankings für kaufrelevante Keywords.' },
       { icon: 'psychology', title: 'KI-Analyse', desc: 'Maschinelles Lernen identifiziert Optimierungspotenziale, die manuell unsichtbar bleiben.' },
-      { icon: 'edit_note', title: 'Content-Automation', desc: 'KI-gestuetzte Erstellung und Optimierung von SEO-Content in Ihrer Tonalitaet.' },
+      { icon: 'edit_note', title: 'Content-Automation', desc: 'KI-gestützte Erstellung und Optimierung von SEO-Content in Ihrer Tonalität.' },
       { icon: 'monitoring', title: 'Echtzeit-Monitoring', desc: 'Automatisierte Überwachung von Rankings, Backlinks und technischer SEO-Health.' },
       { icon: 'speed', title: 'Technisches SEO', desc: 'Core Web Vitals, Crawlability, strukturierte Daten und Schema-Markup.' },
-      { icon: 'language', title: 'Multilingual SEO', desc: 'DACH- und Benelux-Maerkte mit hreflang, lokaler Keyword-Recherche und kultureller Anpassung.' },
+      { icon: 'language', title: 'Multilingual SEO', desc: 'DACH- und Benelux-Märkte mit hreflang, lokaler Keyword-Recherche und kultureller Anpassung.' },
     ],
     nl: [
       { icon: 'trending_up', title: 'Organische groei', desc: 'Systematische opbouw van rankings voor koopgerichte zoekwoorden.' },
@@ -44,9 +44,9 @@ export const SEO_PRODUCT = {
   },
   process: {
     de: [
-      { num: '01', title: 'SEO-Audit & Keyword-Strategie', desc: 'KI-gestuetzte Vollanalyse Ihrer Website und Wettbewerberlandschaft. Definition der Ziel-Keywords.' },
+      { num: '01', title: 'SEO-Audit & Keyword-Strategie', desc: 'KI-gestützte Vollanalyse Ihrer Website und Wettbewerberlandschaft. Definition der Ziel-Keywords.' },
       { num: '02', title: 'Technische Optimierung', desc: 'Core Web Vitals, Seitenstruktur, Schema-Markup, Crawl-Optimierung und Mobile-First.' },
-      { num: '03', title: 'Content-Strategie & Erstellung', desc: 'KI-generierte Content-Plaene, Briefings und Texte — abgestimmt auf Suchintention und Tonalitaet.' },
+      { num: '03', title: 'Content-Strategie & Erstellung', desc: 'KI-generierte Content-Pläne, Briefings und Texte — abgestimmt auf Suchintention und Tonalität.' },
       { num: '04', title: 'Monitoring & Iteration', desc: 'Monatliche Reports, Ranking-Tracking, A/B-Tests und kontinuierliche Nachoptimierung.' },
     ],
     nl: [
@@ -66,7 +66,7 @@ export const SEO_PRODUCT = {
     de: [
       { id: 'NXA-SEO-S', name: 'SEO Starter', price: '799', period: 'EUR / Monat (netto)', features: ['Keyword-Recherche (50 Keywords)', 'Monatlicher SEO-Report', 'On-Page-Optimierung (5 Seiten/Mo.)', 'Technisches SEO-Audit (quartalsweise)', 'Core Web Vitals Monitoring', 'Google Search Console Setup'], time: '6 Monate Mindestlaufzeit' },
       { id: 'NXA-SEO-G', name: 'SEO Growth', price: '1.499', period: 'EUR / Monat (netto)', hl: true, badge: 'EMPFOHLEN', features: ['Keyword-Recherche (200 Keywords)', 'Wöchentlicher SEO-Report', 'On-Page-Optimierung (15 Seiten/Mo.)', 'Content-Strategie & KI-Briefings', 'Technisches SEO (monatlich)', 'Linkbuilding-Strategie', 'Wettbewerberanalyse', 'Multilingual SEO (DE/NL/EN)'], time: '6 Monate Mindestlaufzeit' },
-      { id: 'NXA-SEO-E', name: 'SEO Enterprise', price: 'Individuell', period: '', features: ['Unbegrenzte Keywords', 'Tagesaktuelle Reports & Dashboards', 'Vollständige Content-Produktion', 'Dediziertes SEO-Team', 'International SEO (5+ Maerkte)', 'API-Zugang & Custom Reporting', 'Executive Quarterly Reviews'], time: 'Individuell' },
+      { id: 'NXA-SEO-E', name: 'SEO Enterprise', price: 'Individuell', period: '', features: ['Unbegrenzte Keywords', 'Tagesaktuelle Reports & Dashboards', 'Vollständige Content-Produktion', 'Dediziertes SEO-Team', 'International SEO (5+ Märkte)', 'API-Zugang & Custom Reporting', 'Executive Quarterly Reviews'], time: 'Individuell' },
     ],
     nl: [
       { id: 'NXA-SEO-S', name: 'SEO Starter', price: '799', period: 'EUR / maand (netto)', features: ['Trefwoordonderzoek (50 trefwoorden)', 'Maandelijks SEO-rapport', 'On-page-optimalisatie (5 pagina\'s/mnd)', 'Technische SEO-audit (per kwartaal)', 'Core Web Vitals monitoring', 'Google Search Console setup'], time: '6 maanden minimale looptijd' },
@@ -83,8 +83,8 @@ export const SEO_PRODUCT = {
     de: [
       { q: 'Was unterscheidet KI-gesteuertes SEO von klassischem SEO?', a: 'Klassisches SEO basiert auf manueller Analyse und Erfahrungswerten. Unser KI-gesteuertes SEO nutzt maschinelles Lernen für prädiktive Keyword-Analyse, automatisierte Content-Optimierung und Echtzeit-Wettbewerbermonitoring — schneller, präziser und skalierbarer.' },
       { q: 'Wann sehe ich erste Ergebnisse?', a: 'Technische Optimierungen wirken oft innerhalb von 2-4 Wochen. Nachhaltige Ranking-Verbesserungen für kompetitive Keywords zeigen sich typischerweise nach 3-6 Monaten. Wir liefern ab Monat 1 transparente Reports.' },
-      { q: 'Brauche ich eine neue Website?', a: 'Nein. Wir optimieren Ihre bestehende Website. Bei grundlegenden technischen Maengeln empfehlen wir ggf. einen Website-Relaunch — gerne als Bundle mit unserem Website-Service.' },
-      { q: 'Wie wird der Content erstellt?', a: 'KI-gestuetzte Erstellung von Briefings, Textentwuerfen und Meta-Daten — immer im Einklang mit Ihrer Tonalitaet und Markensprache. Finale Freigabe durch Sie oder Ihr Team.' },
+      { q: 'Brauche ich eine neue Website?', a: 'Nein. Wir optimieren Ihre bestehende Website. Bei grundlegenden technischen Mängeln empfehlen wir ggf. einen Website-Relaunch — gerne als Bundle mit unserem Website-Service.' },
+      { q: 'Wie wird der Content erstellt?', a: 'KI-gestützte Erstellung von Briefings, Textentwürfen und Meta-Daten — immer im Einklang mit Ihrer Tonalität und Markensprache. Finale Freigabe durch Sie oder Ihr Team.' },
       { q: 'Kann ich SEO mit anderen Services kombinieren?', a: 'Absolut. Wir bieten attraktive Bundles: SEO + Website, SEO + KI-Agenten, SEO + App. Cross-Sell-Rabatte bis 15 % auf Bundle-Preise.' },
     ],
     nl: [
@@ -104,12 +104,12 @@ export const SEO_PRODUCT = {
 
 export const BUNDLES = {
   title: { de: 'Bundles & Kombiangebote', nl: 'Bundels & Combinatieaanbiedingen', en: 'Bundles & Combo Deals' },
-  subtitle: { de: 'Mehr Leistung, besserer Preis. Kombinieren Sie Services für maximalen Geschaeftserfolg.', nl: 'Meer prestatie, betere prijs. Combineer diensten voor maximaal bedrijfssucces.', en: 'More performance, better price. Combine services for maximum business success.' },
+  subtitle: { de: 'Mehr Leistung, besserer Preis. Kombinieren Sie Services für maximalen Geschäftserfolg.', nl: 'Meer prestatie, betere prijs. Combineer diensten voor maximaal bedrijfssucces.', en: 'More performance, better price. Combine services for maximum business success.' },
   items: {
     de: [
       { id: 'NXA-BDL-DS', name: 'Digital Starter', price: '3.990 EUR', saving: 'Statt 4.289 EUR', desc: 'Website Starter + SEO Starter (3 Monate)', features: ['Website bis 5 Seiten', 'SEO-Grundoptimierung', 'Keyword-Recherche', 'Google Analytics Setup', 'Laufzeit: 3 Wochen Web + 3 Monate SEO'], cta: 'Bundle anfragen' },
       { id: 'NXA-BDL-GD', name: 'Growth Digital', price: '17.490 EUR', saving: 'Statt 19.467 EUR', desc: 'Website Professional + SEO Growth (6 Monate) + KI-Chatbot', hl: true, badge: 'BELIEBT', features: ['Website bis 15 Seiten mit Animationen', 'KI-gesteuertes SEO Growth (6 Mo.)', 'KI-Chatbot für Ihre Website', 'Content-Strategie', 'Multilingual (DE/NL/EN)', '15 % Bundle-Rabatt'], cta: 'Bundle anfragen' },
-      { id: 'NXA-BDL-ED', name: 'Enterprise Digital', price: 'ab 39.900 EUR', saving: '', desc: 'Alles was Ihr Unternehmen braucht — massgeschneidert.', features: ['Website Enterprise + App', 'SEO Enterprise', 'KI-Agenten (Growth)', 'Vollständige Systemintegration', 'Dediziertes Projektteam', 'Strategisches Quarterly Review'], cta: 'Individuell besprechen' },
+      { id: 'NXA-BDL-ED', name: 'Enterprise Digital', price: 'ab 39.900 EUR', saving: '', desc: 'Alles was Ihr Unternehmen braucht — maßgeschneidert.', features: ['Website Enterprise + App', 'SEO Enterprise', 'KI-Agenten (Growth)', 'Vollständige Systemintegration', 'Dediziertes Projektteam', 'Strategisches Quarterly Review'], cta: 'Individuell besprechen' },
     ],
     nl: [
       { id: 'NXA-BDL-DS', name: 'Digital Starter', price: '3.990 EUR', saving: 'In plaats van 4.289 EUR', desc: 'Website Starter + SEO Starter (3 maanden)', features: ['Website tot 5 pagina\'s', 'SEO-basisoptimalisatie', 'Trefwoordonderzoek', 'Google Analytics setup', 'Looptijd: 3 weken web + 3 maanden SEO'], cta: 'Bundel aanvragen' },
@@ -141,7 +141,7 @@ export const FULL_SERVICES = {
       { name: 'KI-GESTEUERTES SEO', icon: 'search', items: [
         { name: 'SEO Starter', price: '799 EUR/Mo.', desc: 'Keyword-Recherche, On-Page, Monitoring', time: 'Ab 6 Monate', features: ['50 Keywords', 'On-Page (5 Seiten/Mo.)', 'Monatlicher Report', 'Core Web Vitals', 'Google Search Console'] },
         { name: 'SEO Growth', price: '1.499 EUR/Mo.', desc: 'Content-Strategie, Linkbuilding, Multilingual', time: 'Ab 6 Monate', hl: true, features: ['200 Keywords', 'On-Page (15 Seiten/Mo.)', 'Content & KI-Briefings', 'Linkbuilding', 'Multilingual SEO'] },
-        { name: 'SEO Enterprise', price: 'Individuell', desc: 'Vollservice, dediziertes Team, 5+ Maerkte', time: 'Individuell', features: ['Unbegrenzte Keywords', 'Tagesaktuelle Reports', 'Content-Produktion', 'International SEO', 'API-Zugang'] },
+        { name: 'SEO Enterprise', price: 'Individuell', desc: 'Vollservice, dediziertes Team, 5+ Märkte', time: 'Individuell', features: ['Unbegrenzte Keywords', 'Tagesaktuelle Reports', 'Content-Produktion', 'International SEO', 'API-Zugang'] },
       ]},
       { name: 'KI-AGENTEN', icon: 'smart_toy', items: [
         { name: 'Starter AI Agenten AG', price: '499 EUR/Mo.', desc: '2 KI-Agenten, Shared Cloud, E-Mail-Support', time: '24 Monate', features: ['2 KI-Agenten', 'Shared Cloud', 'E-Mail-Support (48h)', 'Basis-Integrationen', 'Standard-Monitoring'] },

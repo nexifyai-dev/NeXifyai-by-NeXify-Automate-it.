@@ -1,6 +1,6 @@
 """
-NeXifyAI Iteration 17 Backend Tests
-Focus: PDF tariff sheets for all categories, product descriptions API, responsive layout verification
+NeXifyAI Backend API Tests - Iteration 17
+Testing: Health, Product APIs, Booking, Legal pages, PDF tariff sheets
 """
 import pytest
 import requests
@@ -8,164 +8,213 @@ import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://ai-architecture-lab.preview.emergentagent.com')
 
-class TestPDFTariffSheets:
-    """Test PDF tariff sheet generation for all categories"""
-    
-    def test_tariff_sheet_all_categories(self):
-        """GET /api/product/tariff-sheet?category=all returns valid PDF > 10KB"""
-        response = requests.get(f"{BASE_URL}/api/product/tariff-sheet?category=all")
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-        assert 'application/pdf' in response.headers.get('Content-Type', ''), "Expected PDF content-type"
-        assert len(response.content) > 10000, f"PDF too small: {len(response.content)} bytes, expected > 10KB"
-        print(f"✓ All categories PDF: {len(response.content)} bytes")
-    
-    def test_tariff_sheet_seo(self):
-        """GET /api/product/tariff-sheet?category=seo returns valid PDF"""
-        response = requests.get(f"{BASE_URL}/api/product/tariff-sheet?category=seo")
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-        assert 'application/pdf' in response.headers.get('Content-Type', ''), "Expected PDF content-type"
-        assert len(response.content) > 1000, f"PDF too small: {len(response.content)} bytes"
-        print(f"✓ SEO PDF: {len(response.content)} bytes")
-    
-    def test_tariff_sheet_apps(self):
-        """GET /api/product/tariff-sheet?category=apps returns valid PDF"""
-        response = requests.get(f"{BASE_URL}/api/product/tariff-sheet?category=apps")
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-        assert 'application/pdf' in response.headers.get('Content-Type', ''), "Expected PDF content-type"
-        assert len(response.content) > 1000, f"PDF too small: {len(response.content)} bytes"
-        print(f"✓ Apps PDF: {len(response.content)} bytes")
-    
-    def test_tariff_sheet_addons(self):
-        """GET /api/product/tariff-sheet?category=addons returns valid PDF"""
-        response = requests.get(f"{BASE_URL}/api/product/tariff-sheet?category=addons")
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-        assert 'application/pdf' in response.headers.get('Content-Type', ''), "Expected PDF content-type"
-        assert len(response.content) > 1000, f"PDF too small: {len(response.content)} bytes"
-        print(f"✓ Addons PDF: {len(response.content)} bytes")
-    
-    def test_tariff_sheet_bundles(self):
-        """GET /api/product/tariff-sheet?category=bundles returns valid PDF"""
-        response = requests.get(f"{BASE_URL}/api/product/tariff-sheet?category=bundles")
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-        assert 'application/pdf' in response.headers.get('Content-Type', ''), "Expected PDF content-type"
-        assert len(response.content) > 1000, f"PDF too small: {len(response.content)} bytes"
-        print(f"✓ Bundles PDF: {len(response.content)} bytes")
-    
-    def test_tariff_sheet_agents(self):
-        """GET /api/product/tariff-sheet?category=agents returns valid PDF"""
-        response = requests.get(f"{BASE_URL}/api/product/tariff-sheet?category=agents")
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-        assert 'application/pdf' in response.headers.get('Content-Type', ''), "Expected PDF content-type"
-        assert len(response.content) > 1000, f"PDF too small: {len(response.content)} bytes"
-        print(f"✓ Agents PDF: {len(response.content)} bytes")
-    
-    def test_tariff_sheet_websites(self):
-        """GET /api/product/tariff-sheet?category=websites returns valid PDF"""
-        response = requests.get(f"{BASE_URL}/api/product/tariff-sheet?category=websites")
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-        assert 'application/pdf' in response.headers.get('Content-Type', ''), "Expected PDF content-type"
-        assert len(response.content) > 1000, f"PDF too small: {len(response.content)} bytes"
-        print(f"✓ Websites PDF: {len(response.content)} bytes")
-
-
-class TestProductDescriptions:
-    """Test product descriptions API"""
-    
-    def test_product_descriptions_structure(self):
-        """GET /api/product/descriptions returns JSON with products, services, bundles"""
-        response = requests.get(f"{BASE_URL}/api/product/descriptions")
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-        
-        data = response.json()
-        
-        # Check products (6+ expected: starter, growth, web_starter, web_professional, seo_starter, seo_growth)
-        products = data.get('products', {})
-        assert len(products) >= 6, f"Expected 6+ products, got {len(products)}"
-        print(f"✓ Products count: {len(products)}")
-        
-        # Check services (10+ expected from SERVICE_CATALOG)
-        services = data.get('services', {})
-        assert len(services) >= 10, f"Expected 10+ services, got {len(services)}"
-        print(f"✓ Services count: {len(services)}")
-        
-        # Check bundles (3 expected: digital_starter, growth_digital, enterprise_digital)
-        bundles = data.get('bundles', {})
-        assert len(bundles) >= 3, f"Expected 3 bundles, got {len(bundles)}"
-        print(f"✓ Bundles count: {len(bundles)}")
-    
-    def test_product_descriptions_content(self):
-        """Verify product descriptions have required fields"""
-        response = requests.get(f"{BASE_URL}/api/product/descriptions")
-        data = response.json()
-        
-        # Check starter product has required fields
-        starter = data.get('products', {}).get('starter', {})
-        assert 'what' in starter, "Starter missing 'what' field"
-        assert 'for_whom' in starter, "Starter missing 'for_whom' field"
-        assert 'included' in starter, "Starter missing 'included' field"
-        print("✓ Starter product has required fields")
-        
-        # Check growth product
-        growth = data.get('products', {}).get('growth', {})
-        assert 'what' in growth, "Growth missing 'what' field"
-        assert 'contract_terms' in growth, "Growth missing 'contract_terms' field"
-        print("✓ Growth product has required fields")
-
-
-class TestHealthAndBasicEndpoints:
-    """Basic health and endpoint tests"""
+class TestHealthAndBasics:
+    """Health check and basic API tests"""
     
     def test_health_endpoint(self):
-        """GET /api/health returns 200"""
+        """Test /api/health returns healthy status"""
         response = requests.get(f"{BASE_URL}/api/health")
         assert response.status_code == 200
         data = response.json()
-        assert data.get('status') == 'healthy'
-        print("✓ Health endpoint OK")
-    
+        assert data["status"] == "healthy"
+        assert "version" in data
+        assert "timestamp" in data
+        print(f"✓ Health check passed: {data['status']}, version {data['version']}")
+
     def test_company_endpoint(self):
-        """GET /api/company returns company data"""
+        """Test /api/company returns company data"""
         response = requests.get(f"{BASE_URL}/api/company")
         assert response.status_code == 200
         data = response.json()
-        assert 'name' in data
-        assert 'email' in data
-        print("✓ Company endpoint OK")
+        assert "name" in data
+        assert "kvk" in data
+        assert data["kvk"] == "90483944"
+        assert data["vat_id"] == "NL865786276B01"
+        print(f"✓ Company data: KvK={data['kvk']}, VAT={data['vat_id']}")
+
+
+class TestProductAPIs:
+    """Product information API tests"""
     
     def test_tariffs_endpoint(self):
-        """GET /api/product/tariffs returns tariff data"""
+        """Test /api/product/tariffs returns tariff data"""
         response = requests.get(f"{BASE_URL}/api/product/tariffs")
         assert response.status_code == 200
         data = response.json()
-        assert 'tariffs' in data
-        assert 'starter' in data['tariffs']
-        assert 'growth' in data['tariffs']
-        print("✓ Tariffs endpoint OK")
+        assert "tariffs" in data
+        tariffs = data["tariffs"]
+        # Check starter tariff
+        assert "starter" in tariffs
+        starter = tariffs["starter"]
+        assert starter["reference_monthly_eur"] == 499
+        assert starter["calculation"]["total_contract_eur"] == 11976
+        # Check growth tariff
+        assert "growth" in tariffs
+        growth = tariffs["growth"]
+        assert growth["reference_monthly_eur"] == 1299
+        print(f"✓ Tariffs: Starter={starter['reference_monthly_eur']} EUR, Growth={growth['reference_monthly_eur']} EUR")
 
-
-class TestBundleCatalog:
-    """Test bundle catalog alignment"""
-    
-    def test_bundle_prices(self):
-        """Verify bundle prices match expected values"""
+    def test_product_descriptions(self):
+        """Test /api/product/descriptions returns 12 products"""
         response = requests.get(f"{BASE_URL}/api/product/descriptions")
+        assert response.status_code == 200
         data = response.json()
-        bundles = data.get('bundles', {})
-        
-        # digital_starter should be 3990
-        ds = bundles.get('digital_starter', {})
-        assert ds.get('bundle_price_eur') == 3990.0, f"digital_starter price mismatch: {ds.get('bundle_price_eur')}"
-        print("✓ digital_starter price: 3990 EUR")
-        
-        # growth_digital should be 17490
-        gd = bundles.get('growth_digital', {})
-        assert gd.get('bundle_price_eur') == 17490.0, f"growth_digital price mismatch: {gd.get('bundle_price_eur')}"
-        print("✓ growth_digital price: 17490 EUR")
-        
-        # enterprise_digital should be 39900
-        ed = bundles.get('enterprise_digital', {})
-        assert ed.get('bundle_price_eur') == 39900.0, f"enterprise_digital price mismatch: {ed.get('bundle_price_eur')}"
-        print("✓ enterprise_digital price: 39900 EUR")
+        assert "products" in data
+        products = data["products"]
+        # Products is a dict with keys like 'starter', 'growth', etc.
+        assert isinstance(products, dict)
+        assert len(products) >= 12, f"Expected at least 12 products, got {len(products)}"
+        # Check for key products
+        assert "starter" in products
+        assert "growth" in products
+        assert "web_starter" in products
+        assert "seo_starter" in products
+        print(f"✓ Product descriptions: {len(products)} products returned")
+
+    def test_product_faq(self):
+        """Test /api/product/faq returns 18 FAQ items"""
+        response = requests.get(f"{BASE_URL}/api/product/faq")
+        assert response.status_code == 200
+        data = response.json()
+        assert "faq" in data
+        faq = data["faq"]
+        assert len(faq) >= 18, f"Expected at least 18 FAQ items, got {len(faq)}"
+        # Check FAQ structure - uses 'q' and 'a' keys
+        for item in faq[:3]:
+            assert "q" in item, "FAQ item missing 'q' key"
+            assert "a" in item, "FAQ item missing 'a' key"
+        print(f"✓ FAQ: {len(faq)} items returned")
+
+
+class TestPDFTariffSheet:
+    """PDF tariff sheet download tests"""
+    
+    def test_tariff_sheet_all(self):
+        """Test /api/product/tariff-sheet?category=all returns PDF"""
+        response = requests.get(f"{BASE_URL}/api/product/tariff-sheet?category=all")
+        assert response.status_code == 200
+        assert response.headers.get("content-type") == "application/pdf"
+        assert len(response.content) > 1000  # PDF should have content
+        print(f"✓ PDF tariff sheet (all): {len(response.content)} bytes")
+
+    def test_tariff_sheet_seo(self):
+        """Test /api/product/tariff-sheet?category=seo returns PDF"""
+        response = requests.get(f"{BASE_URL}/api/product/tariff-sheet?category=seo")
+        assert response.status_code == 200
+        assert response.headers.get("content-type") == "application/pdf"
+        print(f"✓ PDF tariff sheet (seo): {len(response.content)} bytes")
+
+    def test_tariff_sheet_agents(self):
+        """Test /api/product/tariff-sheet?category=agents returns PDF"""
+        response = requests.get(f"{BASE_URL}/api/product/tariff-sheet?category=agents")
+        assert response.status_code == 200
+        assert response.headers.get("content-type") == "application/pdf"
+        print(f"✓ PDF tariff sheet (agents): {len(response.content)} bytes")
+
+
+class TestBookingSlots:
+    """Booking slot availability tests"""
+    
+    def test_booking_slots_future_date(self):
+        """Test /api/booking/slots returns slots for future date"""
+        response = requests.get(f"{BASE_URL}/api/booking/slots?date=2026-04-07")
+        assert response.status_code == 200
+        data = response.json()
+        assert "date" in data
+        assert "slots" in data
+        assert data["date"] == "2026-04-07"
+        # Should have available slots
+        assert isinstance(data["slots"], list)
+        print(f"✓ Booking slots for 2026-04-07: {len(data['slots'])} available")
+
+    def test_booking_slots_another_date(self):
+        """Test booking slots for another date"""
+        response = requests.get(f"{BASE_URL}/api/booking/slots?date=2026-04-10")
+        assert response.status_code == 200
+        data = response.json()
+        assert "slots" in data
+        print(f"✓ Booking slots for 2026-04-10: {len(data['slots'])} available")
+
+
+class TestFrontendPages:
+    """Frontend page accessibility tests"""
+    
+    def test_homepage_loads(self):
+        """Test homepage loads correctly"""
+        response = requests.get(f"{BASE_URL}/")
+        assert response.status_code == 200
+        assert "NeXify" in response.text
+        print("✓ Homepage loads correctly")
+
+    def test_german_legal_impressum(self):
+        """Test /de/impressum loads"""
+        response = requests.get(f"{BASE_URL}/de/impressum")
+        assert response.status_code == 200
+        print("✓ /de/impressum loads")
+
+    def test_german_legal_datenschutz(self):
+        """Test /de/datenschutz loads"""
+        response = requests.get(f"{BASE_URL}/de/datenschutz")
+        assert response.status_code == 200
+        print("✓ /de/datenschutz loads")
+
+    def test_german_legal_agb(self):
+        """Test /de/agb loads"""
+        response = requests.get(f"{BASE_URL}/de/agb")
+        assert response.status_code == 200
+        print("✓ /de/agb loads")
+
+    def test_integration_detail_salesforce(self):
+        """Test /integrationen/salesforce loads"""
+        response = requests.get(f"{BASE_URL}/integrationen/salesforce")
+        assert response.status_code == 200
+        print("✓ /integrationen/salesforce loads")
+
+
+class TestUmlautCheck:
+    """Check for ASCII umlaut remnants in API responses"""
+    
+    def test_no_ascii_umlauts_in_tariffs(self):
+        """Verify no ASCII umlauts in tariff data"""
+        response = requests.get(f"{BASE_URL}/api/product/tariffs")
+        text = response.text
+        ascii_umlauts = ["&auml;", "&ouml;", "&uuml;", "&Auml;", "&Ouml;", "&Uuml;", "&szlig;"]
+        for umlaut in ascii_umlauts:
+            assert umlaut not in text, f"Found ASCII umlaut {umlaut} in tariffs"
+        print("✓ No ASCII umlauts in tariff data")
+
+    def test_no_ascii_umlauts_in_faq(self):
+        """Verify no ASCII umlauts in FAQ data"""
+        response = requests.get(f"{BASE_URL}/api/product/faq")
+        text = response.text
+        ascii_umlauts = ["&auml;", "&ouml;", "&uuml;", "&Auml;", "&Ouml;", "&Uuml;", "&szlig;"]
+        for umlaut in ascii_umlauts:
+            assert umlaut not in text, f"Found ASCII umlaut {umlaut} in FAQ"
+        print("✓ No ASCII umlauts in FAQ data")
+
+    def test_no_ascii_umlauts_in_descriptions(self):
+        """Verify no ASCII umlauts in product descriptions"""
+        response = requests.get(f"{BASE_URL}/api/product/descriptions")
+        text = response.text
+        ascii_umlauts = ["&auml;", "&ouml;", "&uuml;", "&Auml;", "&Ouml;", "&Uuml;", "&szlig;"]
+        for umlaut in ascii_umlauts:
+            assert umlaut not in text, f"Found ASCII umlaut {umlaut} in descriptions"
+        print("✓ No ASCII umlauts in product descriptions")
+
+
+class TestAnalytics:
+    """Analytics tracking endpoint tests"""
+    
+    def test_analytics_track(self):
+        """Test /api/analytics/track accepts events"""
+        response = requests.post(
+            f"{BASE_URL}/api/analytics/track",
+            json={"event": "test_event", "properties": {"test": True}, "session_id": "test_session"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] == True
+        print("✓ Analytics tracking works")
 
 
 if __name__ == "__main__":

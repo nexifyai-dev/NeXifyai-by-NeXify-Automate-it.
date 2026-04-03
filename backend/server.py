@@ -447,7 +447,7 @@ def email_template(title: str, content: str, cta_url: str = None, cta_text: str 
 <p style="margin:0 0 6px;"><strong style="color:#78829a;">NeXify Automate</strong> — Graaf van Loonstraat 1E, 5921 JA Venlo, NL</p>
 <p style="margin:0 0 6px;">Tel: +31 6 133 188 56 | support@nexify-automate.com</p>
 <p style="margin:0 0 6px;">KvK: 90483944 | USt-ID: NL865786276B01</p>
-<p style="margin:12px 0 0;font-size:10px;color:#444;">Datenschutzorientiert fuer den europaeischen Rechtsraum entwickelt. DSGVO (EU) 2016/679.</p>
+<p style="margin:12px 0 0;font-size:10px;color:#444;">Datenschutzorientiert für den europäischen Rechtsraum entwickelt. DSGVO (EU) 2016/679.</p>
 </td></tr>
 </table>
 </body>
@@ -1332,7 +1332,7 @@ async def create_quote(req: QuoteRequest, current_user: dict = Depends(get_curre
     """Create a new quote from admin"""
     calc = calc_contract(req.tier)
     if not calc:
-        raise HTTPException(400, "Ungueltiger Tarif")
+        raise HTTPException(400, "Ungültiger Tarif")
 
     quote_number = await get_next_number(db, "quote")
     now = datetime.now(timezone.utc)
@@ -1436,7 +1436,7 @@ async def send_quote(quote_id: str, current_user: dict = Depends(get_current_adm
                     f'''<h1 style="color:#fff;font-size:22px;margin:0 0 16px;">Ihr persoenliches Angebot</h1>
                     <p>Sehr geehrte/r {customer_name},</p>
                     <p>vielen Dank für Ihr Interesse an <strong style="color:#ffb599;">NeXifyAI</strong>.</p>
-                    <p>Anbei erhalten Sie Ihr Angebot fuer <strong>{calc.get("tier_name", "")}</strong>:</p>
+                    <p>Anbei erhalten Sie Ihr Angebot für <strong>{calc.get("tier_name", "")}</strong>:</p>
                     <div style="background:#252a32;padding:20px;margin:20px 0;border-left:3px solid #ffb599;">
                     <p style="margin:0 0 8px;font-size:13px;color:#8f9095;">ANGEBOT</p>
                     <p style="margin:0 0 4px;color:#fff;font-weight:600;">{quote.get("quote_number", "")}</p>
@@ -1477,7 +1477,7 @@ async def portal_get_quote(quote_id: str, token: str):
         "quote_id": quote_id,
     })
     if not link:
-        raise HTTPException(403, "Zugangslink ungueltig")
+        raise HTTPException(403, "Zugangslink ungültig")
     if not verify_access_token(token, link["token_hash"], link["expires_at"]):
         raise HTTPException(403, "Zugangslink abgelaufen")
 
@@ -1511,7 +1511,7 @@ async def portal_accept_quote(quote_id: str, token: str, request: Request):
         "quote_id": quote_id,
     })
     if not link or not verify_access_token(token, link["token_hash"], link["expires_at"]):
-        raise HTTPException(403, "Zugangslink ungueltig oder abgelaufen")
+        raise HTTPException(403, "Zugangslink ungültig oder abgelaufen")
 
     quote = await db.quotes.find_one({"quote_id": quote_id}, {"_id": 0})
     if not quote:
@@ -1620,9 +1620,9 @@ async def portal_accept_quote(quote_id: str, token: str, request: Request):
             import asyncio
             asyncio.create_task(send_email(
                 [quote["customer"]["email"]],
-                f"Angebotsannahme bestaetigt — Ihre Anzahlungsrechnung {invoice_number}",
+                f"Angebotsannahme bestätigt — Ihre Anzahlungsrechnung {invoice_number}",
                 email_template(
-                    "Angebotsannahme bestaetigt",
+                    "Angebotsannahme bestätigt",
                     f'''<h1 style="color:#fff;font-size:22px;margin:0 0 16px;">Vielen Dank für Ihre Beauftragung</h1>
                     <p>Ihr Angebot <strong>{quote.get("quote_number", "")}</strong> wurde angenommen.</p>
                     <div style="background:#252a32;padding:20px;margin:20px 0;border-left:3px solid #ffb599;">
@@ -1665,7 +1665,7 @@ async def portal_decline_quote(quote_id: str, token: str, request: Request):
         "quote_id": quote_id,
     })
     if not link or not verify_access_token(token, link["token_hash"], link["expires_at"]):
-        raise HTTPException(403, "Zugangslink ungueltig oder abgelaufen")
+        raise HTTPException(403, "Zugangslink ungültig oder abgelaufen")
 
     body = {}
     try:
@@ -1693,7 +1693,7 @@ async def portal_request_revision(quote_id: str, token: str, request: Request):
         "quote_id": quote_id,
     })
     if not link or not verify_access_token(token, link["token_hash"], link["expires_at"]):
-        raise HTTPException(403, "Zugangslink ungueltig oder abgelaufen")
+        raise HTTPException(403, "Zugangslink ungültig oder abgelaufen")
 
     body = {}
     try:
@@ -1738,7 +1738,7 @@ async def chat_generate_offer(data: OfferDiscoveryRequest, request: Request):
 
     calc = calc_contract(data.tier)
     if not calc:
-        raise HTTPException(400, "Ungueltiger Tarif")
+        raise HTTPException(400, "Ungültiger Tarif")
 
     quote_number = await get_next_number(db, "quote")
     now = datetime.now(timezone.utc)
@@ -1964,7 +1964,7 @@ async def download_document(doc_type: str, ref_id: str, token: str = None):
     if token:
         link = await db.access_links.find_one({"token_hash": hashlib.sha256(token.encode()).hexdigest()})
         if not link or not verify_access_token(token, link["token_hash"], link["expires_at"]):
-            raise HTTPException(403, "Zugangslink ungueltig oder abgelaufen")
+            raise HTTPException(403, "Zugangslink ungültig oder abgelaufen")
         await _log_event(db, "document_accessed", ref_id, "magic_link")
 
     filename = f"{doc_type}_{doc.get('number', ref_id).replace('.', '_')}.pdf"

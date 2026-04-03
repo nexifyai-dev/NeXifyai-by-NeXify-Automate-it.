@@ -23,9 +23,9 @@ export default function QuotePortal() {
   const qid = params.get('qid');
 
   useEffect(() => {
-    if (!token || !qid) { setError('Kein gueltiger Zugangslink.'); setLoading(false); return; }
+    if (!token || !qid) { setError('Kein gültiger Zugangslink.'); setLoading(false); return; }
     fetch(`${API}/api/portal/quote/${qid}?token=${encodeURIComponent(token)}`)
-      .then(r => { if (!r.ok) throw new Error(r.status === 403 ? 'Zugangslink abgelaufen oder ungueltig' : 'Fehler beim Laden'); return r.json(); })
+      .then(r => { if (!r.ok) throw new Error(r.status === 403 ? 'Zugangslink abgelaufen oder ungültig' : 'Fehler beim Laden'); return r.json(); })
       .then(d => { setQuote(d.quote); setCompany(d.company); setLoading(false); })
       .catch(e => { setError(e.message); setLoading(false); });
   }, [token, qid]);
@@ -112,15 +112,15 @@ export default function QuotePortal() {
           </div>
           {d.checkout_url && <a href={d.checkout_url} style={S.payBtn} data-testid="pay-online-btn">Jetzt online bezahlen</a>}
           <div style={S.bank}>
-            <strong style={{color:'#c5c9d2'}}>Alternativ per Bankueberweisung:</strong><br/>
+            <strong style={{color:'#c5c9d2'}}>Alternativ per Banküberweisung:</strong><br/>
             IBAN: {d.bank_transfer?.iban}<br/>BIC: {d.bank_transfer?.bic}<br/>
             Verwendungszweck: <strong style={{color:'#c5c9d2'}}>{d.bank_transfer?.reference}</strong>
           </div>
-          <div style={S.footer}><p>{company?.name} | {company?.phone} | {company?.email}</p><p style={S.eu}>Datenschutzorientiert fuer den europaeischen Rechtsraum entwickelt.</p></div>
+          <div style={S.footer}><p>{company?.name} | {company?.phone} | {company?.email}</p><p style={S.eu}>Datenschutzorientiert für den europäischen Rechtsraum entwickelt.</p></div>
         </div></div>
       );
     }
-    const msgs = { declined: { c: '#ef4444', t: 'Angebot abgelehnt', s: 'Vielen Dank fuer Ihre Rueckmeldung.' }, revision: { c: '#f59e0b', t: 'Aenderungswunsch gesendet', s: 'Wir melden uns in Kuerze bei Ihnen.' } };
+    const msgs = { declined: { c: '#ef4444', t: 'Angebot abgelehnt', s: 'Vielen Dank für Ihre Rückmeldung.' }, revision: { c: '#f59e0b', t: 'Änderungswunsch gesendet', s: 'Wir melden uns in Kürze bei Ihnen.' } };
     const m = msgs[result.type];
     return (
       <div style={S.page}><div style={S.card}>
@@ -174,12 +174,12 @@ export default function QuotePortal() {
             <strong style={{color:'#c5c9d2'}}>IBAN:</strong> NL66 REVO 3601 4304 36<br/>
             <strong style={{color:'#c5c9d2'}}>BIC:</strong> REVONL22<br/>
             <strong style={{color:'#c5c9d2'}}>Kontoinhaber:</strong> NeXify Automate<br/>
-            <span style={{fontSize:'12px'}}>Von ausserhalb des EWR zusaetzlich: BIC CHASDEFX</span>
+            <span style={{fontSize:'12px'}}>Von außerhalb des EWR zusätzlich: BIC CHASDEFX</span>
           </div>
         </div>
 
         <div style={{textAlign:'center',color:'#78829a',fontSize:'13px',padding:'12px',background:'#1a2028',borderRadius:'6px',marginBottom:'28px'}}>
-          Gueltig bis: {quote?.valid_until ? new Date(quote.valid_until).toLocaleDateString('de-DE') : ''}
+          Gültig bis: {quote?.valid_until ? new Date(quote.valid_until).toLocaleDateString('de-DE') : ''}
         </div>
 
         <div style={{marginBottom:'12px'}}>
@@ -198,23 +198,23 @@ export default function QuotePortal() {
               {action === 'accept' ? 'Wird verarbeitet...' : 'Angebot annehmen'}
             </button>
             <div style={{display:'flex',gap:'12px'}}>
-              <button style={{...S.btnSec,borderColor:'#ff9b7a',color:'#ff9b7a'}} onClick={() => setPanel(panel === 'revision' ? null : 'revision')} data-testid="revision-btn">Aenderung anfragen</button>
+              <button style={{...S.btnSec,borderColor:'#ff9b7a',color:'#ff9b7a'}} onClick={() => setPanel(panel === 'revision' ? null : 'revision')} data-testid="revision-btn">Änderung anfragen</button>
               <button style={{...S.btnSec,borderColor:'#555',color:'#999'}} onClick={() => setPanel(panel === 'decline' ? null : 'decline')} data-testid="decline-btn">Angebot ablehnen</button>
             </div>
             {panel === 'revision' && <div>
-              <textarea style={S.ta} value={revisionFeedback} onChange={e => setRevisionFeedback(e.target.value)} placeholder="Beschreiben Sie Ihren Aenderungswunsch..." data-testid="revision-textarea" />
-              <button style={{...S.btn,marginTop:'8px',background:'#ff9b7a',fontSize:'14px',padding:'12px'}} onClick={handleRevision} disabled={!revisionFeedback.trim() || !!action}>Aenderungswunsch senden</button>
+              <textarea style={S.ta} value={revisionFeedback} onChange={e => setRevisionFeedback(e.target.value)} placeholder="Beschreiben Sie Ihren Änderungswunsch..." data-testid="revision-textarea" />
+              <button style={{...S.btn,marginTop:'8px',background:'#ff9b7a',fontSize:'14px',padding:'12px'}} onClick={handleRevision} disabled={!revisionFeedback.trim() || !!action}>Änderungswunsch senden</button>
             </div>}
             {panel === 'decline' && <div>
               <textarea style={S.ta} value={declineReason} onChange={e => setDeclineReason(e.target.value)} placeholder="Grund (optional)..." data-testid="decline-textarea" />
-              <button style={{...S.btn,marginTop:'8px',background:'#dc2626',fontSize:'14px',padding:'12px'}} onClick={handleDecline} disabled={!!action}>Ablehnung bestaetigen</button>
+              <button style={{...S.btn,marginTop:'8px',background:'#dc2626',fontSize:'14px',padding:'12px'}} onClick={handleDecline} disabled={!!action}>Ablehnung bestätigen</button>
             </div>}
           </div>
         )}
 
         <div style={S.footer}>
           <p>{company?.name} | {company?.phone} | {company?.email}</p>
-          <p style={S.eu}>Datenschutzorientiert fuer den europaeischen Rechtsraum entwickelt. DSGVO (EU) 2016/679.</p>
+          <p style={S.eu}>Datenschutzorientiert für den europäischen Rechtsraum entwickelt. DSGVO (EU) 2016/679.</p>
         </div>
       </div>
     </div>

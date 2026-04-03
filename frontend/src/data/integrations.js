@@ -478,7 +478,7 @@ export const FEATURED_INTEGRATIONS = {
     hero: { de: 'Shopify + KI-Agenten. E-Commerce auf Autopilot.', nl: 'Shopify + AI-agenten. E-commerce op autopilot.', en: 'Shopify + AI agents. E-commerce on autopilot.' },
     usecases: {
       de: [
-        { title: 'Bestellautomation', desc: 'Automatisierte Bestellbestaetigung, Versandbenachrichtigung und Retouren-Management.' },
+        { title: 'Bestellautomation', desc: 'Automatisierte Bestellbestätigung, Versandbenachrichtigung und Retouren-Management.' },
         { title: 'Produkt-Empfehlungen', desc: 'KI-basierte Produktvorschlaege basierend auf Kundenverhalten und Kaufhistorie.' },
         { title: 'Bestandsmanagement', desc: 'Automatische Bestandsüberwachung mit Nachbestellungs-Triggern und Lieferantenbenachrichtigung.' },
       ],
@@ -512,7 +512,7 @@ export const FEATURED_INTEGRATIONS = {
     logo: 'auto_awesome',
     color: '#10A37F',
     title: { de: 'OpenAI KI-Integration', nl: 'OpenAI AI-Integratie', en: 'OpenAI AI Integration' },
-    meta: { de: 'NeXifyAI integriert OpenAI-Modelle (GPT, DALL-E, Whisper) in Ihre Geschaeftsprozesse für Text-, Bild- und Sprachverarbeitung.', nl: 'NeXifyAI integreert OpenAI-modellen (GPT, DALL-E, Whisper) in uw bedrijfsprocessen voor tekst-, beeld- en spraakverwerking.', en: 'NeXifyAI integrates OpenAI models (GPT, DALL-E, Whisper) into your business processes for text, image, and speech processing.' },
+    meta: { de: 'NeXifyAI integriert OpenAI-Modelle (GPT, DALL-E, Whisper) in Ihre Geschäftsprozesse für Text-, Bild- und Sprachverarbeitung.', nl: 'NeXifyAI integreert OpenAI-modellen (GPT, DALL-E, Whisper) in uw bedrijfsprocessen voor tekst-, beeld- en spraakverwerking.', en: 'NeXifyAI integrates OpenAI models (GPT, DALL-E, Whisper) into your business processes for text, image, and speech processing.' },
     hero: { de: 'OpenAI-Power. In Ihrem Unternehmen. Sicher und kontrolliert.', nl: 'OpenAI-kracht. In uw organisatie. Veilig en gecontroleerd.', en: 'OpenAI power. In your business. Secure and controlled.' },
     usecases: {
       de: [
@@ -572,7 +572,7 @@ export const FEATURED_INTEGRATIONS = {
     combinedWith: ['shopify', 'salesforce', 'datev', 'quickbooks'],
     faq: {
       de: [
-        { q: 'Werden auch SEPA-Lastschriften unterstützt?', a: 'Ja. Stripe unterstützt SEPA, Kreditkarte, Klarna, giropay und weitere europaeische Zahlungsmethoden.' },
+        { q: 'Werden auch SEPA-Lastschriften unterstützt?', a: 'Ja. Stripe unterstützt SEPA, Kreditkarte, Klarna, giropay und weitere europäische Zahlungsmethoden.' },
       ],
       nl: [
         { q: 'Worden SEPA-incasso\'s ook ondersteund?', a: 'Ja. Stripe ondersteunt SEPA, creditcard, Klarna, iDEAL en andere Europese betaalmethoden.' },

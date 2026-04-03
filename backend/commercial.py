@@ -30,7 +30,7 @@ COMPANY_DATA = {
     "name": "NeXify Automate",
     "brand": "NeXifyAI",
     "ceo": "Pascal Courbois",
-    "ceo_title": "Geschaeftsfuehrer",
+    "ceo_title": "Geschäftsführer",
     "address_nl": {
         "street": "Graaf van Loonstraat 1E",
         "city": "5921 JA Venlo",
@@ -123,7 +123,7 @@ TARIFF_CONFIG = {
             "Priority Support (24h Response)",
             "CRM/ERP-Integrations-Kit (SAP, HubSpot, Salesforce)",
             "Advanced Monitoring & Analytics",
-            "Woechentliches Reporting",
+            "Wöchentliches Reporting",
             "Dedizierter Onboarding-Manager",
         ],
         "payment_products": {
@@ -480,6 +480,60 @@ PRODUCT_DESCRIPTIONS = {
         "process": "SEO-Audit → Keyword-Strategie → technische Optimierung → Content-Plan → monatliche Zyklen → Linkbuilding → wöchentliche Reports.",
         "contract_terms": "1.499 EUR/Monat netto. Mindestlaufzeit 6 Monate. Monatliche Abrechnung. Empfohlener Tarif.",
     },
+    "web_enterprise": {
+        "what": "Enterprise-Website mit unbegrenzten Seiten, Headless CMS, E-Commerce-Integration und WCAG-Barrierefreiheit.",
+        "for_whom": "Enterprise-Unternehmen und Konzerne mit komplexen Anforderungen an Content-Management, Internationalisierung und Barrierefreiheit.",
+        "results": "Vollständige digitale Präsenz, skalierbare Content-Infrastruktur, E-Commerce-fähig, barrierefrei und international.",
+        "included": "Alle Professional-Features, Headless CMS (Strapi/Sanity), E-Commerce-Integration, Multi-Language-Support, Custom API-Anbindungen, Performance-Optimierung (Lighthouse 95+), WCAG 2.1 AA Barrierefreiheit, SLA-gesicherter Betrieb, dedizierter Projektmanager, 6 Monate Support.",
+        "not_included": "Laufende Content-Produktion, externe Marketplace-Integrationen über Standardumfang hinaus.",
+        "process": "Discovery → Architektur-Workshop → Design → Entwicklung → Content-Migration → QA → Go-Live. Ca. 8 Wochen.",
+        "contract_terms": "Einmaliger Projektpreis 14.900 EUR netto. 50 % bei Auftragserteilung, 50 % bei Abnahme.",
+    },
+    "app_mvp": {
+        "what": "Cross-Platform App (iOS + Android) mit bis zu 5 Kernfeatures, User-Authentifizierung und Push-Benachrichtigungen.",
+        "for_whom": "Startups und Product Teams, die eine Idee schnell am Markt validieren möchten.",
+        "results": "Marktreifes MVP, validiertes Produkt, Nutzerfeedback, Grundlage für Skalierung.",
+        "included": "iOS + Android (React Native/Flutter), 5 Kernfunktionen, User Authentication, Push Notifications, Backend-API (FastAPI/Node), App Store Deployment, 2 Monate Support.",
+        "not_included": "Admin-Dashboard, Payment-Integration, CRM-Anbindung, Analytics-Dashboard.",
+        "process": "Product Workshop → UI/UX Design → Entwicklung → Testing → App Store Deployment. Ca. 8 Wochen.",
+        "contract_terms": "Einmaliger Projektpreis 9.900 EUR netto. 50 % bei Auftragserteilung, 50 % bei Abnahme.",
+    },
+    "app_professional": {
+        "what": "Full-Stack App mit unbegrenzten Features, Admin-Dashboard, Payment-Integration und CRM/ERP-Anbindung.",
+        "for_whom": "Mittelständische Unternehmen und Scale-ups, die eine vollständige App-Lösung mit professionellem Backend benötigen.",
+        "results": "Skalierbare App-Plattform, professionelles Admin-Backend, integrierte Zahlungsabwicklung, CRM-Synchronisation.",
+        "included": "Alle MVP-Features, Admin-Dashboard, Payment-Integration, CRM/ERP-Anbindung, Analytics & Reporting, App Store Optimization (ASO), dedizierter Support, 6 Monate Support.",
+        "not_included": "Laufende Marketingkampagnen, externe API-Anbindungen über Standardumfang hinaus.",
+        "process": "Product Workshop → Architektur → UI/UX → Entwicklung → Integration → QA → Deployment → Onboarding. Ca. 14 Wochen.",
+        "contract_terms": "Einmaliger Projektpreis 24.900 EUR netto. 50 % bei Auftragserteilung, 50 % bei Abnahme.",
+    },
+    "seo_enterprise": {
+        "what": "Enterprise-SEO mit dediziertem Team, tagesaktuellen Reports, vollständiger Content-Produktion und internationaler Ausrichtung.",
+        "for_whom": "Konzerne und international agierende Unternehmen mit komplexen SEO-Anforderungen in mehreren Märkten.",
+        "results": "Marktdominanz in organischen Suchergebnissen, internationale Sichtbarkeit, vollständige Content-Pipeline.",
+        "included": "Unbegrenzte Keywords, tagesaktuelle Reports & Dashboards, vollständige Content-Produktion, dediziertes SEO-Team, International SEO (5+ Märkte), API-Zugang & Custom Reporting, Executive Quarterly Reviews.",
+        "not_included": "Paid-Media-Kampagnen, Social-Media-Management.",
+        "process": "Executive Workshop → Audit → Strategie → Umsetzung → fortlaufende Optimierung → Quarterly Reviews.",
+        "contract_terms": "Individuelles Angebot auf Anfrage. Mindestlaufzeit 12 Monate.",
+    },
+    "ai_addon_chatbot": {
+        "what": "KI-gesteuerter Website-Chatbot für Lead-Qualifizierung, Terminbuchung und Kundenservice.",
+        "for_whom": "Unternehmen aller Größen, die ihre Website-Besucher aktiv qualifizieren und Kundenservice automatisieren möchten.",
+        "results": "Automatisierte Lead-Qualifizierung, 24/7-Verfügbarkeit, höhere Conversion-Rate, reduzierter Support-Aufwand.",
+        "included": "KI-Chatbot mit Training auf Unternehmensdaten, Lead-Qualifizierung, Terminbuchung, CRM-Sync, Mehrsprachig (DE/EN/NL), Analyse-Dashboard.",
+        "not_included": "Individuelle ML-Modelle, Telefon-Integration.",
+        "process": "Briefing → Training → Integration → Testing → Go-Live. Ca. 1–2 Wochen.",
+        "contract_terms": "249 EUR/Monat netto. Monatlich kündbar. Keine Mindestlaufzeit.",
+    },
+    "ai_addon_automation": {
+        "what": "KI-gesteuerte Prozessautomation für Workflows, E-Mail-Automation und CRM-Synchronisation.",
+        "for_whom": "KMU und Mittelstand, die manuelle Prozesse automatisieren und Systembrüche eliminieren möchten.",
+        "results": "Automatisierte Workflows, eliminierte Medienbrüche, synchronisierte Systeme, messbare Zeitersparnis.",
+        "included": "Workflow-Automation (Zapier/n8n/custom), E-Mail-Automation, Dokumentenverarbeitung, CRM-Sync, API-Integrationen, Monitoring & Alerting.",
+        "not_included": "Individuelle ML-Modelle, Hardware-Integration.",
+        "process": "Prozessanalyse → Automation-Design → Implementierung → Testing → Go-Live. Ca. 2–3 Wochen.",
+        "contract_terms": "499 EUR/Monat netto. Monatlich kündbar. Keine Mindestlaufzeit.",
+    },
 }
 
 ISO_GAP_ANALYSIS = {
@@ -492,9 +546,9 @@ ISO_GAP_ANALYSIS = {
             "A.8_Technological": {"status": "fulfilled", "note": "Argon2 Hashing, JWT Token, Rate Limiting, HTTPS"},
             "A.8_Access_Control": {"status": "fulfilled", "note": "RBAC, Admin-only Routen, Token-Expiry"},
             "A.8_Cryptography": {"status": "fulfilled", "note": "AES-256 at rest, TLS 1.3 in transit"},
-            "A.8_Logging": {"status": "fulfilled", "note": "Audit-Logs fuer alle kommerziellen Events"},
+            "A.8_Logging": {"status": "fulfilled", "note": "Audit-Logs für alle kommerziellen Events"},
             "A.8_Network": {"status": "fulfilled", "note": "CORS-Konfiguration, API-Rate-Limiting"},
-            "A.8_Vulnerability": {"status": "partial", "note": "Regelmaessige Updates, kein formales Penetration-Testing"},
+            "A.8_Vulnerability": {"status": "partial", "note": "Regelmäßige Updates, kein formales Penetration-Testing"},
             "A.8_Data_Classification": {"status": "partial", "note": "Kundendaten separiert, keine formale Klassifizierung"},
             "A.8_Backup": {"status": "delegated", "note": "MongoDB Atlas automatische Backups"},
         },
@@ -508,7 +562,7 @@ ISO_GAP_ANALYSIS = {
             "Data_Processing_Records": {"status": "fulfilled", "note": "Audit-Logs, Event-Tracking"},
             "Third_Party_Management": {"status": "fulfilled", "note": "SCC mit Auftragsverarbeitern (Resend, OpenAI)"},
             "Data_Breach_Notification": {"status": "partial", "note": "Prozess definiert, kein automatisiertes Meldesystem"},
-            "DPIA": {"status": "partial", "note": "Risikobewertung durchgefuehrt, kein formales DPIA-Dokument"},
+            "DPIA": {"status": "partial", "note": "Risikobewertung durchgeführt, kein formales DPIA-Dokument"},
             "DPO": {"status": "open", "note": "Kein benannter Datenschutzbeauftragter (bei KMU optional)"},
         },
     },
@@ -819,7 +873,7 @@ def generate_quote_pdf(quote_data: dict) -> bytes:
     elements.append(Paragraph(
         f"Sehr geehrte Damen und Herren,<br/><br/>"
         f"vielen Dank für Ihr Interesse an NeXify<font color='#ff9b7a'><b>AI</b></font>. "
-        f"Nachfolgend unterbreiten wir Ihnen unser Angebot fuer das Produkt "
+        f"Nachfolgend unterbreiten wir Ihnen unser Angebot für das Produkt "
         f"<b>{tariff.get('name', '')}</b>.",
         styles["BodyText2"],
     ))
@@ -903,18 +957,18 @@ def generate_quote_pdf(quote_data: dict) -> bytes:
 
     elements.append(Paragraph(
         "Wir freuen uns auf die Zusammenarbeit. Bei Fragen stehen wir Ihnen unter "
-        f"<b>{COMPANY_DATA['phone']}</b> oder <b>{COMPANY_DATA['email']}</b> zur Verfuegung.",
+        f"<b>{COMPANY_DATA['phone']}</b> oder <b>{COMPANY_DATA['email']}</b> zur Verfügung.",
         styles["BodyText2"],
     ))
     elements.append(Spacer(1, 8 * mm))
-    elements.append(Paragraph("Mit freundlichen Gruessen,", styles["BodyText2"]))
+    elements.append(Paragraph("Mit freundlichen Grüßen,", styles["BodyText2"]))
     elements.append(Paragraph(
         f"<b>{COMPANY_DATA['ceo']}</b><br/>{COMPANY_DATA['ceo_title']}, NeXifyAI",
         styles["BodyText2"],
     ))
     elements.append(Spacer(1, 8 * mm))
     elements.append(Paragraph(
-        "<font size='7' color='#78829a'>Datenschutzorientiert fuer den europaeischen Rechtsraum entwickelt. "
+        "<font size='7' color='#78829a'>Datenschutzorientiert für den europäischen Rechtsraum entwickelt. "
         "DSGVO (EU) 2016/679 | EU AI Act (EU) 2024/1689 | ISO/IEC 27001 orientiert | EU-Hosting"
         "</font>",
         styles["SmallGray"],
@@ -1331,7 +1385,7 @@ def generate_tariff_sheet_pdf(category: str = "all") -> bytes:
     ))
     elements.append(Spacer(1, 4 * mm))
     elements.append(Paragraph(
-        "Datenschutzorientiert fuer den europaeischen Rechtsraum entwickelt. "
+        "Datenschutzorientiert für den europäischen Rechtsraum entwickelt. "
         "DSGVO (EU) 2016/679 | EU AI Act (EU) 2024/1689 | EU-Hosting (Frankfurt, Amsterdam)",
         styles["FootNote"],
     ))
@@ -1433,7 +1487,7 @@ def get_commercial_faq() -> list:
             "q": "Wann wird die Anzahlungsrechnung erstellt?",
             "a": (
                 "Sofort nach Angebotsannahme wird automatisch eine Anzahlungsrechnung erstellt und per E-Mail zugestellt. "
-                "Die Frist betraegt 14 Tage. Zusaetzlich erhalten Sie einen Online-Zahlungslink."
+                "Die Frist beträgt 14 Tage. Zusätzlich erhalten Sie einen Online-Zahlungslink."
             ),
         },
         {
@@ -1441,14 +1495,14 @@ def get_commercial_faq() -> list:
             "a": (
                 f"Starter: {starter['recurring_eur']:.2f} EUR/Monat über {starter['recurring_count']} Monate | "
                 f"Growth: {growth['recurring_eur']:.2f} EUR/Monat über {growth['recurring_count']} Monate.\n\n"
-                "Alle Betraege zzgl. USt. Rechnungen werden automatisch monatlich erstellt."
+                "Alle Beträge zzgl. USt. Rechnungen werden automatisch monatlich erstellt."
             ),
         },
         {
             "q": "Wie erfolgt die Zahlung per Revolut Checkout?",
             "a": (
                 "Sie erhalten per E-Mail einen sicheren Zahlungslink von Revolut. "
-                "Unterstuetzte Zahlungsmethoden: Kredit-/Debitkarte, Bankkonto, Apple Pay, Google Pay. "
+                "Unterstützte Zahlungsmethoden: Kredit-/Debitkarte, Bankkonto, Apple Pay, Google Pay. "
                 "Nach Zahlungseingang wird der Status automatisch aktualisiert."
             ),
         },
@@ -1485,7 +1539,7 @@ def get_commercial_faq() -> list:
             "q": "Wie funktioniert der sichere Angebotszugriff?",
             "a": (
                 "Über zeitlich begrenzte Magic-Links (24h Gültigkeit). "
-                "Kein Passwort noetig — der Link wird per E-Mail an die verifizierte Adresse gesendet. "
+                "Kein Passwort nötig — der Link wird per E-Mail an die verifizierte Adresse gesendet. "
                 "Alle Zugriffe werden im Audit-Log protokolliert."
             ),
         },
@@ -1494,8 +1548,8 @@ def get_commercial_faq() -> list:
             "a": (
                 "- Alle Daten werden in EU-Rechenzentren verarbeitet\n"
                 "- Kein Datentransfer in Drittländer\n"
-                "- Zeitlich begrenzte Zugriffslinks statt Passwoerter\n"
-                "- Vollstaendige Audit-Logs aller Dokumentenzugriffe\n"
+                "- Zeitlich begrenzte Zugriffslinks statt Passwörter\n"
+                "- Vollständige Audit-Logs aller Dokumentenzugriffe\n"
                 "- Verschlüsselte Speicherung und Übertragung\n"
                 "- EU-AI-Act-konforme Umsetzung"
             ),
@@ -1514,11 +1568,21 @@ def get_commercial_faq() -> list:
         {
             "q": "Gibt es Kombiangebote / Bundles?",
             "a": (
-                "Ja. Beispiele:\n"
-                "- **Digital Starter Bundle:** Website + KI-Chatbot (12 Mo.) ab 3.990 EUR\n"
-                "- **Growth Digital Bundle:** Website Pro + Starter AI Agenten AG (24 Mo.) ab 17.490 EUR\n"
-                "- **Enterprise Digital Bundle:** Website Enterprise + Growth AI Agenten AG (24 Mo.) ab 39.900 EUR\n\n"
-                "Individuelle Kombinationen auf Anfrage."
+                "Ja. Unsere aktuellen Bundles:\n"
+                "- **Digital Starter Bundle:** Website Starter + SEO Starter (3 Monate) — 3.990 EUR (statt 4.289 EUR)\n"
+                "- **Growth Digital Bundle:** Website Professional + SEO Growth (6 Monate) + KI-Chatbot — 17.490 EUR (15 % Rabatt)\n"
+                "- **Enterprise Digital Bundle:** Website Enterprise + App + SEO Enterprise + Growth AI Agenten AG — ab 39.900 EUR\n\n"
+                "Individuelle Kombinationen auf Anfrage. Cross-Sell-Rabatte bis 15 %."
+            ),
+        },
+        {
+            "q": "Bietet NeXifyAI auch KI-gesteuertes SEO an?",
+            "a": (
+                "Ja. Unsere SEO-Tarife:\n"
+                "- **SEO Starter:** 799 EUR/Monat — 50 Keywords, On-Page (5 Seiten/Mo.), monatlicher Report\n"
+                "- **SEO Growth:** 1.499 EUR/Monat — 200 Keywords, Content-Strategie, Linkbuilding, Multilingual SEO\n"
+                "- **SEO Enterprise:** Individuell — dediziertes Team, 5+ Märkte, tagesaktuelle Reports\n\n"
+                "Mindestlaufzeit: 6 Monate. Alle Preise zzgl. USt."
             ),
         },
     ]
