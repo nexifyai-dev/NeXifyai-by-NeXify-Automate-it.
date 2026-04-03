@@ -1,5 +1,53 @@
 # NeXifyAI — Änderungsverlauf (Changelog)
 
+## 2026-04-03 — Phase 4: LeadFlow, CRM, Customer Portal, Memory & WhatsApp
+
+### BLOCK 1 — LeadFlow: Alle CTAs → AI-Chat
+- Alle Angebotsanfragen-CTAs (Hero, Nav, Pricing, Services, SEO, Bundles, Integrations, Contact) öffnen primär den AI-Chat
+- Chat-Sidebar: "Angebot anfordern" (primär, orange) + "Termin buchen" (sekundär, grau)
+- CTA-Labels: "Beratung starten" (DE), "Advies starten" (NL), "Start Consultation" (EN)
+- Kontextbezogene Erstmessages: Klick auf "SEO Growth" → Chat öffnet mit "Ich interessiere mich für SEO Growth"
+- Booking-Modal weiterhin als sekundäre Option erreichbar
+
+### BLOCK 2 — Customer Memory Model
+- `_build_customer_memory()` Funktion: Aggregiert Kontakt, Angebote, Rechnungen, Termine, Chatverläufe, Kontaktformulare
+- Memory-Kontext wird automatisch ins LLM-System-Prompt injiziert (nur intern, nicht zitiert)
+- E-Mail-Erkennung aus Qualification-Daten und Offer-Requests
+- DSGVO-bewusst: Nur relevante Daten, keine vollständigen Chat-Logs an LLM
+
+### BLOCK 4 — Admin/CRM erweitert
+- Neue Tabs: **Chats** (Chat-Sessions mit Tabelle: ID, Kunde, Nachrichtenanzahl, letzte Nachricht, Datum)
+- Neue Tabs: **Timeline** (Unified Activity Feed mit Icons pro Event-Typ)
+- Chat-Detail-Ansicht: Vollständiger Verlauf, Qualifizierung, Metadaten
+- Lead Notes API: POST /api/admin/leads/{lead_id}/notes
+- Customer Memory API: GET /api/admin/customer-memory/{email} (vollständiger Kundenkontext)
+
+### BLOCK 4 — Customer Portal
+- Neue Seite `/portal?token=xxx` mit Magic-Link-Zugang
+- Tabs: Übersicht, Angebote, Rechnungen, Termine
+- Stat-Karten, Statusbadges, PDF-Downloads
+- Dark-Mode CI-konform, responsive bis 375px
+- Backend: GET /api/portal/customer/{token} — aggregiert alle Kundendaten
+
+### BLOCK 6 — WhatsApp-Button
+- Fester Button links am Viewport (position:fixed, left:0, top:50%)
+- Grün (#25d366), "WhatsApp"-Text, SVG-Icon
+- Link: wa.me/31613318856
+- Responsive: Auf Mobile am unteren Rand positioniert
+- Keine Kollisionen mit Cookie-Banner oder Chat-Trigger
+
+### BLOCK 7 — Admin-UI gehärtet
+- Topbar: Flexbox mit space-between, kein Overlap
+- Chat-Messages: Bubble-Layout (User rechts, KI links)
+- Timeline: Icons pro Event-Typ (offer_generated, payment_completed etc.)
+
+### BLOCK 9 — Mail-Signatur
+- Professionelle Signatur: Pascal Courbois, Geschäftsführer
+- Kontaktdaten: Tel, E-Mail (nexifyai@nexifyai.de), Web
+- Dezente Werbezeile mit Link zur Website
+- Rechtliche Links: Impressum, Datenschutz, AGB
+- DSGVO-Hinweis im Footer
+
 ## 2026-04-03 — Phase 3: Self-Healing, Systemhärtung & Vollständige Dokumentation
 
 ### BLOCK 1 — Self-Healing: Umlaut-/Encoding-Korrektur (abgeschlossen)
