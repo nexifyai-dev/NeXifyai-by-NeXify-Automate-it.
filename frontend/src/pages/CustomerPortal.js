@@ -45,6 +45,8 @@ const CustomerPortal = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [projectDetail, setProjectDetail] = useState(null);
   const [projectChatMsg, setProjectChatMsg] = useState('');
+  const [financeData, setFinanceData] = useState(null);
+  const [financeLoading, setFinanceLoading] = useState(false);
   const canvasRef = useRef(null);
   const isDrawingRef = useRef(false);
 
@@ -122,6 +124,15 @@ const CustomerPortal = () => {
       const r = await fetch(`${API}/api/customer/projects`, { headers: { Authorization: `Bearer ${authToken}` } });
       if (r.ok) { const d = await r.json(); setProjects(d.projects || []); }
     } catch {}
+  }, [authToken]);
+
+  const loadFinance = useCallback(async () => {
+    if (!authToken) return;
+    setFinanceLoading(true);
+    try {
+      const r = await fetch(`${API}/api/customer/finance`, { headers: { Authorization: `Bearer ${authToken}` } });
+      if (r.ok) { const d = await r.json(); setFinanceData(d); }
+    } catch {} finally { setFinanceLoading(false); }
   }, [authToken]);
 
   const loadProjectDetail = async (projectId) => {
@@ -317,8 +328,8 @@ const CustomerPortal = () => {
   }, []);
 
   useEffect(() => {
-    if (authToken) { loadContracts(); loadProjects(); }
-  }, [authToken, loadContracts, loadProjects]);
+    if (authToken) { loadContracts(); loadProjects(); loadFinance(); }
+  }, [authToken, loadContracts, loadProjects, loadFinance]);
 
   const logout = () => {
     localStorage.removeItem('nx_auth');
@@ -358,7 +369,7 @@ const CustomerPortal = () => {
     { id: 'contracts', icon: 'gavel', label: `Verträge (${contracts.length})` },
     { id: 'projects', icon: 'folder_special', label: `Projekte (${projects.length})` },
     { id: 'quotes', icon: 'description', label: `Angebote (${data?.quotes?.length || 0})` },
-    { id: 'invoices', icon: 'receipt', label: `Rechnungen (${data?.invoices?.length || 0})` },
+    { id: 'invoices', icon: 'account_balance', label: `Finanzen (${financeData?.summary?.total_invoices || data?.invoices?.length || 0})` },
     { id: 'bookings', icon: 'event', label: `Termine (${data?.bookings?.length || 0})` },
     { id: 'communication', icon: 'forum', label: `Kommunikation (${data?.communications?.length || 0})` },
     { id: 'timeline', icon: 'timeline', label: 'Aktivität' },
@@ -481,6 +492,99 @@ const CustomerPortal = () => {
                           {a.content?.description && <p style={{margin:'4px 0 0',fontSize:'.75rem',color:'#6b7b8d'}}>{a.content.description}</p>}
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {/* Signature Preview (P3: nach Annahme) */}
+                  {isAccepted && cd.signature_preview && (
+                    <div className="cp-card cp-sig-preview-card" style={{marginBottom:16}} data-testid="cp-signature-preview">
+                      <h3 style={{margin:'0 0 12px',fontSize:'.9375rem'}}>Ihre Unterschrift</h3>
+                      <div className="cp-sig-preview-inner">
+                        {cd.signature_preview.is_image ? (
+                          <img src={cd.signature_preview.data} alt="Signatur" className="cp-sig-preview-img" data-testid="cp-sig-preview-img" />
+                        ) : (
+                          <div className="cp-sig-preview-name" data-testid="cp-sig-preview-name">{cd.signature_preview.data}</div>
+                        )}
+                        <div className="cp-sig-preview-meta">
+                          <span><I n="person" /> {cd.signature_preview.customer_name}</span>
+                          <span><I n="schedule" /> {fmtTime(cd.signature_preview.timestamp)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Contract PDF Download */}
+                  {cd.has_pdf && (
+                    <div className="cp-card" style={{marginBottom:16}} data-testid="cp-contract-pdf">
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                        <div>
+                          <h3 style={{margin:0,fontSize:'.9375rem'}}>Vertragsdokument</h3>
+                          <p style={{margin:'4px 0 0',fontSize:'.75rem',color:'#6b7b8d'}}>PDF-Version Ihres Vertrags</p>
+                        </div>
+                        <a href={`${API}${cd.pdf_url}`} target="_blank" rel="noreferrer" className="cp-btn cp-btn-secondary" data-testid="cp-contract-pdf-download"><I n="picture_as_pdf" /> PDF herunterladen</a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Versions History (P3) */}
+                  {cd.versions && cd.versions.length > 0 && (
+                    <div className="cp-card" style={{marginBottom:16}} data-testid="cp-contract-versions">
+                      <h3 style={{margin:'0 0 12px',fontSize:'.9375rem'}}>Versionshistorie</h3>
+                      <div className="cp-version-list">
+                        {cd.versions.map((v, idx) => (
+                          <div key={idx} className="cp-version-item" data-testid={`cp-version-${v.version}`}>
+                            <div className="cp-version-badge">v{v.version}</div>
+                            <div className="cp-version-info">
+                              <span className="cp-version-status">{{draft:'Entwurf',sent:'Versendet',viewed:'Eingesehen',accepted:'Angenommen',declined:'Abgelehnt',change_requested:'Änderung angefragt',amended:'Überarbeitet'}[v.status]||v.status}</span>
+                              <span className="cp-version-date">{fmtTime(v.timestamp)}</span>
+                            </div>
+                          </div>
+                        ))}
+                        <div className="cp-version-item cp-version-current">
+                          <div className="cp-version-badge" style={{background:'rgba(255,155,122,0.15)',color:'#ff9b7a'}}>v{cd.version || 1}</div>
+                          <div className="cp-version-info">
+                            <span className="cp-version-status" style={{color:'#ff9b7a'}}>Aktuelle Version</span>
+                            <span className="cp-version-date">{fmtTime(cd.updated_at)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Evidence Trail (P3: Nachvollziehbares Evidenzpaket) */}
+                  {cd.evidence_trail && cd.evidence_trail.length > 0 && (
+                    <div className="cp-card" style={{marginBottom:16}} data-testid="cp-evidence-trail">
+                      <h3 style={{margin:'0 0 12px',fontSize:'.9375rem'}}>Nachweisprotokoll</h3>
+                      <p style={{fontSize:'.6875rem',color:'#6b7b8d',marginBottom:12}}>Alle rechtlich relevanten Aktionen zu diesem Vertrag.</p>
+                      {cd.evidence_trail.map(ev => {
+                        const actionLabels = {accepted:'Angenommen',declined:'Abgelehnt',change_requested:'Änderung angefragt',viewed:'Eingesehen'};
+                        return (
+                          <div key={ev.evidence_id} className="cp-evidence-item" data-testid={`cp-evidence-${ev.evidence_id}`}>
+                            <div className="cp-evidence-header">
+                              <span className="cp-badge cp-badge-sm" style={{background: ev.action === 'accepted' ? '#10b98122' : ev.action === 'declined' ? '#ef444422' : '#3b82f622', color: ev.action === 'accepted' ? '#10b981' : ev.action === 'declined' ? '#ef4444' : '#3b82f6'}}>
+                                {actionLabels[ev.action] || ev.action}
+                              </span>
+                              <span className="cp-evidence-time">{fmtTime(ev.timestamp)}</span>
+                            </div>
+                            <div className="cp-evidence-details">
+                              <div><span className="cp-finance-label">Version</span><span>v{ev.contract_version}</span></div>
+                              <div><span className="cp-finance-label">Hash</span><span className="cp-finance-mono" style={{fontSize:'.625rem'}}>{ev.document_hash?.substring(0, 16)}...</span></div>
+                              <div><span className="cp-finance-label">IP</span><span className="cp-finance-mono" style={{fontSize:'.75rem'}}>{ev.ip_address}</span></div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Change Request Detail */}
+                  {isChangeReq && cd.change_request_detail && (
+                    <div className="cp-card" style={{marginBottom:16}} data-testid="cp-change-request-detail">
+                      <h3 style={{margin:'0 0 12px',fontSize:'.9375rem'}}>Ihre Änderungsanfrage</h3>
+                      <div style={{background:'rgba(249,115,22,0.06)',border:'1px solid rgba(249,115,22,0.15)',borderRadius:8,padding:14}}>
+                        <p style={{margin:0,color:'#c8d1dc',fontSize:'.8125rem',whiteSpace:'pre-wrap'}}>{cd.change_request_detail.text}</p>
+                        <span style={{fontSize:'.6875rem',color:'#6b7b8d',marginTop:8,display:'block'}}>Gesendet: {fmtTime(cd.change_request_detail.timestamp)}</span>
+                      </div>
                     </div>
                   )}
 
@@ -725,27 +829,160 @@ const CustomerPortal = () => {
         )}
 
         {tab === 'invoices' && (
-          <div className="cp-invoices" data-testid="cp-invoices">
-            <h2>Ihre Rechnungen</h2>
-            {(!data?.invoices || data.invoices.length === 0) ? (
-              <div className="cp-empty"><I n="receipt" /><p>Noch keine Rechnungen vorhanden.</p></div>
-            ) : data.invoices.map(inv => (
-              <div key={inv.invoice_id} className="cp-card" data-testid={`cp-inv-${inv.invoice_id}`}>
-                <div className="cp-card-header">
-                  <span className="cp-card-title">{inv.invoice_number}</span>
-                  <span className="cp-badge" style={{ background: inv.payment_status === 'paid' ? '#10b98122' : '#f59e0b22', color: inv.payment_status === 'paid' ? '#10b981' : '#f59e0b' }}>
-                    <I n={inv.payment_status === 'paid' ? 'check_circle' : 'schedule'} /> {inv.payment_status === 'paid' ? 'Bezahlt' : 'Ausstehend'}
-                  </span>
+          <div className="cp-finance" data-testid="cp-finance">
+            <h2>Ihre Finanzen</h2>
+            {financeLoading ? (
+              <div className="cp-empty"><div className="cp-spinner"></div><p>Finanzdaten laden...</p></div>
+            ) : financeData ? (
+              <>
+                {/* Finance Summary */}
+                <div className="cp-stat-grid cp-finance-summary" data-testid="cp-finance-summary">
+                  <div className="cp-stat">
+                    <I n="receipt_long" />
+                    <div className="cp-stat-val">{financeData.summary.total_invoices}</div>
+                    <div className="cp-stat-label">Rechnungen</div>
+                  </div>
+                  <div className="cp-stat">
+                    <I n="pending_actions" />
+                    <div className="cp-stat-val" style={{color: financeData.summary.open_invoices > 0 ? '#f59e0b' : '#10b981'}}>{financeData.summary.open_invoices}</div>
+                    <div className="cp-stat-label">Offen</div>
+                  </div>
+                  <div className="cp-stat">
+                    <I n="payments" />
+                    <div className="cp-stat-val" style={{color:'#10b981'}}>{fmtEur(financeData.summary.total_paid_eur)}</div>
+                    <div className="cp-stat-label">Bezahlt</div>
+                  </div>
+                  <div className="cp-stat">
+                    <I n="account_balance_wallet" />
+                    <div className="cp-stat-val" style={{color: financeData.summary.total_outstanding_eur > 0 ? '#f59e0b' : '#10b981'}}>{fmtEur(financeData.summary.total_outstanding_eur)}</div>
+                    <div className="cp-stat-label">Ausstehend</div>
+                  </div>
                 </div>
-                <div className="cp-card-body">
-                  <span>{fmtDate(inv.created_at)}</span>
-                  <span className="cp-card-price">{fmtEur(inv.total_eur)}</span>
+
+                {/* Overdue Warning */}
+                {financeData.summary.overdue_invoices > 0 && (
+                  <div className="cp-finance-alert cp-finance-alert-warning" data-testid="cp-finance-overdue-alert">
+                    <I n="warning" />
+                    <div>
+                      <strong>{financeData.summary.overdue_invoices} Rechnung{financeData.summary.overdue_invoices > 1 ? 'en' : ''} überfällig</strong>
+                      <p>Bitte begleichen Sie offene Rechnungen zeitnah, um Mahngebühren zu vermeiden.</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Invoice List */}
+                <div className="cp-finance-section">
+                  <h3>Rechnungen</h3>
+                  {financeData.invoices.length === 0 ? (
+                    <div className="cp-empty"><I n="receipt" /><p>Noch keine Rechnungen vorhanden.</p></div>
+                  ) : financeData.invoices.map(inv => {
+                    const severityColor = { success: '#10b981', warning: '#f59e0b', error: '#ef4444', neutral: '#6b7b8d' }[inv.payment_status_severity] || '#6b7b8d';
+                    return (
+                      <div key={inv.invoice_id} className={`cp-card cp-finance-card ${inv.is_overdue ? 'cp-card-overdue' : ''}`} data-testid={`cp-fin-inv-${inv.invoice_id}`}>
+                        <div className="cp-card-header">
+                          <div className="cp-finance-card-title">
+                            <span className="cp-card-title">{inv.invoice_number}</span>
+                            {inv.type === 'deposit' && <span className="cp-badge cp-badge-sm" style={{background:'#3b82f622',color:'#3b82f6'}}>Anzahlung</span>}
+                          </div>
+                          <span className="cp-badge" style={{ background: severityColor + '22', color: severityColor }} data-testid={`cp-fin-status-${inv.invoice_id}`}>
+                            <I n={inv.payment_status === 'paid' ? 'check_circle' : inv.is_overdue ? 'error' : 'schedule'} />
+                            {inv.payment_status_label}
+                          </span>
+                        </div>
+                        <div className="cp-finance-card-body">
+                          <div className="cp-finance-detail-grid">
+                            <div className="cp-finance-detail">
+                              <span className="cp-finance-label">Netto</span>
+                              <span className="cp-finance-value">{fmtEur(inv.amount_net)}</span>
+                            </div>
+                            <div className="cp-finance-detail">
+                              <span className="cp-finance-label">USt. ({inv.vat_rate}%)</span>
+                              <span className="cp-finance-value">{fmtEur(inv.amount_vat)}</span>
+                            </div>
+                            <div className="cp-finance-detail cp-finance-detail-total">
+                              <span className="cp-finance-label">Brutto</span>
+                              <span className="cp-finance-value cp-finance-total">{fmtEur(inv.amount_gross)}</span>
+                            </div>
+                            <div className="cp-finance-detail">
+                              <span className="cp-finance-label">Rechnungsdatum</span>
+                              <span className="cp-finance-value">{inv.date}</span>
+                            </div>
+                            <div className="cp-finance-detail">
+                              <span className="cp-finance-label">Fällig bis</span>
+                              <span className="cp-finance-value" style={{color: inv.is_overdue ? '#ef4444' : 'inherit'}}>{inv.due_date}</span>
+                            </div>
+                            {inv.reminder_count > 0 && (
+                              <div className="cp-finance-detail">
+                                <span className="cp-finance-label">Mahnstufe</span>
+                                <span className="cp-finance-value" style={{color:'#ef4444'}}>{inv.reminder_level}</span>
+                              </div>
+                            )}
+                          </div>
+                          {inv.items && inv.items.length > 0 && (
+                            <div className="cp-finance-items">
+                              {inv.items.map((item, idx) => (
+                                <div key={idx} className="cp-finance-item">
+                                  <span>{item.description}</span>
+                                  <span>{fmtEur(item.amount_net)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="cp-card-actions cp-finance-actions">
+                          {inv.has_pdf && (
+                            <a href={`${API}${inv.pdf_url}`} target="_blank" rel="noreferrer" className="cp-btn cp-btn-secondary" data-testid={`cp-fin-pdf-${inv.invoice_id}`}>
+                              <I n="picture_as_pdf" /> PDF herunterladen
+                            </a>
+                          )}
+                          {inv.checkout_url && inv.payment_status !== 'paid' && (
+                            <a href={inv.checkout_url} target="_blank" rel="noreferrer" className="cp-btn cp-btn-primary" data-testid={`cp-fin-pay-${inv.invoice_id}`}>
+                              <I n="payment" /> Jetzt online bezahlen
+                            </a>
+                          )}
+                        </div>
+                        {/* Bank transfer info for pending invoices */}
+                        {inv.payment_status !== 'paid' && inv.payment_status !== 'cancelled' && (
+                          <div className="cp-finance-bank" data-testid={`cp-fin-bank-${inv.invoice_id}`}>
+                            <div className="cp-finance-bank-header"><I n="account_balance" /> <span>Alternativ per Banküberweisung</span></div>
+                            <div className="cp-finance-bank-grid">
+                              <div><span className="cp-finance-label">Empfänger</span><span>{financeData.bank_transfer_info.account_holder}</span></div>
+                              <div><span className="cp-finance-label">IBAN</span><span className="cp-finance-mono">{financeData.bank_transfer_info.iban}</span></div>
+                              <div><span className="cp-finance-label">BIC</span><span className="cp-finance-mono">{financeData.bank_transfer_info.bic}</span></div>
+                              <div><span className="cp-finance-label">Verwendungszweck</span><span className="cp-finance-mono cp-finance-ref">{inv.payment_reference}</span></div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="cp-card-actions">
-                  <a href={`${API}/api/documents/invoice/${inv.invoice_id}/pdf`} target="_blank" rel="noreferrer" className="cp-btn cp-btn-secondary"><I n="picture_as_pdf" /> PDF herunterladen</a>
-                </div>
-              </div>
-            ))}
+
+                {/* Linked Contracts Summary */}
+                {financeData.contracts && financeData.contracts.length > 0 && (
+                  <div className="cp-finance-section">
+                    <h3>Verträge</h3>
+                    {financeData.contracts.map(c => (
+                      <div key={c.contract_id} className="cp-card cp-finance-contract-card" data-testid={`cp-fin-ctr-${c.contract_id}`}>
+                        <div className="cp-card-header">
+                          <span className="cp-card-title">{c.contract_number || c.contract_id}</span>
+                          <span className="cp-badge" style={{ background: c.status === 'accepted' ? '#10b98122' : '#3b82f622', color: c.status === 'accepted' ? '#10b981' : '#3b82f6' }}>
+                            {c.status === 'accepted' ? 'Aktiv' : c.status}
+                          </span>
+                        </div>
+                        <div className="cp-finance-detail-grid">
+                          <div className="cp-finance-detail"><span className="cp-finance-label">Vertragswert</span><span className="cp-finance-value">{fmtEur(c.total_value)}</span></div>
+                          {c.monthly_value > 0 && <div className="cp-finance-detail"><span className="cp-finance-label">Monatlich</span><span className="cp-finance-value">{fmtEur(c.monthly_value)}</span></div>}
+                          <div className="cp-finance-detail"><span className="cp-finance-label">Erstellt</span><span className="cp-finance-value">{fmtDate(c.created_at)}</span></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="cp-empty"><I n="account_balance" /><p>Finanzdaten konnten nicht geladen werden.</p><button className="cp-btn cp-btn-secondary" onClick={loadFinance}>Erneut laden</button></div>
+            )}
           </div>
         )}
 

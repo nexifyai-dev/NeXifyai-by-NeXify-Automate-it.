@@ -106,3 +106,56 @@
 .cp-sig-name-input:focus{outline:none;border-color:rgba(255,155,122,0.3)}
 .cp-contract-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
 @media(max-width:600px){.cp-contract-actions{flex-direction:column}.cp-contract-actions .cp-btn{width:100%;justify-content:center}}
+/* ── Finance View (P2) ── */
+.cp-finance-summary{margin-bottom:20px}
+.cp-finance-alert{display:flex;align-items:flex-start;gap:12px;padding:14px 18px;border-radius:8px;margin-bottom:20px;font-size:.8125rem}
+.cp-finance-alert .material-symbols-outlined{font-size:22px;flex-shrink:0;margin-top:1px}
+.cp-finance-alert strong{display:block;font-size:.875rem;margin-bottom:2px}
+.cp-finance-alert p{margin:0;opacity:0.8}
+.cp-finance-alert-warning{background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);color:#f59e0b}
+.cp-finance-section{margin-bottom:32px}
+.cp-finance-card{padding:20px}
+.cp-card-overdue{border-color:rgba(239,68,68,0.25)}
+.cp-finance-card-title{display:flex;align-items:center;gap:8px}
+.cp-finance-card-body{margin-top:12px}
+.cp-finance-detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.cp-finance-detail{display:flex;flex-direction:column;gap:2px}
+.cp-finance-detail-total{border-top:1px solid rgba(255,255,255,0.06);padding-top:8px}
+.cp-finance-label{font-size:.6875rem;color:#6b7b8d;text-transform:uppercase;letter-spacing:.04em}
+.cp-finance-value{font-size:.875rem;color:#c8d1dc;font-weight:500}
+.cp-finance-total{font-size:1.125rem;color:#fff;font-weight:700}
+.cp-finance-items{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.04)}
+.cp-finance-item{display:flex;justify-content:space-between;font-size:.8125rem;padding:6px 0;color:#c8d1dc}
+.cp-finance-actions{margin-top:16px;display:flex;gap:8px;flex-wrap:wrap}
+.cp-finance-bank{margin-top:16px;padding:14px 18px;background:rgba(14,20,28,0.5);border:1px solid rgba(255,255,255,0.04);border-radius:8px}
+.cp-finance-bank-header{display:flex;align-items:center;gap:8px;font-size:.8125rem;font-weight:600;color:#ff9b7a;margin-bottom:10px}
+.cp-finance-bank-header .material-symbols-outlined{font-size:18px}
+.cp-finance-bank-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cp-finance-bank-grid>div{display:flex;flex-direction:column;gap:2px}
+.cp-finance-mono{font-family:'SF Mono',Menlo,monospace;font-size:.8125rem;color:#fff;letter-spacing:.02em}
+.cp-finance-ref{color:#ff9b7a;font-weight:600}
+.cp-finance-contract-card{padding:16px}
+.cp-finance-contract-card .cp-finance-detail-grid{grid-template-columns:repeat(3,1fr);margin-top:10px}
+@media(max-width:600px){.cp-finance-detail-grid{grid-template-columns:1fr 1fr}.cp-finance-bank-grid{grid-template-columns:1fr}.cp-finance-actions{flex-direction:column}.cp-finance-actions .cp-btn{width:100%;justify-content:center}}
+/* ── Contract OS Enhanced (P3) ── */
+.cp-sig-preview-card{background:rgba(14,20,28,0.6)}
+.cp-sig-preview-inner{display:flex;flex-direction:column;gap:12px}
+.cp-sig-preview-img{max-width:260px;height:auto;background:rgba(14,20,28,0.8);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px}
+.cp-sig-preview-name{font-size:1.25rem;font-family:'Dancing Script',cursive,serif;color:#fff;font-weight:700;padding:16px 20px;background:rgba(14,20,28,0.8);border:1px solid rgba(255,255,255,0.06);border-radius:8px;display:inline-block}
+.cp-sig-preview-meta{display:flex;gap:16px;font-size:.6875rem;color:#6b7b8d}
+.cp-sig-preview-meta span{display:flex;align-items:center;gap:4px}
+.cp-sig-preview-meta .material-symbols-outlined{font-size:14px}
+.cp-version-list{display:flex;flex-direction:column;gap:0}
+.cp-version-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.cp-version-item:last-child{border-bottom:none}
+.cp-version-badge{font-size:.6875rem;font-weight:700;color:#c8d1dc;background:rgba(255,255,255,0.06);padding:4px 10px;border-radius:12px;flex-shrink:0}
+.cp-version-info{display:flex;flex-direction:column;gap:2px}
+.cp-version-status{font-size:.8125rem;color:#c8d1dc;font-weight:500}
+.cp-version-date{font-size:.6875rem;color:#6b7b8d}
+.cp-evidence-item{padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.cp-evidence-item:last-child{border-bottom:none}
+.cp-evidence-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cp-evidence-time{font-size:.6875rem;color:#6b7b8d}
+.cp-evidence-details{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:.75rem;color:#c8d1dc}
+.cp-evidence-details>div{display:flex;flex-direction:column;gap:2px}
+@media(max-width:600px){.cp-evidence-details{grid-template-columns:1fr 1fr}}

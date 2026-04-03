@@ -88,9 +88,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 NOTIFICATION_EMAILS = ["support@nexify-automate.com", "nexifyai@nexifyai.de"]
 EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
 
-# LLM Chat sessions store
-llm_sessions = {}
-
 # Agent Layer (initialized in lifespan)
 orchestrator = None
 agents = {}
@@ -973,25 +970,17 @@ async def chat_message(data: ChatMessage, request: Request):
     should_escalate = False
     
     try:
-        if EMERGENT_LLM_KEY:
-            if data.session_id not in llm_sessions:
-                system_prompt = get_system_prompt(data.language or "de")
-                if memory_context:
-                    system_prompt += f"\n\nKUNDENKONTEXT (NUR INTERN — NICHT ZITIEREN):\n{memory_context}"
-                chat = LlmChat(
-                    api_key=EMERGENT_LLM_KEY,
-                    session_id=data.session_id,
-                    system_message=system_prompt
-                )
-                chat.with_model("openai", "gpt-4o-mini")
-                llm_sessions[data.session_id] = chat
-            elif memory_context and not session.get("_memory_injected"):
-                # Re-inject memory context if newly available
-                pass
+        if llm_provider:
+            system_prompt = get_system_prompt(data.language or "de")
+            if memory_context:
+                system_prompt += f"\n\nKUNDENKONTEXT (NUR INTERN — NICHT ZITIEREN):\n{memory_context}"
             
-            llm_chat = llm_sessions[data.session_id]
-            user_message = UserMessage(text=data.message)
-            response_text = await llm_chat.send_message(user_message)
+            response_text = await llm_provider.chat_with_history(
+                session_id=data.session_id,
+                user_message=data.message,
+                system_prompt=system_prompt,
+                temperature=0.7,
+            )
             
             # Extract email from offer/booking requests for memory linking
             offer_match_pre = re.search(r'\[OFFER_REQUEST\](.*?)\[/OFFER_REQUEST\]', response_text, re.DOTALL)
@@ -1310,9 +1299,9 @@ async def auth_request_magic_link(data: dict, request: Request):
         try:
             html = email_template(
                 "Ihr Portalzugang — NeXifyAI",
-                f"<p>Hallo,</p>"
-                f"<p>Sie haben einen Zugangslink für Ihr NeXifyAI-Kundenportal angefordert.</p>"
-                f"<p>Klicken Sie auf den Button, um sich einzuloggen. Der Link ist 24 Stunden gültig.</p>",
+                "<p>Hallo,</p>"
+                "<p>Sie haben einen Zugangslink für Ihr NeXifyAI-Kundenportal angefordert.</p>"
+                "<p>Klicken Sie auf den Button, um sich einzuloggen. Der Link ist 24 Stunden gültig.</p>",
                 magic_link,
                 "Zum Portal"
             )
@@ -3986,9 +3975,15 @@ async def admin_audit_health(current_user: dict = Depends(get_current_admin)):
         "phone": wa.get("phone_number") if wa else None,
     }
     
-    # 5. LLM key status
-    key = os.environ.get("EMERGENT_LLM_KEY", "")
-    checks["llm"] = {"status": "ok" if key else "missing", "key_present": bool(key)}
+    # 5. LLM provider status
+    if llm_provider:
+        checks["llm"] = {
+            "status": "ok",
+            "provider": llm_provider.get_provider_name(),
+            "is_target": llm_provider.get_provider_name() == "deepseek",
+        }
+    else:
+        checks["llm"] = {"status": "not_initialized"}
     
     # 6. Recent errors in timeline
     error_count = await db.timeline_events.count_documents({
@@ -5413,7 +5408,7 @@ async def customer_contracts(current_user: dict = Depends(get_current_customer))
 
 @app.get("/api/customer/contracts/{contract_id}")
 async def customer_contract_detail(contract_id: str, current_user: dict = Depends(get_current_customer)):
-    """Vertragsdetail für Kunden."""
+    """Vertragsdetail für Kunden — inkl. Versionen, Evidenz, Signatur-Vorschau."""
     email = current_user["email"]
     contract = await db.contracts.find_one({"contract_id": contract_id, "customer.email": email}, {"_id": 0})
     if not contract:
@@ -5431,7 +5426,59 @@ async def customer_contract_detail(contract_id: str, current_user: dict = Depend
     contract["appendices_detail"] = appendices
     contract["document_hash"] = _compute_doc_hash(contract)
     contract["legal_module_definitions"] = LEGAL_MODULES
+
+    # Versions history for customer view
+    versions = contract.get("versions_history", [])
+    contract["versions"] = [
+        {"version": v.get("version", 1), "status": v.get("status", ""), "timestamp": v.get("timestamp", ""), "note": v.get("note", "")}
+        for v in versions
+    ]
     contract.pop("versions_history", None)
+
+    # Evidence trail (P3: vollständiges Evidenzpaket)
+    evidence_list = []
+    async for e in db.contract_evidence.find({"contract_id": contract_id}, {"_id": 0}).sort("timestamp", -1):
+        evidence_list.append({
+            "evidence_id": e.get("evidence_id"),
+            "action": e.get("action"),
+            "timestamp": e.get("timestamp"),
+            "ip_address": e.get("ip_address", ""),
+            "user_agent": e.get("user_agent", "")[:80],
+            "document_hash": e.get("document_hash", ""),
+            "contract_version": e.get("contract_version", 1),
+            "consent_status": e.get("consent_status", ""),
+            "signature_type": e.get("signature_type", ""),
+        })
+    contract["evidence_trail"] = evidence_list
+
+    # Signature preview (if accepted)
+    if contract.get("status") == ContractStatus.ACCEPTED.value and contract.get("signature"):
+        acceptance_evidence = await db.contract_evidence.find_one(
+            {"contract_id": contract_id, "action": "accepted"}, {"_id": 0}
+        )
+        if acceptance_evidence:
+            sig_data = acceptance_evidence.get("signature_data", "")
+            contract["signature_preview"] = {
+                "type": acceptance_evidence.get("signature_type", ""),
+                "data": sig_data[:200] if sig_data.startswith("data:image") else sig_data,
+                "is_image": sig_data.startswith("data:image"),
+                "timestamp": acceptance_evidence.get("timestamp", ""),
+                "customer_name": acceptance_evidence.get("customer_name", ""),
+            }
+
+    # Contract PDF availability
+    has_pdf = bool(await db.documents.find_one({"ref_id": contract_id, "type": "contract"}, {"_id": 1}))
+    contract["has_pdf"] = has_pdf
+    contract["pdf_url"] = f"/api/documents/contract/{contract_id}/pdf" if has_pdf else None
+
+    # Change request details
+    if contract.get("change_request"):
+        cr = contract["change_request"]
+        contract["change_request_detail"] = {
+            "text": cr.get("text", ""),
+            "timestamp": cr.get("timestamp", ""),
+        }
+
     for dt_field in ("created_at", "updated_at"):
         if hasattr(contract.get(dt_field), "isoformat"):
             contract[dt_field] = contract[dt_field].isoformat()
@@ -5570,16 +5617,171 @@ async def customer_request_change(contract_id: str, data: dict, request: Request
 
 
 # ══════════════════════════════════════════════════════════════
-# LLM PROVIDER STATUS
+# CUSTOMER FINANCE — Portal-Finance-Ansicht (P2)
+# ══════════════════════════════════════════════════════════════
+
+PAYMENT_STATUS_MAP = {
+    "pending": {"label": "Ausstehend", "severity": "warning"},
+    "paid": {"label": "Bezahlt", "severity": "success"},
+    "overdue": {"label": "Überfällig", "severity": "error"},
+    "partial": {"label": "Teilbezahlt", "severity": "warning"},
+    "cancelled": {"label": "Storniert", "severity": "neutral"},
+    "refunded": {"label": "Erstattet", "severity": "neutral"},
+}
+
+REMINDER_LEVEL_MAP = {
+    0: "Keine",
+    1: "Zahlungserinnerung",
+    2: "1. Mahnung",
+    3: "2. Mahnung",
+}
+
+
+@app.get("/api/customer/finance")
+async def customer_finance(current_user: dict = Depends(get_current_customer)):
+    """Vollständige Finance-Ansicht: Rechnungen, Zahlungsstatus, Verträge, Angebote, Statuslogik."""
+    email = current_user["email"]
+    now = utcnow()
+
+    # --- Invoices (full detail) ---
+    invoices = []
+    total_outstanding = 0
+    total_paid = 0
+    async for inv in db.invoices.find({"customer.email": email}, {"_id": 0}).sort("created_at", -1):
+        totals = inv.get("totals", {})
+        gross = totals.get("gross", inv.get("total_eur", 0))
+        net = totals.get("net", inv.get("amount_netto_eur", 0))
+        vat = totals.get("vat", inv.get("tax_eur", 0))
+        ps = inv.get("payment_status", "pending")
+        reminder_count = inv.get("reminder_count", 0)
+
+        # Check overdue
+        due_str = inv.get("due_date", "")
+        is_overdue = False
+        if due_str and ps not in ("paid", "cancelled", "refunded"):
+            try:
+                due_dt = datetime.strptime(due_str, "%d.%m.%Y").replace(tzinfo=timezone.utc)
+                is_overdue = now > due_dt
+            except Exception:
+                pass
+
+        effective_status = "overdue" if is_overdue and ps == "pending" else ps
+        status_info = PAYMENT_STATUS_MAP.get(effective_status, {"label": ps, "severity": "neutral"})
+
+        if effective_status in ("pending", "overdue"):
+            total_outstanding += gross
+        elif effective_status == "paid":
+            total_paid += gross
+
+        has_pdf = bool(await db.documents.find_one({"ref_id": inv.get("invoice_id"), "type": "invoice"}, {"_id": 1}))
+
+        inv_data = {
+            "invoice_id": inv.get("invoice_id"),
+            "invoice_number": inv.get("invoice_number", ""),
+            "type": inv.get("type", "standard"),
+            "status": inv.get("status", ""),
+            "payment_status": effective_status,
+            "payment_status_label": status_info["label"],
+            "payment_status_severity": status_info["severity"],
+            "amount_net": net,
+            "amount_vat": vat,
+            "amount_gross": gross,
+            "vat_rate": totals.get("vat_rate", inv.get("tax_rate", 19)),
+            "date": inv.get("date", ""),
+            "due_date": due_str,
+            "is_overdue": is_overdue,
+            "description": inv.get("description", ""),
+            "items": inv.get("items", []),
+            "payment_reference": inv.get("payment_reference", inv.get("invoice_number", "")),
+            "checkout_url": inv.get("checkout_url"),
+            "revolut_order_id": inv.get("revolut_order_id"),
+            "reminder_count": reminder_count,
+            "reminder_level": REMINDER_LEVEL_MAP.get(min(reminder_count, 3), f"Stufe {reminder_count}"),
+            "last_reminder_at": inv.get("last_reminder_at"),
+            "quote_id": inv.get("quote_id", ""),
+            "has_pdf": has_pdf,
+            "pdf_url": f"/api/documents/invoice/{inv.get('invoice_id')}/pdf" if has_pdf else None,
+            "created_at": str(inv.get("created_at", "")),
+        }
+        invoices.append(inv_data)
+
+    # --- Quotes (summary for finance context) ---
+    quotes_summary = []
+    async for q in db.quotes.find({"customer.email": email}, {"_id": 0}).sort("created_at", -1).limit(20):
+        calc = q.get("calculation", {})
+        quotes_summary.append({
+            "quote_id": q.get("quote_id"),
+            "quote_number": q.get("quote_number", ""),
+            "status": q.get("status", ""),
+            "tier": q.get("tier", ""),
+            "tier_name": calc.get("tier_name", ""),
+            "total_contract_eur": calc.get("total_contract_eur", 0),
+            "upfront_eur": calc.get("upfront_eur", 0),
+            "monthly_eur": calc.get("monthly_eur", 0),
+            "created_at": str(q.get("created_at", "")),
+        })
+
+    # --- Contracts (finance-relevant fields) ---
+    contracts_summary = []
+    async for c in db.contracts.find({"customer.email": email}, {"_id": 0}).sort("created_at", -1):
+        contracts_summary.append({
+            "contract_id": c.get("contract_id"),
+            "contract_number": c.get("contract_number", ""),
+            "status": c.get("status", ""),
+            "contract_type": c.get("contract_type", ""),
+            "tier": c.get("tier", ""),
+            "total_value": c.get("total_value", 0),
+            "monthly_value": c.get("monthly_value", 0),
+            "created_at": str(c.get("created_at", "")),
+            "accepted_at": str(c.get("accepted_at", "")) if c.get("accepted_at") else None,
+        })
+
+    # --- Bank transfer info ---
+    bank_info = {
+        "iban": COMM_COMPANY.get("bank", {}).get("iban", ""),
+        "bic": COMM_COMPANY.get("bank", {}).get("bic", ""),
+        "bank_name": COMM_COMPANY.get("bank", {}).get("bank", ""),
+        "account_holder": COMM_COMPANY.get("name", "NeXify Automate"),
+    }
+
+    return {
+        "summary": {
+            "total_invoices": len(invoices),
+            "total_outstanding_eur": round(total_outstanding, 2),
+            "total_paid_eur": round(total_paid, 2),
+            "open_invoices": sum(1 for i in invoices if i["payment_status"] in ("pending", "overdue")),
+            "overdue_invoices": sum(1 for i in invoices if i["is_overdue"]),
+        },
+        "invoices": invoices,
+        "quotes": quotes_summary,
+        "contracts": contracts_summary,
+        "bank_transfer_info": bank_info,
+    }
+
+
+
+# ══════════════════════════════════════════════════════════════
+# LLM PROVIDER STATUS & OPERATIONS
 # ══════════════════════════════════════════════════════════════
 
 @app.get("/api/admin/llm/status")
 async def llm_status(current_user: dict = Depends(get_current_admin)):
-    """LLM-Provider-Status und DeepSeek-Migrationsstatus."""
+    """LLM-Provider-Status, Metriken und DeepSeek-Migrationsstatus."""
     from services.llm_provider import get_provider_status
     if llm_provider:
         return get_provider_status(llm_provider)
     return {"active_provider": "not_initialized", "migration_ready": False}
+
+
+@app.get("/api/admin/llm/health")
+async def llm_health(current_user: dict = Depends(get_current_admin)):
+    """Live Health-Check: Sendet Test-Prompt an aktiven Provider."""
+    if not llm_provider:
+        raise HTTPException(503, "LLM-Provider nicht initialisiert")
+    result = await llm_provider.health_check()
+    result["provider"] = llm_provider.get_provider_name()
+    result["is_target_architecture"] = llm_provider.get_provider_name() == "deepseek"
+    return result
 
 
 @app.post("/api/admin/llm/test")
@@ -5601,11 +5803,54 @@ async def llm_test(data: dict = None, current_user: dict = Depends(get_current_a
             "provider": llm_provider.get_provider_name(),
             "model": model or "default",
             "response": response[:500],
-            "success": True,
+            "success": not response.startswith("["),
         }
     except Exception as e:
         return {"provider": llm_provider.get_provider_name(), "error": str(e), "success": False}
 
+
+@app.post("/api/admin/llm/test-agent-flow")
+async def llm_test_agent_flow(data: dict = None, current_user: dict = Depends(get_current_admin)):
+    """Realer Agentenfluss-Test: Simuliert Chat-Session mit System-Prompt."""
+    if not llm_provider:
+        raise HTTPException(503, "LLM-Provider nicht initialisiert")
+
+    import secrets as _sec
+    test_session = f"test_{_sec.token_hex(6)}"
+    system_prompt = get_system_prompt("de")
+    test_message = (data or {}).get("message", "Welche Leistungen bietet NeXifyAI an?")
+
+    try:
+        # Test 1: Initial message
+        r1 = await llm_provider.chat_with_history(
+            session_id=test_session,
+            user_message=test_message,
+            system_prompt=system_prompt,
+            temperature=0.7,
+        )
+        # Test 2: Follow-up (session continuity)
+        r2 = await llm_provider.chat_with_history(
+            session_id=test_session,
+            user_message="Kannst du mir mehr über die Preise sagen?",
+            system_prompt=system_prompt,
+            temperature=0.7,
+        )
+        # Cleanup
+        llm_provider.clear_session(test_session)
+
+        return {
+            "provider": llm_provider.get_provider_name(),
+            "session_id": test_session,
+            "test_results": {
+                "initial_response": {"text": r1[:300], "ok": bool(r1) and not r1.startswith("[")},
+                "followup_response": {"text": r2[:300], "ok": bool(r2) and not r2.startswith("[")},
+                "session_continuity": bool(r1) and bool(r2) and not r1.startswith("[") and not r2.startswith("["),
+            },
+            "success": bool(r1) and bool(r2) and not r1.startswith("[") and not r2.startswith("["),
+        }
+    except Exception as e:
+        llm_provider.clear_session(test_session)
+        return {"provider": llm_provider.get_provider_name(), "error": str(e), "success": False}
 
 
 if __name__ == "__main__":
