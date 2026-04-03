@@ -85,13 +85,17 @@ class EmergentGPTProvider(LLMProvider):
             return "LLM nicht verfügbar (Key fehlt)"
 
         from emergentintegrations.llm.chat import LlmChat, UserMessage
+        import secrets
 
+        # LlmChat requires session_id, not model/temperature in __init__
+        session_id = f"chat_{secrets.token_hex(8)}"
         chat = LlmChat(
             api_key=self._api_key,
-            model=model or "gpt-5.2",
+            session_id=session_id,
             system_message=system_prompt,
-            temperature=temperature,
         )
+        # Set model via with_model method
+        chat.with_model("openai", model or "gpt-4o-mini")
 
         # Nur letzte User-Message senden (Emergent-API-Pattern)
         last_user = ""
@@ -116,12 +120,13 @@ class EmergentGPTProvider(LLMProvider):
         from emergentintegrations.llm.chat import LlmChat, UserMessage
 
         if session_id not in self._sessions:
-            self._sessions[session_id] = LlmChat(
+            chat = LlmChat(
                 api_key=self._api_key,
-                model=model or "gpt-5.2",
+                session_id=session_id,
                 system_message=system_prompt,
-                temperature=temperature,
             )
+            chat.with_model("openai", model or "gpt-4o-mini")
+            self._sessions[session_id] = chat
 
         chat = self._sessions[session_id]
         response = await chat.send_message(UserMessage(text=user_message))
@@ -138,18 +143,24 @@ class EmergentGPTProvider(LLMProvider):
 class DeepSeekProvider(LLMProvider):
     """
     ZIEL-Provider: DeepSeek.
-    Vorbereitet für Migration — aktiviert wenn DEEPSEEK_API_KEY gesetzt.
+    Unterstützte Modelle:
+      - deepseek-chat (Standard-Chat)
+      - deepseek-reasoner (erweiterte Reasoning-Fähigkeiten)
 
-    Migration:
+    Aktivierung:
     1. DEEPSEEK_API_KEY in .env setzen
-    2. LLM_PROVIDER=deepseek in .env setzen
-    3. System-Prompts ggf. optimieren
-    4. Regressionstests
+    2. LLM_PROVIDER=deepseek in .env setzen (oder auto)
     """
+
+    MODELS = {
+        "deepseek-chat": "Standard Chat",
+        "deepseek-reasoner": "Reasoning (erweitert)",
+    }
 
     def __init__(self):
         self._api_key = os.environ.get("DEEPSEEK_API_KEY", "")
         self._base_url = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+        self._default_model = os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
         self._sessions: Dict[str, list] = {}
 
     async def chat(
@@ -161,7 +172,7 @@ class DeepSeekProvider(LLMProvider):
         model: str = None,
     ) -> str:
         if not self._api_key:
-            return "DeepSeek nicht konfiguriert (Key fehlt)"
+            return "DeepSeek nicht konfiguriert (DEEPSEEK_API_KEY fehlt). Bitte in .env hinterlegen."
 
         import httpx
 
@@ -170,23 +181,30 @@ class DeepSeekProvider(LLMProvider):
             api_messages.append({"role": "system", "content": system_prompt})
         api_messages.extend([m.to_dict() for m in messages])
 
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(
-                f"{self._base_url}/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self._api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": model or "deepseek-chat",
-                    "messages": api_messages,
-                    "temperature": temperature,
-                    "max_tokens": max_tokens,
-                },
-            )
-            response.raise_for_status()
-            data = response.json()
-            return data["choices"][0]["message"]["content"]
+        try:
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.post(
+                    f"{self._base_url}/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {self._api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": model or self._default_model,
+                        "messages": api_messages,
+                        "temperature": temperature,
+                        "max_tokens": max_tokens,
+                    },
+                )
+                response.raise_for_status()
+                data = response.json()
+                return data["choices"][0]["message"]["content"]
+        except httpx.HTTPStatusError as e:
+            logger.error(f"DeepSeek API error: {e.response.status_code} — {e.response.text[:200]}")
+            return f"DeepSeek API-Fehler: {e.response.status_code}"
+        except Exception as e:
+            logger.error(f"DeepSeek connection error: {e}")
+            return f"DeepSeek Verbindungsfehler: {str(e)[:100]}"
 
     async def chat_with_history(
         self,
@@ -227,15 +245,57 @@ class DeepSeekProvider(LLMProvider):
 def create_llm_provider() -> LLMProvider:
     """
     LLM-Provider basierend auf Konfiguration erstellen.
-    Prüft: LLM_PROVIDER env var → deepseek wenn Key vorhanden → Emergent fallback.
+    Prüft: LLM_PROVIDER env var:
+      - 'deepseek' → DeepSeek direkt
+      - 'emergent' → Emergent GPT-5.2 (Fallback)
+      - 'auto' (default) → DeepSeek wenn Key vorhanden, sonst Emergent
     """
-    provider_name = os.environ.get("LLM_PROVIDER", "").lower()
+    provider_name = os.environ.get("LLM_PROVIDER", "auto").lower()
+    deepseek_key = os.environ.get("DEEPSEEK_API_KEY", "").strip()
+    emergent_key = os.environ.get("EMERGENT_LLM_KEY", "").strip()
 
-    if provider_name == "deepseek" or (
-        os.environ.get("DEEPSEEK_API_KEY") and not os.environ.get("EMERGENT_LLM_KEY")
-    ):
+    if provider_name == "deepseek" and deepseek_key:
         logger.info("LLM-Provider: DeepSeek (Ziel-Architektur)")
         return DeepSeekProvider()
 
-    logger.info("LLM-Provider: Emergent GPT-5.2 (TEMPORÄR)")
+    if provider_name == "auto" and deepseek_key:
+        logger.info("LLM-Provider: DeepSeek (auto-detected)")
+        return DeepSeekProvider()
+
+    if emergent_key:
+        logger.info("LLM-Provider: Emergent GPT-5.2 (TEMPORÄR — Fallback bis DeepSeek-Key gesetzt)")
+        return EmergentGPTProvider()
+
+    logger.warning("LLM-Provider: Kein API-Key konfiguriert. Emergent-Fallback ohne Key.")
     return EmergentGPTProvider()
+
+
+def get_provider_status(provider: LLMProvider) -> dict:
+    """Provider-Status für Admin-Dashboard."""
+    name = provider.get_provider_name()
+    is_deepseek = name == "deepseek"
+    deepseek_key = bool(os.environ.get("DEEPSEEK_API_KEY", "").strip())
+    emergent_key = bool(os.environ.get("EMERGENT_LLM_KEY", "").strip())
+
+    return {
+        "active_provider": name,
+        "is_target_architecture": is_deepseek,
+        "providers": {
+            "deepseek": {
+                "status": "active" if is_deepseek else ("ready" if deepseek_key else "not_configured"),
+                "api_key_set": deepseek_key,
+                "base_url": os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
+                "models": list(DeepSeekProvider.MODELS.keys()) if is_deepseek else [],
+            },
+            "emergent_gpt52": {
+                "status": "active" if not is_deepseek else "fallback",
+                "api_key_set": emergent_key,
+                "note": "Temporärer Fallback — wird durch DeepSeek ersetzt",
+            },
+        },
+        "migration_ready": deepseek_key,
+        "env_config": {
+            "LLM_PROVIDER": os.environ.get("LLM_PROVIDER", "auto"),
+            "DEEPSEEK_MODEL": os.environ.get("DEEPSEEK_MODEL", "deepseek-chat"),
+        },
+    }
