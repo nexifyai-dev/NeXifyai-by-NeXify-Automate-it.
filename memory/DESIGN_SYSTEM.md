@@ -1,95 +1,108 @@
-# NeXifyAI — Design System Reference
+# NeXifyAI — Vollständiges Design-System
 
-## Core Tokens
+## Design-Tokens (:root)
 
-### Farben
+### CI-Farben
+| Token | Wert | Zweck |
+|-------|------|-------|
+| `--nx-accent` | #ff9b7a | CI-Gelb (Primär-Akzent, CTAs, Highlights) |
+| `--nx-accent-h` | #ffb59e | Hover-Variante CI-Gelb |
+| `--nx-accent-bg` | rgba(255,155,122,0.07) | Hintergrund-Tint CI-Gelb |
+| `--nx-accent-b` | rgba(255,155,122,0.18) | Border-Tint CI-Gelb |
+| `--nx-blue` | #6B8AFF | CI-Blau (Sekundär, Info, Kontrast) |
+| `--nx-blue-h` | #8DA4FF | Hover-Variante CI-Blau |
+| `--nx-blue-bg` | rgba(107,138,255,0.07) | Hintergrund-Tint CI-Blau |
+| `--nx-blue-b` | rgba(107,138,255,0.18) | Border-Tint CI-Blau |
+
+### Oberflächen (dunkel → hell)
 | Token | Wert | Verwendung |
 |-------|------|------------|
-| `--nx-bg` | `#0c1117` | Haupt-Hintergrund |
-| `--nx-surface` | `rgba(14,20,28,0.6)` | Karten, Panels |
-| `--nx-surface-hover` | `rgba(14,20,28,0.8)` | Karten Hover |
-| `--nx-accent` | `#ff9b7a` | Primär-Akzent, CTAs |
-| `--nx-accent-glow` | `rgba(255,155,122,0.06)` | Glow-Effekte |
-| `--nx-text` | `#c8d1dc` | Standard-Text |
-| `--nx-muted` | `#6b7b8d` | Sekundär-Text |
-| `--nx-dim` | `rgba(255,255,255,0.25)` | Tertiär-Text |
-| `--nx-border` | `rgba(255,255,255,0.04)` | Standard-Rahmen |
-| `--nx-border-hover` | `rgba(255,155,122,0.12)` | Hover-Rahmen |
-| `--nx-err` | `#ef4444` | Fehler |
-| `--nx-success` | `#10b981` | Erfolg |
-| `--nx-warn` | `#f59e0b` | Warnung |
+| `--nx-bg` | #0c1117 | Haupthintergrund |
+| `--nx-s1` | #131a22 | Eingabefelder, Card-Innenflächen |
+| `--nx-s2` | #1a2230 | Erhöhte Flächen |
+| `--nx-glass` | rgba(14,20,28,0.6) | Glasflächen (Cards, Panels) |
+| `--nx-glass-h` | rgba(14,20,28,0.8) | Modale Glasflächen |
 
-### Typografie
+### Radien (abgestuft)
 | Token | Wert | Verwendung |
 |-------|------|------------|
-| `--f-display` | `'Inter', sans-serif` | Headlines, Buttons |
-| `--f-body` | `'Inter', sans-serif` | Fließtext |
-| H1 | `clamp(1.75rem, 3vw, 3rem)` | Hero, Seitenüberschriften |
-| H2 | `clamp(1.25rem, 2vw, 1.75rem)` | Abschnitte |
-| H3 | `.9375rem` | Karten-Titel |
-| Body | `.8125rem` | Standard-Text |
-| Small | `.75rem` | Labels, Metadaten |
-| Micro | `.6875rem` | Badges, Timestamps |
+| `--r-xs` | 4px | Kleine Inlines (Tags, Dots) |
+| `--r-sm` | 6px | Buttons, Inputs, Badges, Small Cards |
+| `--r-md` | 8px | Cards, Panels, Modals, Tables |
+| `--r-lg` | 12px | Modale Overlays, große Panels |
+| `--r-xl` | 16px | Hero-Elemente, Feature-Cards |
+| `--r-pill` | 100px | Pills, Chips, Badges |
 
-### Abstände
+### Schatten (3-Stufen-Tiefe)
 | Token | Wert | Verwendung |
 |-------|------|------------|
-| `--pad` | `clamp(16px, 4vw, 40px)` | Responsive Padding |
-| `--gap` | `clamp(8px, 2vw, 24px)` | Grid-Gap |
-| Card Padding | `16px-28px` | Karten-Innenabstand |
-| Section Gap | `48px-80px` | Zwischen Sektionen |
+| `--shadow-sm` | 0 1px 2px + border-glow | Standard (Buttons, Input-Focus) |
+| `--shadow-md` | 0 4px 16px + border-glow | Hover-Lift (Cards, Dropdowns) |
+| `--shadow-lg` | 0 12px 48px + border-glow | Modale, Overlays |
+| `--shadow-glow` | 24px + 80px accent | CTA-Glow-Effekt |
+| `--shadow-focus` | 3px ring + 20px glow | Focus-Ring (Accessibility) |
 
-### Radien
-| Token | Wert | Verwendung |
-|-------|------|------------|
-| Small | `6px` | Inputs, kleine Buttons |
-| Medium | `8px-10px` | Karten, Panels |
-| Large | `12px-14px` | Modals, große Karten |
-| Pill | `20px` | Badges, Tags |
-| Circle | `50%` | Avatare, Dots |
+## Button-System
 
-### Shadows & Effects
-| Effekt | CSS |
-|--------|-----|
-| Card Glow | `box-shadow: 0 0 40px rgba(255,155,122,0.03)` |
-| Modal Shadow | `box-shadow: 0 32px 80px rgba(0,0,0,0.4)` |
-| Glass Effect | `backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px)` |
-| Grain Overlay | `background-image: url(data:image/svg+xml,...) /* grain noise */` |
+### Hierarchie
+1. **Primary** (`.btn-primary`): Hauptaktionen (Speichern, Absenden, CTA)
+2. **Secondary** (`.btn-secondary`): Nebenaktionen (Abbrechen, Filter)
+3. **Tertiary** (`.btn-tertiary`): Dritte Priorität (Optionen, Extras)
+4. **Outline** (`.btn-outline`): Visuell prominent aber nicht dominierend
+5. **Ghost** (`.btn-ghost`): Minimal (Navigation, Links)
+6. **Destructive** (`.btn-destructive`): Löschen, Abbrechen, Warnung
+7. **Success** (`.btn-success`): Bestätigen, Akzeptieren
+8. **Link** (`.btn-link`): Inline-Links
+9. **Icon** (`.btn-icon`): Icon-Only (Toolbar, Actions)
 
-### Motion
-| Animation | Dauer | Easing |
-|-----------|-------|--------|
-| Hover | `200ms` | `ease` |
-| Entrance | `300-500ms` | Framer Motion defaults |
-| Page Transition | `300ms` | `ease-in-out` |
-| Spinner | `700ms` | `linear infinite` |
+### Größen
+- `.btn-xs`: 5px 10px, 11px
+- `.btn-sm`: 7px 14px, 13px
+- (Standard): 10px 22px, 14px
+- `.btn-lg`: 14px 28px, 15px
+- `.btn-xl`: 16px 36px, 16px
 
-### Touch Targets
-| Element | Min-Größe | Kontext |
-|---------|-----------|---------|
-| Buttons | `44px` | Mobile |
-| Tab Items | `44px` | Mobile Tabs |
-| Links | `44px` | Mobile Navigation |
-| Icons (interaktiv) | `32px` | Desktop |
+### Modifikatoren
+- `.btn-glow`: Accent-Glow-Effekt
+- `.btn-full`: 100% Breite
+- `.btn-pill`: Pill-Form
+- `.btn-loading`: Spinner-Animation
 
-### Breakpoints
-| Name | Wert | Kontext |
-|------|------|---------|
-| Mobile S | `360px` | Min. unterstützte Breite |
-| Mobile | `480px` | Standard Mobile |
-| Tablet | `768px` | Tablets |
-| Desktop | `1200px` | Standard Desktop |
-| Wide | `1920px` | Full HD |
+### Zustände
+- `:hover` → translateY(-1px) + shadow-lift
+- `:active` → translateY(0) + inset shadow
+- `:focus-visible` → shadow-focus ring
+- `:disabled` → opacity 0.4, no pointer-events
 
-## Anwendung im Code
+## Flächen-System
 
-### CSS-Import
-Alle Tokens sind in `App.css` unter `:root` definiert.
+### Card (`.nx-card`)
+- Background: `--nx-glass` mit backdrop-filter
+- Border: 1px `--nx-border`
+- Radius: `--r-md`
+- Top-Gradient-Line (::before)
+- Hover: border-color accent-glow
 
-### Konsistenzregel
-Jede neue Komponente MUSS:
-1. CSS-Variablen aus `:root` verwenden
-2. Responsive via `clamp()` oder `@media` sein
-3. Touch-Targets >= 44px auf Mobile
-4. `data-testid` für jedes interaktive Element
-5. `transition` auf spezifische Properties (nicht `all`)
+### Panel (`.nx-panel`)
+- Wie Card, ohne backdrop-filter
+- Für Container-Elemente (Tables, Listen)
+
+### Surface (`.nx-surface`)
+- Solid background `--nx-s1`
+- Für Inputs, Textarea-Container
+
+## Regelwerk
+
+### DO
+- Immer CSS-Variablen statt hardcoded Farben
+- Transitions auf spezifische Properties, nicht `all`
+- Glass-Morphism für schwebende Flächen (backdrop-filter: blur(12px))
+- Focus-Ringe mit `--shadow-focus` für Accessibility
+- Hover-States mit subtiler Y-Translation + Schatten-Verstärkung
+
+### DON'T
+- Keine eckigen Elemente (immer mindestens `--r-xs`)
+- Keine chaotischen Schatten (nur die 3 definierten Stufen)
+- Keine hardcoded `#ff9b7a` — immer `var(--nx-accent)`
+- Keine `transition: all` (bricht transforms)
+- Keine unterschiedlichen Qualitätsniveaus zwischen Seiten
