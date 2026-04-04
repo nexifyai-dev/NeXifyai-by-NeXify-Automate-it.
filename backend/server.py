@@ -302,14 +302,21 @@ async def lifespan(app: FastAPI):
     # --- Admin User ---
     if ADMIN_PASSWORD:
         existing = await db.admin_users.find_one({"email": ADMIN_EMAIL})
+        new_hash = hash_password(ADMIN_PASSWORD)
         if not existing:
             await db.admin_users.insert_one({
                 "email": ADMIN_EMAIL,
-                "password_hash": hash_password(ADMIN_PASSWORD),
+                "password_hash": new_hash,
                 "role": "admin",
                 "created_at": datetime.now(timezone.utc)
             })
             logger.info(f"Admin user created: {ADMIN_EMAIL}")
+        elif existing.get("password_hash") != new_hash:
+            await db.admin_users.update_one(
+                {"email": ADMIN_EMAIL},
+                {"$set": {"password_hash": new_hash, "updated_at": datetime.now(timezone.utc).isoformat()}}
+            )
+            logger.info(f"Admin password updated: {ADMIN_EMAIL}")
 
     # --- Service Layer ---
     memory_svc = MemoryService(db)
