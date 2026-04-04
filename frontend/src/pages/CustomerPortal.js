@@ -364,15 +364,16 @@ const CustomerPortal = () => {
     </div>
   );
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 640;
   const tabs = [
-    { id: 'overview', icon: 'dashboard', label: 'Übersicht' },
-    { id: 'contracts', icon: 'gavel', label: `Verträge (${contracts.length})` },
-    { id: 'projects', icon: 'folder_special', label: `Projekte (${projects.length})` },
-    { id: 'quotes', icon: 'description', label: `Angebote (${data?.quotes?.length || 0})` },
-    { id: 'invoices', icon: 'account_balance', label: `Finanzen (${financeData?.summary?.total_invoices || data?.invoices?.length || 0})` },
-    { id: 'bookings', icon: 'event', label: `Termine (${data?.bookings?.length || 0})` },
-    { id: 'communication', icon: 'forum', label: `Kommunikation (${data?.communications?.length || 0})` },
-    { id: 'timeline', icon: 'timeline', label: 'Aktivität' },
+    { id: 'overview', icon: 'dashboard', label: 'Übersicht', shortLabel: 'Übersicht' },
+    { id: 'contracts', icon: 'gavel', label: `Verträge (${contracts.length})`, shortLabel: `Verträge` },
+    { id: 'projects', icon: 'folder_special', label: `Projekte (${projects.length})`, shortLabel: 'Projekte' },
+    { id: 'quotes', icon: 'description', label: `Angebote (${data?.quotes?.length || 0})`, shortLabel: 'Angebote' },
+    { id: 'invoices', icon: 'account_balance', label: `Finanzen (${financeData?.summary?.total_invoices || data?.invoices?.length || 0})`, shortLabel: 'Finanzen' },
+    { id: 'bookings', icon: 'event', label: `Termine (${data?.bookings?.length || 0})`, shortLabel: 'Termine' },
+    { id: 'communication', icon: 'forum', label: `Kommunikation (${data?.communications?.length || 0})`, shortLabel: 'Chat' },
+    { id: 'timeline', icon: 'timeline', label: 'Aktivität', shortLabel: 'Aktivität' },
   ];
 
   return (
@@ -386,10 +387,10 @@ const CustomerPortal = () => {
           </div>
         </div>
       </header>
-      <div className="cp-tabs">
+      <div className="cp-tabs" data-testid="cp-tabs">
         {tabs.map(t => (
           <button key={t.id} className={`cp-tab ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)} data-testid={`cp-tab-${t.id}`}>
-            <I n={t.icon} /><span>{t.label}</span>
+            <I n={t.icon} /><span className="cp-tab-label">{t.label}</span><span className="cp-tab-short">{t.shortLabel}</span>
           </button>
         ))}
       </div>
