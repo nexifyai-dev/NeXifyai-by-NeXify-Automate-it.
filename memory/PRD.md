@@ -1,94 +1,70 @@
 # NeXifyAI — Product Requirements Document
 
 ## Originaler Auftrag
-B2B-Plattform "Starter/Growth AI Agenten AG" (NeXifyAI) — API-First, Unified Communication, Deep Customer Memory (mem0), KI-Orchestrator. Premium-Architektur mit absolutem Fokus auf Produktionsreife, Sicherheit und System-Konsistenz.
+B2B-Plattform "Starter/Growth AI Agenten AG" (NeXifyAI) — API-First, Unified Communication, Deep Customer Memory (mem0), KI-Orchestrator. Premium-Architektur mit absolutem Fokus auf Produktionsreife, Sicherheit und System-Konsistenz. Vollumfänglicher System-Audit mit 42-Sektionen-Systemprompt durchgeführt.
 
 ## Architektur
 - **Frontend**: React 18 SPA, Framer Motion, i18n (DE/NL/EN), Shadcn-Style Dark Theme
 - **Backend**: FastAPI (modular: 10 Route-Module), APScheduler, MongoDB
-- **Workers**: In-process JobQueue (Retry + Dead-Letter), Cron-Scheduler (7 Jobs)
-- **LLM**: DeepSeek (Primär), GPT-5.2 Fallback via Emergent
+- **Workers**: In-process JobQueue (4 Workers, Retry + Dead-Letter), Cron-Scheduler (7 Jobs)
+- **LLM**: DeepSeek (Primär, aktiv), GPT-5.2 Fallback via Emergent
 - **Integrations**: Stripe, Object Storage, Resend (E-Mail)
-- **Security**: JWT Auth, Rate Limiting (SlowAPI 200/min), Security Headers (CSP, X-Frame-Options, XSS, Referrer-Policy), CORS
+- **Security**: JWT Auth, Rate Limiting (SlowAPI 200/min), Security Headers, CORS
+- **Oracle**: Memory Service (178 Einträge), get_contact_oracle(), Snapshot
 
-## Implementierte Features (kumulativ)
+## Implementierte Features (kumulativ, verifiziert Iter. 48-50)
 
-### Backend (verifiziert)
-- Modulare Route-Architektur (auth, public, admin, billing, portal, comms, contract, project, outbound, monitoring)
-- Worker/Scheduler-Layer: 8 Handler, 7 Scheduler-Jobs (Zahlungsreminder, Mahnungen, Follow-ups, Buchungserinnerungen, Angebotsablauf, Health-Check, Dead-Letter-Alert)
+### Backend
+- Modulare Route-Architektur (10 Route-Module: auth, public, admin, billing, portal, comms, contract, project, outbound, monitoring)
+- Worker/Scheduler-Layer: 8 Handler, 7 Scheduler-Jobs
 - Oracle/Memory Service: write_classified, get_contact_oracle(), Oracle Snapshot
-- Billing Overview Dashboard API
-- Outbound Campaigns API
-- Monitoring Aliases (health, workers) + Memory Stats
-- Rate Limiting (SlowAPI 200/min global)
+- Billing Overview Dashboard, Outbound Campaigns, Monitoring Aliases, Memory Stats
+- Rate Limiting (SlowAPI 200/min), Security Headers (CSP, X-Frame, XSS, Referrer, Permissions)
 - Triple-secured action logic (MongoDB + Timeline + Memory Audit)
-- **FIXED**: QuoteRequest-Model (discount_percent, customer_industry, use_case, special_items Felder)
-- **FIXED**: Invoice-aus-Quote-Erstellung (upfront_eur statt activation_fee_eur, auto-Beschreibung)
-- **FIXED**: Contract-aus-Quote-Erstellung (auto-Populate Kundendaten, Tarif, Kalkulation)
-- System Health Endpoint erweitert (Workers, Scheduler, Memory Checks)
+- QuoteRequest-Model (discount_percent, customer_industry, use_case, special_items)
+- Invoice-aus-Quote (upfront_eur, auto-Beschreibung, Typ-Support activation/recurring)
+- Contract-aus-Quote (auto-Populate Kundendaten, Tarif, Kalkulation)
+- System Health Endpoint (Workers, Scheduler, Memory, DB, LLM, Agents)
 
-### Frontend (verifiziert)
-- Unified Login (2-Spalten Premium)
-- Landing Page: 12 Sektionen
-- Standalone Termin-Seite (/termin) — Premium 2-Spalten-Layout mit Trust-Signalen
-- BookingModal (2-Step)
-- LiveChat mit KI-Backend
-- Legal Pages (Impressum, Datenschutz, AGB, KI-Hinweise) — 3 Sprachen
+### Frontend
+- Landing Page: 12 Sektionen mit Premium Dark Theme
+- Standalone Termin-Seite (/termin): 2-Spalten, Trust-Signale, i18n
+- Unified Login: 2-Spalten, DSGVO-Checkbox, Trust-Row, Booking-CTA nach Registrierung
+- BookingModal: 2-Step Premium
+- LiveChat: KI-gestützt, responsive (Desktop + Mobile Full-Screen)
+- Legal Pages: Impressum, Datenschutz, AGB, KI-Hinweise (DE/NL/EN)
 - Animated Pricing mit Custom Quote Request
-- Customer Portal, Admin Dashboard (mit System Health Panel), Quote Portal
-- **FIXED**: Registrierungsprozess (DSGVO-Checkbox, Trust-Row, verbesserter Erfolgsseite mit Booking-CTA)
-- **FIXED**: UnifiedLogin Footer-Links (/de/impressum statt /impressum)
-- **NEU**: Admin System-Health-Panel (6 Health-Cards: System, Datenbank, Workers, KI-Engine, Scheduler, Memory)
+- Customer Portal: 8 Tabs (Übersicht, Verträge, Projekte, Angebote, Finanzen, Termine, Kommunikation, Aktivität), Mobile-optimierte Kurzlabels
+- Admin Dashboard: System-Health-Panel (6 Karten), Lead-Management, Billing, CRM
+- Quote Portal
 
 ## E2E-Prozesskette (verifiziert)
-Lead → Booking → Quote → Invoice → Contract → Payment (vollständig getestet)
-- Contact-Formular → Lead-Erstellung ✅
-- Termin-Buchung → Booking-Erstellung ✅
-- KI-Chat → Response mit Preisinfo ✅
+Lead → Booking → Quote → Invoice → Contract → Payment
+- Contact-Formular → Lead ✅
+- Termin-Buchung → Booking ✅
+- KI-Chat → Response ✅
 - Quote-Anfrage → Lead + Anfrage ✅
 - Admin: Quote → Invoice (korrekte Beträge) ✅
 - Admin: Quote → Contract (auto-populate) ✅
 
-## Key API Endpoints
-- `/api/health` — System Health
-- `/api/auth/login` — Admin JWT Login
-- `/api/booking`, `/api/booking/slots` — Terminbuchung
-- `/api/contact` — Kontaktformular
-- `/api/chat/message` — KI-Chat
-- `/api/quote/request` — Angebotsanfrage
-- `/api/admin/quotes` — Angebote CRUD
-- `/api/admin/invoices` — Rechnungen CRUD
-- `/api/admin/contracts` — Verträge CRUD
-- `/api/admin/billing/overview` — Billing-Dashboard
-- `/api/admin/outbound/campaigns` — Outbound-Kampagnen
-- `/api/admin/oracle/snapshot` — Oracle IST-Stand
-- `/api/admin/oracle/contact/{id}` — Kontakt-Oracle
-- `/api/admin/memory/stats` — Memory-Statistiken
-- `/api/admin/audit/health` — System-Gesundheit (mit Workers/Scheduler/Memory)
-- `/api/admin/monitoring/health`, `/api/admin/monitoring/workers` — Monitoring-Aliase
+## Testing (3 Iterationen, alle 100%)
+- Iteration 48: 30/30 Backend + Frontend ✅
+- Iteration 49: 25/25 Backend + Frontend ✅
+- Iteration 50: 35/35 Backend + Frontend ✅
 
-## DB-Schema
-leads, customers, quotes, invoices, bookings, contracts, projects, timeline_events, customer_memory, messages, chat_sessions, conversations, documents, audit_log, legal_audit, webhook_events, jobs, outbound_leads, contract_appendices, contract_evidence
-
-## Testing Status
-- Iteration 48: 100% (30/30) — Backend API + Frontend ✅
-- Iteration 49: 100% (25/25) — Phase 2 Härtung + E2E ✅
-- Alle Admin-Endpunkte: 200 ✅
-- Worker: 4 aktiv, 7 Scheduler-Jobs ✅
-- Oracle: Operational ✅
-- Rate Limiting: Aktiv ✅
-- Security Headers: Vollständig ✅
-- E2E-Prozesskette: Quote → Invoice → Contract ✅
+## Dokumentation
+- PRD.md (dieses Dokument)
+- ROADMAP.md (Dynamische Bedarfsliste mit Prioritäten, Risiken, Monitoring-Status)
+- DESIGN_SYSTEM.md (Farben, Typografie, Abstände, Radien, Motion, Breakpoints)
+- test_credentials.md (Admin-Zugang)
+- TECHNICAL_DOCS.md (Architektur-Details)
 
 ## Nächste Schritte (Backlog)
-1. **P2**: Content & Copywriting Overhaul — perfektionierte Texte für alle Flows
-2. **P3**: Security Hardening — CORS-Einschränkung für Produktion, Firewall-Regeln, Secrets-Audit
-3. **P4**: E2E Browser-Verifikation aller kritischen Pfade
-4. **P5**: DeepSeek Live-Migration
-5. **P6**: Legal & Compliance Guardian
-6. **P7**: Outbound Lead Machine Härtung
-7. **P8**: Next.js Migration
-8. **P9**: PydanticAI + LiteLLM + Temporal Adoption
+1. P0: Stripe Webhook-Integration, E-Mail-Benachrichtigungen, PDF-Generierung
+2. P1: DeepSeek Live-Migration, Dunning Flow, Projekt-Chat mit Upload
+3. P2: Content-Review, Onboarding-Flow, Umsatz-Charts
+4. P3: Next.js Migration, PydanticAI, Database-Indexierung
+5. P4: Legal Guardian, Cookie-Consent, AVV, Löschkonzept
 
 ## Credentials
 - Admin: p.courbois@icloud.com / 1def!xO2022!!
