@@ -1,66 +1,69 @@
 # NeXifyAI — Product Requirements Document
 
 ## Original Problem Statement
-B2B-Plattform "Starter/Growth AI Agenten AG" (NeXifyAI) — API-First, Unified Communication, Deep Customer Memory (mem0), KI-Orchestrator. Premium, hochsichere Architektur. Unified Login Stack, Worker/Scheduler Layer, Revolut-only Billing, Outbound Lead Machine, Contract OS. Autopilot-Direktive P0.10 bis P0.10.7 für vollumfängliche Produktion.
+B2B-Plattform "Starter/Growth AI Agenten AG" (NeXifyAI) — API-First, Unified Communication, Deep Customer Memory (mem0), KI-Orchestrator. Premium, hochsichere Architektur. Autopilot-Direktive: Alle Vorgaben gesammelt, strukturiert, Gesamtbild verstanden, komplett umgesetzt.
 
 ## Tech Stack
-- **Frontend**: React 18 SPA (CRA), Shadcn/UI, ErrorBoundary
+- **Frontend**: React 18 SPA (CRA), ErrorBoundary, ContractAcceptance page
 - **Backend**: FastAPI (Python), modular routing, Global Exception Handler
-- **Database**: MongoDB (MONGO_URL) — 30+ optimierte Indexes
-- **Auth**: JWT (24h), Dual-Role (Admin/Kundenportal), OAuth2 form-encoded
-- **Workers**: APScheduler (8 Job-Typen, Dead-Letter Queue, 4 Worker-Threads)
+- **Database**: MongoDB — 30+ Indexes (inkl. sparse)
+- **Auth**: JWT (24h), Dual-Role, OAuth2
+- **Workers**: APScheduler (8 Job-Typen, Dead-Letter Queue)
 - **Email**: Hostinger SMTP
-- **LLM**: DeepSeek (Target) — routed through Emergent GPT-5.2 mock
-- **Payments**: Revolut ONLY (Stripe komplett entfernt)
-- **Storage**: emergentintegrations Object Storage
-- **Security**: HSTS, X-Frame-Options DENY, CSP, Rate Limiting 200/min
+- **LLM**: DeepSeek (Target) → Emergent GPT-5.2 mock (aktiv)
+- **Payments**: Revolut ONLY
+- **Security**: HSTS, X-Frame-Options DENY, Rate Limiting 200/min, CORS Origins
 
-## Architecture (Go-Live Verifiziert — Iteration 57)
+## Go-Live Status: APPROVED (Iteration 58)
 
-### BLOCK A — Public Website (VERIFIZIERT)
-3D Hero, Solutions, UseCases, Process, Governance, Pricing, FAQ, SEO, LiveChat, Booking, Cookie Consent, Legal Pages (Impressum, Datenschutz, AGB, KI-Hinweise), 3-Language Support (DE/NL/EN)
+### Vollständig Verifizierte Geschäftsprozesse
 
-### BLOCK B — Customer Portal (VERIFIZIERT)
-10 Tabs: Übersicht, Verträge, Projekte, Angebote, Finanzen, Dokumente, Termine, Kommunikation, Aktivität, Einstellungen. Profile-Bearbeitung, Dokumenten-Download, DSGVO-Einwilligungsverwaltung (Opt-In/Out), Contract Acceptance mit Digital Signature + Evidence Package
+**E2E Outbound Pipeline:**
+Discover → Prequalify → Analyze & Score → Legal-Check → Outreach → Send → Respond → Handover → CRM
 
-### BLOCK C — Admin Panel (VERIFIZIERT)
-19 Navigation Views: Dashboard, Projekte, Verträge, Billing, Outbound, Legal, Angebote & Rechnungen, Leads, Kommunikation, KI-Chats, WhatsApp, Aktivitäten, Kalender, Kunden, KI-Agenten, Benutzer, Webhooks, Audit, Monitoring. Kunden-Fallakte mit Direct-Email
+**E2E Contract Lifecycle:**
+Create (mit Titel + Kalkulation) → Add Appendix → Send (Magic Link) → Customer View → Legal Accept → Digital Signature → Evidence Package → Status: Accepted
 
-### BLOCK D — Admin Governance (VERIFIZIERT)
-Admin User Management (CRUD, Selbstlöschung blockiert), Webhook Event Store (28+ Events), Audit Log, Legal & Compliance Guardian, System Monitoring (11 Subsysteme), Recovery & Self-Healing Panel
+**E2E Öffentliche Vertragsannahme:**
+`/vertrag?token=xxx&cid=xxx` → Contract View → Legal Modules (4 Pflicht) → Signature (Name/Zeichnung) → Accept → Evidenzpaket (IP, UserAgent, DocHash, Timestamp)
 
-### BLOCK E — Outbound Lead Machine (VERIFIZIERT)
-Full Pipeline: Discover → Prequalify → Analyze & Score → Legal-Check → Outreach → Send → Follow-up (3 Stufen) → Response → Handover (Angebot/Termin/Nurture). Bulk Import, Opt-Out, Pipeline-Visualisierung, Filter-System (35 Leads, 8.6% Conversion)
+### Architecture Blocks (Alle VERIFIZIERT)
 
-### BLOCK F — Backend Infrastructure (VERIFIZIERT)
-10 Route-Module, 8 Worker-Job-Typen, Webhook Event Store, Timeline Events, Legal Audit, Customer Memory Service, Global Exception Handler (JSON statt HTML bei 500)
+| Block | Beschreibung | Status |
+|-------|-------------|--------|
+| A | Public Website (3D Hero, Services, Legal Pages, Booking) | VERIFIZIERT |
+| B | Customer Portal (10 Tabs: Übersicht, Verträge, Projekte, Finanzen, Dokumente, Settings, Consents) | VERIFIZIERT |
+| C | Admin Panel (19-21 Navigation Views, Full CRUD) | VERIFIZIERT |
+| D | Admin Governance (User Mgmt, Webhook Store, Audit, Monitoring) | VERIFIZIERT |
+| E | Outbound Lead Machine (Full Pipeline, Bulk Import, Filter) | VERIFIZIERT |
+| F | Backend Infrastructure (10 Route-Module, Workers, Timeline, Legal Audit) | VERIFIZIERT |
+| G | Production Hardening (CORS, HSTS, Rate Limiting, ErrorBoundary, Exception Handler) | VERIFIZIERT |
 
-### BLOCK G — Production Hardening (VERIFIZIERT)
-CORS Origins-Whitelist, HSTS (31536000s), X-Frame-Options DENY, X-Content-Type-Options nosniff, X-XSS-Protection, Permissions-Policy, Rate Limiting 200/min, MongoDB Sparse Indexes, React ErrorBoundary
+### Key API Endpoints
+- POST /api/admin/login (OAuth2)
+- GET/POST /api/admin/outbound/* (Full pipeline)
+- GET/POST /api/admin/projects/*, /api/admin/contracts/*
+- GET /api/admin/stats, /billing/status, /legal/compliance, /monitoring/status
+- GET/POST /api/admin/users, DELETE /api/admin/users/{email}
+- GET /api/admin/webhooks/events
+- GET/PATCH /api/customer/profile, /documents, /consents
+- **NEW: GET /api/public/contracts/view?token=&cid= (kein Auth)**
+- **NEW: POST /api/public/contracts/accept (kein Auth, Token-basiert)**
 
-## Key API Endpoints
-POST /api/admin/login, GET /api/admin/stats, GET/POST /api/admin/users, DELETE /api/admin/users/{email}, GET /api/admin/webhooks/events, GET/POST /api/admin/outbound/*, GET/POST /api/admin/projects/*, GET/POST /api/admin/contracts/*, GET /api/admin/billing/status, GET /api/admin/legal/compliance, GET /api/admin/monitoring/status, GET/PATCH /api/customer/profile, GET /api/customer/documents, GET /api/customer/consents, POST /api/customer/consents/opt-out, POST /api/customer/consents/opt-in, GET /api/health
-
-## DB Collections (22)
-leads, contacts, customers, quotes, invoices, bookings, timeline_events, customer_memory, chat_sessions, outbound_leads, projects, project_sections, project_versions, project_chat, contracts, contract_appendices, contract_evidence, documents, admin_users, suppression_list, legal_audit, legal_risks, webhook_events, opt_outs, audit_log, analytics, messages, conversations, whatsapp_sessions
-
-## Data Counts (Go-Live)
-71 Leads, 27 Bookings, 3 Chat Sessions, 35 Outbound Leads, 7 Projekte, 43 Verträge, 1 Admin User, 28 Webhook Events
+### Testing History
+- Iteration 55: 100% (Outbound, Projects, Contracts)
+- Iteration 56: 100% (User Mgmt, Webhooks, Security)
+- Iteration 57: 100% (ErrorBoundary, Exception Handler, Indexes)
+- **Iteration 58: 100% (E2E Contract Acceptance, Kalkulation, Public Endpoints)**
 
 ## Test Credentials
 - Admin: p.courbois@icloud.com / 1def!xO2022!!
 
-## Testing History
-- Iteration 55: 100% (42/42)
-- Iteration 56: 100% (23/23 backend, all frontend flows)
-- Iteration 57: 100% — **FINAL GO-LIVE APPROVED** (20/20 backend, 19/19 admin views, all security verified)
-
-## MOCKED: DeepSeek → Emergent GPT-5.2 Fallback
+## MOCKED: DeepSeek → Emergent GPT-5.2
 
 ## Post-Go-Live Backlog
-- [ ] DeepSeek Live-Migration (DEEPSEEK_API_KEY setzen)
+- [ ] DeepSeek Live-Migration (DEEPSEEK_API_KEY)
 - [ ] Content & Copywriting Overhaul
-- [ ] E2E Browser Verifications (Quote → Invoice Durchlauf)
 - [ ] server.py modular refactoring
 - [ ] Next.js Migration
 - [ ] PydanticAI + LiteLLM + Temporal
