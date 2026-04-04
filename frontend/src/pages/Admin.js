@@ -115,6 +115,9 @@ const Admin = () => {
   const [legalAudit, setLegalAudit] = useState([]);
   const [legalRisks, setLegalRisks] = useState([]);
   const [systemHealth, setSystemHealth] = useState(null);
+  const [monitorData, setMonitorData] = useState(null);
+  const [monitorLoading, setMonitorLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const headers = useMemo(() => ({ 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
@@ -475,6 +478,8 @@ const Admin = () => {
     apiFetch('/api/admin/legal/audit?limit=20').then(d => d && setLegalAudit(d.audit_log || []));
     apiFetch('/api/admin/legal/risks?resolved=false').then(d => d && setLegalRisks(d.risks || []));
   }, [token, view, apiFetch]);
+
+  useEffect(() => { if (token && view === 'monitoring') loadMonitoring(); }, [token, view]); // eslint-disable-line
 
   const logout = () => { setToken(''); localStorage.removeItem('nx_admin_token'); localStorage.removeItem('nx_auth'); };
 
@@ -2305,15 +2310,12 @@ const Admin = () => {
   };
 
   /* ══════════ MONITORING VIEW (P7) ══════════ */
-  const [monitorData, setMonitorData] = useState(null);
-  const [monitorLoading, setMonitorLoading] = useState(false);
   const loadMonitoring = async () => {
     setMonitorLoading(true);
     const d = await apiFetch('/api/admin/monitoring/status');
     if (d) setMonitorData(d);
     setMonitorLoading(false);
   };
-  useEffect(() => { if (token && view === 'monitoring') loadMonitoring(); }, [token, view]); // eslint-disable-line
 
   const MonitoringView = () => {
     if (monitorLoading) return <div className="adm-loading"><I n="sync" /> Lade Systemstatus...</div>;
@@ -2403,7 +2405,6 @@ const Admin = () => {
   };
 
   /* ══════════ MAIN LAYOUT ══════════ */
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const navItems = [
     { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
