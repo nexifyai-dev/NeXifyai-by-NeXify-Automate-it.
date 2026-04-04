@@ -94,6 +94,7 @@ class ContactForm(BaseModel):
     unternehmen: Optional[str] = None
     nachricht: str = Field(..., min_length=10, max_length=5000)
     source: str = "contact_form"
+    language: Optional[str] = "de"
     consent: bool = True
     datenschutz_akzeptiert: bool = True
     honeypot: Optional[str] = Field(None, alias="_hp")

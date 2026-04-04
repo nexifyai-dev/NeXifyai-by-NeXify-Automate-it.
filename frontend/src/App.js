@@ -308,7 +308,7 @@ const Contact = ({ onChat, t, lang }) => {
   const submit = async (e) => {
     e.preventDefault(); if (!v()) return; setBusy(true); track('form_submit', { form: 'contact' });
     try {
-      const r = await fetch(`${API}/api/contact`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+      const r = await fetch(`${API}/api/contact`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, source: 'contact_form', language: lang || 'de' }) });
       const d = await r.json();
       if (r.ok) { setStatus({ t: 'success', m: t.contact.form.success }); setForm({ vorname: '', nachname: '', email: '', telefon: '', unternehmen: '', nachricht: '', _hp: '' }); }
       else throw new Error(d.detail || 'Error');
