@@ -3,92 +3,81 @@
 ## Produkt
 B2B-Plattform "Starter/Growth AI Agenten AG" — API-First, Unified Communication, Deep Customer Memory (mem0), KI-Orchestrator (DeepSeek).
 
-## Architektur
-- **Frontend**: React 18 SPA (React Router v6, Framer Motion, Three.js)
-- **Backend**: FastAPI (Python 3.11) — 10 modulare Route-Dateien
-- **Datenbank**: MongoDB (Motor async, 35 Collections)
-- **LLM**: DeepSeek (Primär), GPT-5.2 (Fallback via Emergent)
-- **Object Storage**: Emergent Object Storage
-- **Payments**: Stripe (via emergentintegrations)
-- **E-Mail**: Resend (mit Audit-Trail)
-- **Background Jobs**: APScheduler + Job Queue + Dead Letter Queue
+## System-Architektur
+| Schicht | Technologie | Status |
+|---------|------------|--------|
+| Frontend | React 18 SPA, Three.js, Framer Motion | Produktiv |
+| Backend | FastAPI 3.11, 10 modulare Route-Dateien | Produktiv |
+| Datenbank | MongoDB (Motor async, 35 Collections) | Produktiv |
+| LLM | DeepSeek (Primär), GPT-5.2 Fallback (Emergent) | Produktiv |
+| Object Storage | Emergent Object Storage | Produktiv |
+| Payments | Stripe (emergentintegrations) | Konfiguriert, Webhook Secret fehlt |
+| E-Mail | Resend | Konfiguriert, 24 gesendet |
+| Background Jobs | APScheduler + Job Queue + DLQ | Aktiv |
 
-## Backend-Module
-```
-server.py → routes/
-├── shared.py (State Container S)
-├── auth_routes.py, public_routes.py, admin_routes.py
-├── billing_routes.py, portal_routes.py, comms_routes.py
-├── contract_routes.py, project_routes.py
-├── outbound_routes.py, monitoring_routes.py
-services/ → billing, comms, llm_provider, outbound, storage
-workers/ → manager, job_queue, scheduler
-```
+## IST/SOLL/GAP-Analyse (2026-02-04)
 
-## System-Audit (2026-02-04, Iteration 45) — VOLLSTÄNDIG VERIFIZIERT
+### Frontend
+| Bereich | IST | SOLL | GAP | Priorität |
+|---------|-----|------|-----|-----------|
+| Hero | 3D-Szene, 3 CTAs, Stats | Produktionsreif | Keiner | - |
+| Chat | Premium-UI, Avatare, Timestamps, Mobile | Produktionsreif | Keiner | - |
+| Booking | 2-Step Premium Modal, Direkt-Zugang | Produktionsreif | Keiner | - |
+| Login | 2-Spalten Premium, 4 Flows | Produktionsreif | Keiner | - |
+| Contact | Dual-CTA, Formular mit Validierung | Produktionsreif | Keiner | - |
+| Legal | 4 Seiten x 3 Sprachen | Produktionsreif | Keiner | - |
+| Admin | 16 Views, Sidebar-Nav | Funktionsfähig | Design-Refresh (Ist Legacy-CSS) | MITTEL |
+| Portal | Dashboard, Projekte, Finanzen | Funktionsfähig | Nur mit Magic-Link erreichbar | MITTEL |
 
-### APIs (26/26 Tests bestanden)
-| Endpoint | Status |
-|---|---|
-| /api/health | 200 |
-| /api/admin/stats | 200 (47 Leads, 15+ Buchungen) |
-| /api/admin/leads | 200 |
-| /api/admin/customers | 200 |
-| /api/admin/calendar-data | 200 |
-| /api/admin/quotes | 200 |
-| /api/admin/invoices | 200 |
-| /api/admin/projects | 200 |
-| /api/admin/contracts | 200 |
-| /api/admin/chat-sessions | 200 |
-| /api/admin/agents | 200 |
-| /api/admin/activities | 200 |
-| /api/admin/billing/status | 200 |
-| /api/admin/outbound/pipeline | 200 |
-| /api/admin/workers/status | 200 |
-| /api/admin/monitoring/status | 200 |
-| /api/contact | 200 |
-| /api/booking | 200 |
-| /api/booking/slots | 200 |
-| /api/chat/message | 200 |
-| /api/auth/check-email | 200 |
-| /api/product/tariffs | 200 |
-| /api/product/tariff-sheet | 200 |
+### Backend/APIs (26 Endpoints verifiziert)
+| Bereich | IST | SOLL | GAP | Priorität |
+|---------|-----|------|-----|-----------|
+| Auth | Admin-Login, Magic-Link | Multi-Faktor | 2FA fehlt | NIEDRIG |
+| CRM | 49 Leads, 18 Buchungen | Produktionsreif | Keiner | - |
+| Billing | Stripe konfiguriert | Webhook-Loop geschlossen | Webhook Secret fehlt | HOCH (extern) |
+| E-Mail | Resend aktiv, 24 gesendet | Produktionsreif | 1 Fehlsendung im Log | NIEDRIG |
+| LLM | DeepSeek aktiv | Produktionsreif | Keiner | - |
+| Workers | APScheduler + Queue aktiv | Produktionsreif | Keiner | - |
+| Monitoring | 12 Subsysteme | Produktionsreif | Keiner | - |
 
-### Monitoring (12 Subsysteme)
-- API v3.0.0, Datenbank (35 Collections), Worker/Queue
-- E-Mail (Resend), LLM/DeepSeek, Revolut, Stripe
-- Webhooks (28 Events), Memory/Audit, Dead Letter Queue
-- Object Storage, Dokumente
+### Daten
+| Bereich | IST | SOLL | GAP |
+|---------|-----|------|-----|
+| Lead-Status | Einheitlich DE (neu/qualifiziert/termin_gebucht) | ✅ Normalisiert | Keiner |
+| Timeline | 341 Events | ✅ Audit-Trail | Keiner |
+| Memory | 173 Einträge | ✅ Persistent | Keiner |
+| Legal Audit | 39 Einträge | ✅ Compliance-Trail | Keiner |
 
-### Frontend (Alle Flows)
-- Landing Page: Hero + 3D + 9 Sektionen + Footer
-- Login: Admin + Customer + Registrierung
-- Admin: 16 Sidebar-Views funktionsfähig
-- Booking Modal: Premium 2-Step Design
-- Chat: Desktop + Mobile mit Avataren, Timestamps, AI-Disclaimer
-- Legal: 4 Seiten in DE/NL/EN
-- Responsive: 1920px, 1024px, 768px, 375px
+### Offene externe Abhängigkeiten (nicht durch Agent lösbar)
+| Abhängigkeit | Benötigt von | Risiko | Maßnahme |
+|---|---|---|---|
+| Stripe Webhook Secret | Zahlungskreislauf | Keine Zahlungsbestätigung | Kunde muss Key bereitstellen |
+| DEEPSEEK_API_KEY Produktionskey | LLM in Produktion | Aktuell via Emergent-Fallback gesichert | Kunde muss Key bereitstellen |
+| Resend Domain-Verifizierung | E-Mail-Zustellung | Spam-Risiko | Kunde muss DNS konfigurieren |
+| Custom Domain | SEO, Branding | Aktuell auf preview.emergentagent.com | Deployment auf eigene Infra |
 
-## Implementierte Features
-1. Backend Modular Refactoring (P7 → vorgezogen, 6530→10 Module)
-2. Domain Layer Hardening (17 Modelle)
-3. Memory/Audit Systematik (write_classified, audit_action)
-4. Legacy MongoDB→Object Storage Migration (29 Dokumente)
-5. UnifiedLogin Premium (2-Spalten, Framer-motion)
-6. Chat-Bug-Fix (generate_response_fallback)
-7. Chat Premium (Avatare, Timestamps, Mobile-Header, Disclaimer)
-8. Booking Modal Premium (2-Step, Progress, Datums-Karten)
-9. Legal (Datenschutz-Fix, KI-Hinweise)
-10. Contact Form (source+language)
-11. System-wide Audit (Iteration 45: 100%)
+## Implementierte Maßnahmen (Session 2026-02-04)
+1. Backend Modular Refactoring (6530→10 Module) — verifiziert
+2. Domain Layer Hardening (17 Modelle) — verifiziert
+3. Memory/Audit Systematik — verifiziert
+4. Legacy MongoDB→Object Storage Migration (29 Dokumente) — verifiziert
+5. UnifiedLogin Premium 2-Spalten — verifiziert (Iter. 41)
+6. Chat-Endpoint Reparatur (generate_response_fallback) — verifiziert (Iter. 42)
+7. Chat Premium (Avatare, Timestamps, Disclaimer, Mobile) — verifiziert (Iter. 43)
+8. Booking Premium Redesign (2-Step, Progress, Mobile) — verifiziert (Iter. 44)
+9. Legal-Seiten Korrekturen (Datenschutz, Syntax) — verifiziert (Iter. 44)
+10. Contact Form source+language Fix — verifiziert (Iter. 44)
+11. System-Audit (26 APIs, 12 Subsysteme) — verifiziert (Iter. 45)
+12. Lead-Status Normalisierung (EN→DE, 15 Records) — verifiziert (Iter. 46)
+13. Direkter Booking-Zugang (Hero + Contact CTAs) — verifiziert (Iter. 46)
 
-## Offene Punkte
-- Stripe Webhook Secret (Produktionskey)
-- Master-Auftrag Items
-- Next.js Migration (Zielarchitektur)
-- PydanticAI + LiteLLM + Temporal
-- Chatwoot / Cal.com / Documenso
-- PostHog / Grafana
+## Nächste Maßnahmen (nach Priorität)
+1. **HOCH**: Master-Auftrag Restpunkte
+2. **HOCH**: Stripe Webhook Secret + Live-Zahlungskreislauf
+3. **MITTEL**: Admin-Panel Design-Refresh
+4. **MITTEL**: Customer Portal UX-Verbesserung
+5. **NIEDRIG**: Next.js Migration (eigene Infrastruktur)
+6. **NIEDRIG**: PydanticAI + LiteLLM + Temporal
 
 ## Admin Credentials
 - Email: p.courbois@icloud.com
