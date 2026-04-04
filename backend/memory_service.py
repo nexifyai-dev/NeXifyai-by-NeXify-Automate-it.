@@ -171,3 +171,93 @@ class MemoryService:
                 entry["timestamp"] = entry["timestamp"].isoformat()
             results.append(entry)
         return results
+
+    # ══════════════════════════════════════════════════════════════
+    # ORACLE — Single Source of Truth (Kontakt-Level)
+    # ══════════════════════════════════════════════════════════════
+
+    async def get_contact_oracle(self, contact_id: str = None, email: str = None) -> dict:
+        """
+        Oracle: Vollständiger IST-Stand eines Kontakts —
+        Lead-Daten, Bookings, Quotes, Invoices, Contracts, Chat-Verlauf, Memory.
+        Einzelne Wahrheitsquelle für alle Agenten und Admin-Oberflächen.
+        """
+        query = {"contact_id": contact_id} if contact_id else {"email": email}
+        if not contact_id and not email:
+            return {"error": "contact_id oder email erforderlich"}
+
+        # Lead/Customer-Stammdaten
+        lead = await self.db.leads.find_one(query, {"_id": 0})
+        customer = await self.db.customers.find_one(
+            {"email": email} if email else {"contact_id": contact_id}, {"_id": 0}
+        )
+
+        # Resolve contact_id from lead if only email was provided
+        cid = contact_id or (lead or {}).get("contact_id") or (customer or {}).get("contact_id")
+
+        # Bookings
+        bk_query = {"contact_id": cid} if cid else {"email": email}
+        bookings = []
+        async for b in self.db.bookings.find(bk_query, {"_id": 0}).sort("created_at", -1).limit(10):
+            bookings.append(b)
+
+        # Quotes
+        q_query = {"customer.email": email} if email else {"customer.contact_id": cid}
+        quotes = []
+        async for q in self.db.quotes.find(q_query, {"_id": 0, "history": 0}).sort("created_at", -1).limit(10):
+            quotes.append(q)
+
+        # Invoices
+        invoices = []
+        async for inv in self.db.invoices.find(q_query, {"_id": 0, "history": 0}).sort("created_at", -1).limit(10):
+            invoices.append(inv)
+
+        # Contracts
+        contracts = []
+        async for c in self.db.contracts.find(q_query, {"_id": 0, "history": 0}).sort("created_at", -1).limit(10):
+            contracts.append(c)
+
+        # Chat sessions/messages
+        chat_query = {"contact_id": cid} if cid else {"email": email}
+        chat_sessions = []
+        async for cs in self.db.chat_sessions.find(chat_query, {"_id": 0}).sort("created_at", -1).limit(5):
+            chat_sessions.append(cs)
+
+        messages = []
+        async for msg in self.db.messages.find(chat_query, {"_id": 0}).sort("created_at", -1).limit(20):
+            messages.append(msg)
+
+        # Memory (alle Agenten)
+        memory_facts = await self.read(cid, limit=30) if cid else []
+
+        # Timeline-Events
+        timeline = []
+        te_query = {"ref_id": cid} if cid else {}
+        async for te in self.db.timeline_events.find(te_query, {"_id": 0}).sort("timestamp", -1).limit(20):
+            if "timestamp" in te and hasattr(te["timestamp"], "isoformat"):
+                te["timestamp"] = te["timestamp"].isoformat()
+            timeline.append(te)
+
+        # Audit entries
+        audit = await self.get_audit_trail(entity_id=cid, limit=15) if cid else []
+
+        return {
+            "contact_id": cid,
+            "oracle_type": "contact_full",
+            "timestamp": utcnow().isoformat(),
+            "stammdaten": {
+                "lead": lead,
+                "customer": customer,
+            },
+            "bookings": bookings,
+            "quotes": quotes,
+            "invoices": invoices,
+            "contracts": contracts,
+            "communication": {
+                "chat_sessions": chat_sessions,
+                "recent_messages": messages,
+            },
+            "memory": memory_facts,
+            "timeline": timeline,
+            "audit": audit,
+        }

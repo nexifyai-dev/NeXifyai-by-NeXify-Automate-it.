@@ -10,6 +10,8 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from routes.shared import S
 from routes.shared import (
     check_rate_limit,

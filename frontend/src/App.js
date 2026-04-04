@@ -421,6 +421,7 @@ const Ft = ({ onCookieSettings, t, lang }) => {
           <div>
             <h3 className="footer-nav-title">{t.footer.kontakt}</h3>
             <ul className="footer-links">
+              <li><a href="/termin" data-testid="footer-booking-link"><I n="calendar_month" /> {lang === 'en' ? 'Book Meeting' : lang === 'nl' ? 'Gesprek boeken' : 'Termin buchen'}</a></li>
               <li><a href={`tel:${COMPANY.phone.replace(/\s/g, '')}`}>{COMPANY.phone}</a></li>
               <li><a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></li>
               <li><a href={`https://${COMPANY.web}`} target="_blank" rel="noopener noreferrer">{COMPANY.web}</a></li>

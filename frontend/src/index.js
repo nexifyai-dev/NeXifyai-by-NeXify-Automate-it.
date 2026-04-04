@@ -11,6 +11,7 @@ import QuotePortal from './pages/QuotePortal';
 import CustomerPortal from './pages/CustomerPortal';
 import IntegrationDetail from './pages/IntegrationDetail';
 import UnifiedLogin from './pages/UnifiedLogin';
+import BookingPage from './pages/BookingPage';
 
 /* Language-aware redirect: / → /<detected lang> */
 function LangRedirect() {
@@ -47,6 +48,10 @@ root.render(
             {/* Unified Login (Admin + Customer) */}
             <Route path="/login" element={<UnifiedLogin />} />
             <Route path="/login/verify" element={<UnifiedLogin />} />
+
+            {/* Standalone Booking Page (Pre-Login) */}
+            <Route path="/termin" element={<BookingPage />} />
+            <Route path="/booking" element={<BookingPage />} />
 
             {/* Admin (no language prefix) */}
             <Route path="/admin" element={<Admin />} />

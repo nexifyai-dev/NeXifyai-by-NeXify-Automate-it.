@@ -58,6 +58,45 @@ async def outbound_pipeline(current_user: dict = Depends(get_current_admin)):
 
 
 
+@router.get("/api/admin/outbound/campaigns")
+async def outbound_campaigns(current_user: dict = Depends(get_current_admin)):
+    """Outbound-Kampagnen-Übersicht — aggregiert aus Lead-Daten."""
+    stats = await S.outbound_svc.get_outbound_stats()
+    total = stats.get("total", 0)
+    by_status = stats.get("by_status", {})
+    active_outreach = by_status.get("contacted", 0) + by_status.get("followup_1", 0) + by_status.get("followup_2", 0) + by_status.get("followup_3", 0)
+    responded = by_status.get("responded", 0)
+    meetings = by_status.get("meeting_booked", 0)
+    quotes_sent = by_status.get("quote_sent", 0)
+    recent_leads = []
+    async for lead in S.db.outbound_leads.find(
+        {"status": {"$in": ["contacted", "followup_1", "followup_2", "responded", "meeting_booked"]}},
+        {"_id": 0}
+    ).sort("updated_at", -1).limit(10):
+        recent_leads.append({
+            "lead_id": lead.get("outbound_lead_id"),
+            "company": lead.get("company_name", ""),
+            "contact": lead.get("contact_name", ""),
+            "status": lead.get("status"),
+            "score": lead.get("score", 0),
+            "updated_at": lead.get("updated_at", ""),
+        })
+    return {
+        "campaigns": {
+            "total_leads": total,
+            "active_outreach": active_outreach,
+            "responded": responded,
+            "meetings_booked": meetings,
+            "quotes_sent": quotes_sent,
+            "conversion_rate": stats.get("conversion_rate", 0),
+        },
+        "recent_activity": recent_leads,
+        "pipeline_summary": by_status,
+        "timestamp": utcnow().isoformat(),
+    }
+
+
+
 @router.post("/api/admin/outbound/{lead_id}/prequalify")
 async def outbound_prequalify(lead_id: str, current_user: dict = Depends(get_current_admin)):
     """Lead vorqualifizieren."""

@@ -565,3 +565,178 @@ async def migrate_legacy_documents(current_user: dict = Depends(get_current_admi
         "skipped": skipped,
         "errors": errors[:10],
     }
+
+
+
+# ══════════════════════════════════════════════════════════════
+# MONITORING ALIASES (API-Vollständigkeit)
+# ══════════════════════════════════════════════════════════════
+
+
+@router.get("/api/admin/monitoring/health")
+async def monitoring_health_alias(current_user: dict = Depends(get_current_admin)):
+    """Alias für /api/admin/audit/health — Vollständige System-Gesundheitsprüfung."""
+    return await admin_audit_health(current_user)
+
+
+@router.get("/api/admin/monitoring/workers")
+async def monitoring_workers_alias(current_user: dict = Depends(get_current_admin)):
+    """Alias für /api/admin/workers/status."""
+    return await worker_status(current_user)
+
+
+# ══════════════════════════════════════════════════════════════
+# MEMORY / ORACLE STATS (P5: Single Source of Truth)
+# ══════════════════════════════════════════════════════════════
+
+
+@router.get("/api/admin/memory/stats")
+async def memory_stats(current_user: dict = Depends(get_current_admin)):
+    """Memory-Service-Statistiken und Oracle-Gesundheit."""
+    total_memories = await S.db.customer_memory.count_documents({})
+    total_timeline = await S.db.timeline_events.count_documents({})
+    total_audit = await S.db.audit_log.count_documents({})
+    total_legal_audit = await S.db.legal_audit.count_documents({})
+
+    # By agent
+    agent_pipeline = [
+        {"$group": {"_id": "$agent_id", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+    ]
+    by_agent = {}
+    async for a in S.db.customer_memory.aggregate(agent_pipeline):
+        by_agent[a["_id"] or "unknown"] = a["count"]
+
+    # By category
+    cat_pipeline = [
+        {"$group": {"_id": "$category", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+    ]
+    by_category = {}
+    async for c in S.db.customer_memory.aggregate(cat_pipeline):
+        by_category[c["_id"] or "general"] = c["count"]
+
+    # By verification
+    ver_pipeline = [
+        {"$group": {"_id": "$verification_status", "count": {"$sum": 1}}},
+    ]
+    by_verification = {}
+    async for v in S.db.customer_memory.aggregate(ver_pipeline):
+        by_verification[v["_id"] or "nicht verifiziert"] = v["count"]
+
+    # Unique contacts with memory
+    unique_contacts = len(await S.db.customer_memory.distinct("contact_id"))
+
+    # Recent memory writes (last 24h)
+    recent_cutoff = utcnow() - timedelta(hours=24)
+    recent_writes = await S.db.customer_memory.count_documents({"created_at": {"$gte": recent_cutoff}})
+
+    return {
+        "oracle_status": "operational",
+        "totals": {
+            "memory_entries": total_memories,
+            "timeline_events": total_timeline,
+            "audit_entries": total_audit,
+            "legal_audits": total_legal_audit,
+            "unique_contacts": unique_contacts,
+        },
+        "recent_24h": {"memory_writes": recent_writes},
+        "by_agent": by_agent,
+        "by_category": by_category,
+        "by_verification": by_verification,
+        "timestamp": utcnow().isoformat(),
+    }
+
+
+@router.get("/api/admin/oracle/snapshot")
+async def oracle_snapshot(current_user: dict = Depends(get_current_admin)):
+    """Oracle-Snapshot: Vollständiger IST-Stand aller operativen Daten."""
+    leads_total = await S.db.leads.count_documents({})
+    leads_by_status = {}
+    async for s in S.db.leads.aggregate([{"$group": {"_id": "$status", "count": {"$sum": 1}}}]):
+        leads_by_status[s["_id"] or "unknown"] = s["count"]
+
+    bookings_total = await S.db.bookings.count_documents({})
+    bookings_upcoming = await S.db.bookings.count_documents({"date": {"$gte": utcnow().strftime("%Y-%m-%d")}})
+
+    quotes_total = await S.db.quotes.count_documents({})
+    quotes_by_status = {}
+    async for s in S.db.quotes.aggregate([{"$group": {"_id": "$status", "count": {"$sum": 1}}}]):
+        quotes_by_status[s["_id"] or "unknown"] = s["count"]
+
+    invoices_total = await S.db.invoices.count_documents({})
+    invoices_by_payment = {}
+    async for s in S.db.invoices.aggregate([{"$group": {"_id": "$payment_status", "count": {"$sum": 1}}}]):
+        invoices_by_payment[s["_id"] or "unknown"] = s["count"]
+
+    contracts_total = await S.db.contracts.count_documents({})
+    contracts_by_status = {}
+    async for s in S.db.contracts.aggregate([{"$group": {"_id": "$status", "count": {"$sum": 1}}}]):
+        contracts_by_status[s["_id"] or "unknown"] = s["count"]
+
+    projects_total = await S.db.projects.count_documents({})
+    chat_sessions_total = await S.db.chat_sessions.count_documents({})
+    messages_total = await S.db.messages.count_documents({})
+    conversations_total = await S.db.conversations.count_documents({})
+    documents_total = await S.db.documents.count_documents({})
+    webhook_events_total = await S.db.webhook_events.count_documents({})
+
+    # Revenue
+    rev_pipeline = [{"$match": {"payment_status": "paid"}}, {"$group": {"_id": None, "total": {"$sum": "$total_eur"}}}]
+    rev_agg = await S.db.invoices.aggregate(rev_pipeline).to_list(1)
+    total_revenue = rev_agg[0]["total"] if rev_agg else 0
+
+    # Open revenue
+    open_pipeline = [{"$match": {"payment_status": {"$nin": ["paid"]}}}, {"$group": {"_id": None, "total": {"$sum": "$total_eur"}}}]
+    open_agg = await S.db.invoices.aggregate(open_pipeline).to_list(1)
+    open_revenue = open_agg[0]["total"] if open_agg else 0
+
+    # Worker status
+    worker_info = S.worker_mgr.get_status() if S.worker_mgr else {"status": "not_initialized"}
+
+    # LLM provider
+    llm_info = {
+        "provider": S.llm_provider.get_provider_name() if S.llm_provider else "none",
+        "active": bool(S.llm_provider),
+    }
+
+    return {
+        "snapshot_type": "oracle_full",
+        "timestamp": utcnow().isoformat(),
+        "operational_data": {
+            "leads": {"total": leads_total, "by_status": leads_by_status},
+            "bookings": {"total": bookings_total, "upcoming": bookings_upcoming},
+            "quotes": {"total": quotes_total, "by_status": quotes_by_status},
+            "invoices": {"total": invoices_total, "by_payment_status": invoices_by_payment},
+            "contracts": {"total": contracts_total, "by_status": contracts_by_status},
+            "projects": {"total": projects_total},
+        },
+        "communication": {
+            "chat_sessions": chat_sessions_total,
+            "messages": messages_total,
+            "conversations": conversations_total,
+        },
+        "financial": {
+            "revenue_paid_eur": round(total_revenue, 2),
+            "revenue_open_eur": round(open_revenue, 2),
+            "currency": "EUR",
+        },
+        "infrastructure": {
+            "documents": documents_total,
+            "webhook_events": webhook_events_total,
+            "workers": worker_info,
+            "llm": llm_info,
+        },
+    }
+
+
+@router.get("/api/admin/oracle/contact/{identifier}")
+async def oracle_contact(identifier: str, current_user: dict = Depends(get_current_admin)):
+    """Oracle: Vollständiger IST-Stand eines einzelnen Kontakts."""
+    if not S.memory_svc:
+        raise HTTPException(status_code=503, detail="Memory-Service nicht initialisiert")
+    if "@" in identifier:
+        result = await S.memory_svc.get_contact_oracle(email=identifier)
+    else:
+        result = await S.memory_svc.get_contact_oracle(contact_id=identifier)
+    return result

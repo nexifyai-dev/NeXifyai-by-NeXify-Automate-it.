@@ -1416,6 +1416,88 @@ async def commercial_stats(current_user: dict = Depends(get_current_admin)):
     }
 
 
+# --- Billing Overview Dashboard ---
+
+
+@router.get("/api/admin/billing/overview")
+async def billing_overview(current_user: dict = Depends(get_current_admin)):
+    """Konsolidierte Billing-Übersicht: Quotes + Invoices + Contracts + Revenue."""
+    now = utcnow()
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    total_quotes = await S.db.quotes.count_documents({})
+    open_quotes = await S.db.quotes.count_documents({"status": {"$in": ["draft", "sent", "generated"]}})
+    accepted_quotes = await S.db.quotes.count_documents({"status": "accepted"})
+
+    total_invoices = await S.db.invoices.count_documents({})
+    paid_invoices = await S.db.invoices.count_documents({"payment_status": "paid"})
+    pending_invoices = await S.db.invoices.count_documents({"payment_status": {"$in": ["pending", "unpaid", None]}})
+    overdue_invoices = await S.db.invoices.count_documents({
+        "payment_status": {"$nin": ["paid"]},
+        "reminder_count": {"$gte": 1}
+    })
+
+    total_contracts = await S.db.contracts.count_documents({})
+    active_contracts = await S.db.contracts.count_documents({"status": "accepted"})
+
+    # Revenue aggregation
+    rev_pipeline = [{"$match": {"payment_status": "paid"}}, {"$group": {"_id": None, "total": {"$sum": "$total_eur"}}}]
+    rev_agg = await S.db.invoices.aggregate(rev_pipeline).to_list(1)
+    total_revenue = rev_agg[0]["total"] if rev_agg else 0
+
+    open_pipeline = [{"$match": {"payment_status": {"$nin": ["paid"]}}}, {"$group": {"_id": None, "total": {"$sum": "$total_eur"}}}]
+    open_agg = await S.db.invoices.aggregate(open_pipeline).to_list(1)
+    open_revenue = open_agg[0]["total"] if open_agg else 0
+
+    # Monthly revenue
+    month_rev_pipeline = [
+        {"$match": {"payment_status": "paid", "paid_at": {"$gte": month_start.isoformat()}}},
+        {"$group": {"_id": None, "total": {"$sum": "$total_eur"}}},
+    ]
+    month_agg = await S.db.invoices.aggregate(month_rev_pipeline).to_list(1)
+    monthly_revenue = month_agg[0]["total"] if month_agg else 0
+
+    # Recent activity
+    recent_quotes = []
+    async for q in S.db.quotes.find({}, {"_id": 0, "history": 0}).sort("created_at", -1).limit(5):
+        recent_quotes.append({
+            "quote_id": q.get("quote_id"),
+            "quote_number": q.get("quote_number"),
+            "tier": q.get("tier"),
+            "status": q.get("status"),
+            "customer": q.get("customer", {}).get("name", ""),
+            "total": q.get("calculation", {}).get("total_contract_eur", 0),
+        })
+
+    recent_invoices = []
+    async for inv in S.db.invoices.find({}, {"_id": 0, "history": 0}).sort("created_at", -1).limit(5):
+        recent_invoices.append({
+            "invoice_id": inv.get("invoice_id"),
+            "invoice_number": inv.get("invoice_number"),
+            "status": inv.get("status"),
+            "payment_status": inv.get("payment_status"),
+            "total_eur": inv.get("total_eur", 0),
+            "customer": inv.get("customer", {}).get("name", ""),
+        })
+
+    return {
+        "summary": {
+            "quotes": {"total": total_quotes, "open": open_quotes, "accepted": accepted_quotes},
+            "invoices": {"total": total_invoices, "paid": paid_invoices, "pending": pending_invoices, "overdue": overdue_invoices},
+            "contracts": {"total": total_contracts, "active": active_contracts},
+        },
+        "revenue": {
+            "total_paid_eur": round(total_revenue, 2),
+            "total_open_eur": round(open_revenue, 2),
+            "monthly_eur": round(monthly_revenue, 2),
+            "currency": "EUR",
+        },
+        "recent_quotes": recent_quotes,
+        "recent_invoices": recent_invoices,
+        "timestamp": now.isoformat(),
+    }
+
+
 # --- Admin: Activity Timeline ---
 
 
