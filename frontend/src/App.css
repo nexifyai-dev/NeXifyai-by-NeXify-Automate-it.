@@ -634,7 +634,7 @@ a.integ-item-v2.popular{border-color:rgba(255,155,122,0.1);color:rgba(255,255,25
 .chat-md hr{border:none;border-top:1px solid rgba(255,255,255,0.05);margin:8px 0}
 
 /* ── Mobile Chat (Full-Screen) ── */
-@media(max-width:768px){
+@media(max-width:767px){
   .chat-overlay{padding:0}
   .chat-modal{max-width:100%;max-height:100vh;height:100vh;height:100dvh;border-radius:0;border:none}
   .chat-close-desktop{display:none}

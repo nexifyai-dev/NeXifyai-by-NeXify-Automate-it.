@@ -137,7 +137,7 @@ de: {
     status:'Alle Systeme operativ'
   },
   chat: {
-    sidebarRole:'Advisor', sidebarDesc:'Ihr strategischer KI-Berater — analysiert Ihre Situation und zeigt konkrete Automatisierungspotenziale auf.',
+    sidebarRole:'KI-Berater', sidebarDesc:'Ihr strategischer KI-Berater — analysiert Ihre Situation und zeigt konkrete Automatisierungspotenziale auf.',
     status:'KI-Berater', statusOn:'Online',
     presets:['Was kann KI in meiner Branche leisten?','Wie integriert ihr euch in unsere Systeme?','Welche Ergebnisse erzielen eure Kunden?','Ich möchte meine Prozesse analysieren lassen','Was unterscheidet euch von anderen Anbietern?'],
     bookBtn:'Kostenloses Strategiegespräch', placeholder:'Stellen Sie Ihre Frage...', topicLabel:'Enterprise KI',
@@ -289,7 +289,7 @@ nl: {
     status:'Alle systemen operationeel'
   },
   chat: {
-    sidebarRole:'Adviseur', sidebarDesc:'Uw strategische AI-adviseur — analyseert uw situatie en toont concrete automatiseringsmogelijkheden.',
+    sidebarRole:'AI-Adviseur', sidebarDesc:'Uw strategische AI-adviseur — analyseert uw situatie en toont concrete automatiseringsmogelijkheden.',
     status:'AI-Adviseur', statusOn:'Online',
     presets:['Wat kan AI voor mijn branche betekenen?','Hoe integreren jullie met onze systemen?','Welke resultaten behalen jullie klanten?','Ik wil mijn processen laten analyseren','Wat onderscheidt jullie van andere aanbieders?'],
     bookBtn:'Gratis strategiegesprek', placeholder:'Stel uw vraag...', topicLabel:'Enterprise AI',
@@ -441,7 +441,7 @@ en: {
     status:'All systems operational'
   },
   chat: {
-    sidebarRole:'Advisor', sidebarDesc:'Your strategic AI consultant — analyzes your situation and identifies concrete automation potential.',
+    sidebarRole:'AI Advisor', sidebarDesc:'Your strategic AI consultant — analyzes your situation and identifies concrete automation potential.',
     status:'AI Advisor', statusOn:'Online',
     presets:['What can AI achieve in my industry?','How do you integrate with our systems?','What results do your clients achieve?','I want my processes analyzed','What sets you apart from other providers?'],
     bookBtn:'Free strategy call', placeholder:'Ask your question...', topicLabel:'Enterprise AI',

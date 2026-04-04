@@ -8,63 +8,58 @@ B2B-Plattform "Starter/Growth AI Agenten AG" — API-First, Unified Communicatio
 - **Backend**: FastAPI (Python 3.11) — Modular Route Architecture
 - **Datenbank**: MongoDB (Motor async)
 - **LLM**: DeepSeek (Primär), GPT-5.2 (Fallback via Emergent)
-- **Object Storage**: Emergent Object Storage (für alle Dokumente)
+- **Object Storage**: Emergent Object Storage
 - **Payments**: Stripe (via emergentintegrations)
 - **E-Mail**: Resend (mit Audit-Trail)
 
 ## Modulare Backend-Architektur (v3.1)
 ```
-server.py (419 Zeilen — Orchestrator)
+server.py (Orchestrator)
 routes/
-├── shared.py       (405 — State Container S, Auth, Helpers)
-├── auth_routes.py  (214 — Login, Magic Links, Me)
-├── public_routes.py(~740 — Health, Contact, Booking, Chat, Products)
-├── admin_routes.py (604 — CRM: Leads, Customers, Bookings)
-├── billing_routes.py(1454 — Quotes, Invoices, Stripe, Documents)
-├── portal_routes.py(711 — Customer Portal, Dashboard, Finance)
-├── comms_routes.py (577 — Conversations, WhatsApp, Memory)
-├── contract_routes.py(552 — Contract OS, Appendices, Evidence)
-├── project_routes.py(564 — Projects, Sections, Handover)
-├── outbound_routes.py(243 — Lead Machine)
-├── monitoring_routes.py(567 — Monitoring, LLM, Workers, Audit, E2E)
+├── shared.py (State Container S, Auth, Helpers)
+├── auth_routes.py, public_routes.py, admin_routes.py
+├── billing_routes.py, portal_routes.py, comms_routes.py
+├── contract_routes.py, project_routes.py
+├── outbound_routes.py, monitoring_routes.py
 ```
-
-## Domain-Modelle (17 Pflichtobjekte)
-Contact, Lead, Conversation, Message, Timeline, Memory, WhatsAppSession, Project, ProjectSection, ProjectVersion, Contract, ContractAppendix, ContractEvidence, Payment, Audit, PromptHandover, BuildStatus, ReviewCycle, Deliverable
 
 ## Implementierungsstatus
 
-### P0 — Restlücken-Verifikation (Abgeschlossen)
-- Stripe: teilweise verifiziert (Test-Key aktiv, Webhook Secret benötigt Produktionskey)
-- Object Storage: verifiziert (30/30 Dokumente)
-- Monitoring: verifiziert (12 Subsysteme)
+### P0 — Backend Modular Refactoring (Abgeschlossen)
+- 6530 Zeilen Monolith → 10 modulare Route-Dateien
+- Testing Iteration 40: 100% Pass
 
-### P1 — server.py Modular Refactoring (Abgeschlossen)
-- 6530 Zeilen Monolith → 10 modulare Route-Dateien + 419 Zeilen Orchestrator
-- 0 API-Regression (Testing Iteration 40: 100% Pass)
-
-### P2 — Domain-Layer-Härtung (Abgeschlossen)
-- 17 Pflichtobjekte modelliert, 6 neue Factories, 5 neue Enums
-
-### P3 — Memory/Audit Systematik (Abgeschlossen)
-- write_classified(), audit_action(), audit_verified() mit Pflicht-Klassifizierung
-
-### P4 — Legacy-Dokumente (Abgeschlossen)
-- 29/29 MongoDB-Dokumente → Object Storage migriert
-
-### P5 — UnifiedLogin UI/UX Perfektionierung (Abgeschlossen — 2026-02-04)
-- Premium 2-Spalten-Design, Framer-motion, Trust-Badges
+### P1 — UnifiedLogin Premium (Abgeschlossen — 2026-02-04)
+- 2-Spalten-Design, Framer-motion, Trust-Badges
 - Testing Iteration 41: 100% Pass (14/14)
 
-### P6 — Chat-Bug + Mobile Floating Buttons (Abgeschlossen — 2026-02-04)
-- Chat-Endpoint: get_system_prompt() + generate_response_fallback() fehlten nach Refactoring
-- Mobile: body.chat-open CSS-Klasse → WhatsApp + ChatTrigger ausgeblendet bei Chat-Öffnung
-- Testing Iteration 42: 100% Pass (Backend 8/8, Frontend alle Tests)
+### P2 — Chat-Bug + Mobile Floating Buttons (Abgeschlossen — 2026-02-04)
+- get_system_prompt() + generate_response_fallback() repariert
+- body.chat-open Klasse für Mobile-Button-Steuerung
+- Testing Iteration 42: 100% Pass
+
+### P3 — Chat-Interface Premium Perfektionierung (Abgeschlossen — 2026-02-04)
+- **Desktop**: 2-Spalten-Layout (260px Sidebar + Main), NeXifyAI Brand in Sidebar mit Logo + Rollenbezeichnung, Preset-Buttons, CTA-Buttons, "Neue Unterhaltung"-Button
+- **Messages**: Assistant-Avatar (NeXifyAI Logo), Sender-Labels (KI-Berater / Sie), Timestamps, Markdown-Rendering
+- **Input**: Disclaimer-Zeile "KI-gestützter Assistent. Keine rechtsverbindlichen Zusagen."
+- **Mobile (Full-Screen)**: Eigener Header mit Zurück-Pfeil + Brand + Status-Dot, Pill-Input, runder Send-Button, safe-area-inset
+- **Tablet**: Sauberer Breakpoint-Übergang bei 768px
+- **Floating Buttons**: Ausblenden bei Chat-Öffnung auf Mobile (<767px)
+- Custom Scrollbar für Chat-Messages
+- Testing Iteration 43: 100% Pass (18/18)
+
+### P4 — Rechtliche Vervollständigung (Abgeschlossen — 2026-02-04)
+- Datenschutz: Doppelte Sektion 4 behoben (jetzt 4-Datensicherheit, 5-Ihre Rechte, 6-Cookies)
+- LegalPages.js Syntax-Fehler (doppelte Zeilen am Ende) behoben
+- Alle 4 Legal-Seiten verifiziert: Impressum, Datenschutz, AGB, KI-Hinweise (DE/NL/EN)
+- Footer-Links zu allen 4 Legal-Seiten verifiziert
+- Cookie-Banner Datenschutz-Link verifiziert
+- Übersetzungskonsistenz: sidebarRole in DE→KI-Berater, NL→AI-Adviseur, EN→AI Advisor
 
 ## Offene Punkte
 - Stripe Webhook Secret (benötigt Produktionskey vom Kunden)
-- Next.js Migration (Zielarchitektur)
-- PydanticAI, LiteLLM, Temporal (Ziel-Stack)
+- Master-Auftrag Items (P1 Upcoming)
+- Next.js Migration, PydanticAI, LiteLLM, Temporal (Ziel-Stack)
 
 ## Admin Credentials
 - Email: p.courbois@icloud.com
