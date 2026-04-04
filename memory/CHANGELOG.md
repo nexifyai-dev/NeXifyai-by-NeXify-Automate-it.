@@ -1,43 +1,35 @@
 # NeXifyAI — Changelog
 
-## 2026-04-04 — Fork: Modular Architecture & Production Hardening
+## 2026-04-04
 
-### P0: Restlücken-Verifikation
-- Alle 6 Produktivpfade systematisch geprüft (Stripe, Storage, Monitoring, Rollen, Projekte, Memory)
-- Dokumentierte Ergebnisse: verifiziert/teilweise verifiziert/nicht verifiziert
+### P0 Rechtstexte — Verifizierung (Iteration 62)
+- Verified all 21 legal page routes (7 documents x 3 languages: DE/NL/EN)
+- Footer shows all 7 legal links correctly
+- Language switcher works on legal pages
+- Legacy redirects (/impressum -> /de/impressum) functional
+- Invalid slug redirects to homepage
 
-### P1: server.py Modular Refactoring
-- Monolith (6530 Zeilen) in 10 Route-Module + 1 Orchestrator aufgeteilt
-- Shared State Pattern: `_AppState` Container (S) mit Runtime-Bindung
-- Null API-Regression — Testing Agent Iteration 40: 100% bestanden (27/27)
-- Module: auth, public, admin, billing, portal, comms, contract, project, outbound, monitoring
+### P1 Content & Copywriting Overhaul (Iteration 63)
+- **BUGFIX**: TrustSection i18n — was always showing German text regardless of language setting
+  - Root cause: Used `t.lang` which was `undefined` (the `t` translations object has no `.lang` property)
+  - Fix: Refactored TrustSection.js to use `useLanguage()` hook directly, with structured T translation object
+  - Removed `t` prop from TrustSection in App.js
+- Enhanced TrustSection copy in all 3 languages (deeper descriptions for security features, GDPR references, OWASP standards)
+- All 14 sections render correctly across DE/NL/EN
 
-### P2: Domain-Layer-Härtung
-- 6 neue Factories: Payment, Audit, PromptHandover, BuildStatus, ReviewCycle, Deliverable
-- 5 neue Enums: PaymentStatus, DeliverableStatus, ReviewCycleStatus, BuildPhase, AuditVerification
-- 17 Pflichtobjekte vollständig modelliert
+## 2026-04-03
 
-### P3: Memory/Audit Systematik
-- write_classified() mit 4-Level-Pflichtklassifizierung
-- audit_action() / audit_verified() für strukturierte Audit-Trails
-- get_audit_trail() für Entity/Actor-basierte Abfragen
+### Admin Sidebar Harmonization (Iteration 60)
+- Admin sidebar collapsed by default with CSS hover tooltips (::after)
+- Customer Portal sidebar follows same pattern (Iteration 61)
 
-### P4: Legacy-Dokument-Migration
-- 29/29 MongoDB-Dokumente nach Object Storage migriert
-- Migrations-Endpunkt erstellt: POST /api/admin/monitoring/migrate-documents
-- Audit-Eintrag für Migration geschrieben
+### Customer Portal Active Features (Iteration 61)
+- Added backend APIs for requests, bookings, messages, support tickets
+- Full CRUD UI forms in Customer Portal
+- Quote/Contract workflows functional
 
-## Vorige Sessions
-### 2026-04-03 — DeepSeek, Stripe, Object Storage, Monitoring
-- DeepSeek Live-Aktivierung
-- Stripe Checkout & Webhooks via emergentintegrations
-- Object Storage für PDF-Archivierung
-- Resend Email Delivery Audit Trails
-- Admin Monitoring & Recovery Dashboard
-- Contract OS & Portal Finance View
-
-### 2026-04-02 — Unified Login, Worker Layer, Design Harmonization
-- Unified Login Stack mit Role Separation
-- APScheduler Worker/Scheduler Layer
-- System-wide Design/Brand Harmonization
-- Mobile Menu & Floating Actions
+### Comprehensive Legal Texts Implementation
+- LegalPages.js with 7 legal documents (Impressum, Datenschutz, AGB, KI-Hinweise, Widerruf, Cookies, AVV)
+- Full translations for DE/NL/EN with proper URL slugs per language
+- Footer updated with all 7 legal links
+- LEGAL_PATHS in shared/index.js updated
