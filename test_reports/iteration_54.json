@@ -1,0 +1,85 @@
+{
+  "summary": "Iteration 54 - All 3 critical bug fixes verified: 1) Login infinite loop fixed - apiFetch clears both nx_admin_token AND nx_auth on 401, 2) Dashboard stats showing real data (71 leads, 27 bookings, 3 chats) - API returns leads_total field, 3) No hooks error during navigation - hooks moved before conditional return. All 13 backend tests passed, all 8 frontend tests passed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_54.py",
+    "/app/test_reports/pytest/pytest_results_iter54.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100% (13/13 tests passed)",
+    "frontend": "100% (all UI flows verified)"
+  },
+  "test_credentials": {
+    "admin_email": "p.courbois@icloud.com",
+    "admin_password": "1def!xO2022!!"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 54 verified all 3 critical bug fixes: 1) Login loop - both nx_auth and nx_admin_token are now cleared on 401 and on logout. UnifiedLogin.js validates token via API before auto-redirect. 2) Dashboard stats - API returns leads_total (71), leads_new (5), bookings_total (27), chat_sessions_total (3). 3) Hooks error - monitorData, monitorLoading, sidebarOpen hooks moved before conditional return in Admin.js. Navigation between Dashboard, Leads, Customers, Calendar, Monitoring works without crashes.",
+  "tests_executed": {
+    "backend_api_tests": [
+      "TestAdminAuth::test_admin_login_success - PASSED",
+      "TestAdminAuth::test_admin_login_invalid_credentials - PASSED (401)",
+      "TestAdminAuth::test_protected_endpoint_without_token - PASSED (401)",
+      "TestDashboardStats::test_stats_endpoint_returns_correct_fields - PASSED (leads_total, leads_new, bookings_total, chat_sessions_total, recent_leads)",
+      "TestDashboardStats::test_stats_values_are_non_negative - PASSED",
+      "TestDashboardStats::test_stats_has_real_data - PASSED (71+ leads)",
+      "TestDashboardStats::test_recent_leads_has_data - PASSED (10 leads)",
+      "TestLeadsAPI::test_get_leads - PASSED",
+      "TestCustomersAPI::test_get_customers - PASSED (61 customers)",
+      "TestCustomersAPI::test_get_customer_casefile - PASSED",
+      "TestBookingsAPI::test_get_bookings - PASSED (27 bookings)",
+      "TestTokenValidation::test_invalid_token_returns_401 - PASSED",
+      "TestTokenValidation::test_expired_token_format_returns_401 - PASSED"
+    ],
+    "frontend_ui_tests": [
+      "Fresh login page loads (no auto-redirect loop) - PASSED",
+      "Login flow (email → role choice → password → admin) - PASSED",
+      "Dashboard stats show real data (71, 5, 27, 3) - PASSED",
+      "Recent leads table shows 10 rows - PASSED",
+      "Stale token handling (invalid token → 401 → cleared → login form) - PASSED",
+      "Navigation between views (no hooks error) - PASSED",
+      "Sidebar collapse/expand (240px → 64px) - PASSED",
+      "Customer casefile opens with 8 tabs - PASSED",
+      "Logout clears both storage keys and redirects to /login - PASSED",
+      "Visiting /admin after logout redirects to /login - PASSED"
+    ]
+  },
+  "bug_fixes_verified": {
+    "login_loop_fix": {
+      "issue": "Login infinite loop caused by stale nx_auth in localStorage not being cleared on 401",
+      "fix_location": "Admin.js line 126 (apiFetch), lines 487-494 (if !token)",
+      "verification": "Set invalid token → reload → stayed on /login, both storage keys cleared"
+    },
+    "dashboard_stats_fix": {
+      "issue": "Dashboard stats showing 0 due to API field name mismatch",
+      "fix_location": "admin_routes.py lines 57-73 (stats endpoint returns leads_total)",
+      "verification": "Stats show 71 leads, 27 bookings, 3 chats (not 0)"
+    },
+    "hooks_error_fix": {
+      "issue": "React hooks error (fewer hooks rendered) during navigation",
+      "fix_location": "Admin.js lines 118-120 (hooks moved before conditional return)",
+      "verification": "Navigated between Dashboard, Leads, Customers, Calendar, Monitoring without crashes"
+    }
+  },
+  "screenshots": {
+    "01_login_page_fresh": "Login page after clearing localStorage - no auto-redirect",
+    "02_admin_dashboard": "Dashboard with stats (71, 5, 27, 3) and recent leads table",
+    "03_stale_token_test": "Login page after invalid token validation",
+    "04_navigation_test": "Dashboard after navigating through all views",
+    "05_customer_casefile": "Customers view with 61 customers",
+    "06_logout_test": "Login page after logout"
+  }
+}

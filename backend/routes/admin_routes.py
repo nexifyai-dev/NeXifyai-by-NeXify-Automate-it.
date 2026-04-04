@@ -48,18 +48,30 @@ async def admin_stats(user = Depends(get_current_admin)):
     week_ago = today - timedelta(days=7)
     
     total = await S.db.leads.count_documents({})
-    today_count = await S.db.leads.count_documents({"created_at": {"$gte": today}})
-    week_count = await S.db.leads.count_documents({"created_at": {"$gte": week_ago}})
-    upcoming = await S.db.bookings.count_documents({"date": {"$gte": today.strftime("%Y-%m-%d")}, "status": "confirmed"})
+    today_count = await S.db.leads.count_documents({"created_at": {"$gte": today.isoformat()}})
+    week_count = await S.db.leads.count_documents({"created_at": {"$gte": week_ago.isoformat()}})
+    bookings_total = await S.db.bookings.count_documents({})
+    upcoming = await S.db.bookings.count_documents({"date": {"$gte": today.strftime("%Y-%m-%d")}})
+    chat_total = await S.db.conversations.count_documents({})
     
     status_agg = await S.db.leads.aggregate([{"$group": {"_id": "$status", "count": {"$sum": 1}}}]).to_list(20)
     
+    recent_leads = []
+    async for l in S.db.leads.find({}, {"_id": 0}).sort("created_at", -1).limit(10):
+        recent_leads.append(l)
+    
     return {
+        "leads_total": total,
+        "leads_new": today_count,
+        "leads_week": week_count,
+        "bookings_total": bookings_total,
+        "bookings_upcoming": upcoming,
+        "chat_sessions_total": chat_total,
+        "by_status": {s["_id"]: s["count"] for s in status_agg if s["_id"]},
+        "recent_leads": recent_leads,
         "total_leads": total,
         "new_leads_today": today_count,
-        "new_leads_week": week_count,
         "upcoming_bookings": upcoming,
-        "by_status": {s["_id"]: s["count"] for s in status_agg if s["_id"]}
     }
 
 

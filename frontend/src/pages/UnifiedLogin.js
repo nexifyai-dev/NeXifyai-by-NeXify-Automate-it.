@@ -24,14 +24,20 @@ const UnifiedLogin = () => {
     if (token && window.location.pathname.includes('/login/verify')) {
       setStep('verifying');
       verifyMagicLink(token);
+      return;
     }
     const stored = localStorage.getItem('nx_auth');
     if (stored) {
       try {
         const auth = JSON.parse(stored);
-        if (auth.role === 'admin') window.location.href = '/admin';
-        else if (auth.role === 'customer') window.location.href = '/portal';
-      } catch {}
+        if (auth.token && auth.role === 'admin') {
+          fetch(`${API}/api/admin/stats`, { headers: { 'Authorization': `Bearer ${auth.token}` } })
+            .then(r => { if (r.ok) window.location.href = '/admin'; else { localStorage.removeItem('nx_auth'); localStorage.removeItem('nx_admin_token'); } })
+            .catch(() => { localStorage.removeItem('nx_auth'); localStorage.removeItem('nx_admin_token'); });
+        } else if (auth.token && auth.role === 'customer') {
+          window.location.href = '/portal';
+        }
+      } catch { localStorage.removeItem('nx_auth'); }
     }
   }, []);
 

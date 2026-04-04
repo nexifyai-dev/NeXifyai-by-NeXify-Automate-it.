@@ -123,7 +123,7 @@ const Admin = () => {
 
   const apiFetch = useCallback(async (url, opts = {}) => {
     const r = await fetch(`${API}${url}`, { ...opts, headers: { ...headers, ...opts.headers } });
-    if (r.status === 401) { setToken(''); localStorage.removeItem('nx_admin_token'); return null; }
+    if (r.status === 401) { setToken(''); localStorage.removeItem('nx_admin_token'); localStorage.removeItem('nx_auth'); return null; }
     return r.json();
   }, [headers]);
 
@@ -485,7 +485,8 @@ const Admin = () => {
 
   /* ══════════ LOGIN SCREEN ══════════ */
   if (!token) {
-    // Security by Obscurity: Keine internen Details offenlegen, neutral zu /login redirecten
+    localStorage.removeItem('nx_auth');
+    localStorage.removeItem('nx_admin_token');
     window.location.href = '/login';
     return (
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',background:'#080c12',color:'rgba(255,255,255,0.4)',fontSize:'0.875rem'}}>
