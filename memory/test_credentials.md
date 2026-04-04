@@ -4,8 +4,14 @@
 - Email: p.courbois@icloud.com
 - Password: 1def!xO2022!!
 - Login URL: /login
-- Login Flow: 2-step (email → Weiter → password → Anmelden)
+- Login Flow: 3-step for dual-role (email -> role choice -> password -> Anmelden)
 - API Login: POST /api/admin/login (form-urlencoded: username, password)
+
+## Dual-Role User
+- Email: p.courbois@icloud.com (exists as BOTH admin and customer)
+- check-email returns: {"role": "dual", "needs_password": true, "needs_magic_link": true}
+- Admin path: Role choice -> "Administration" -> Password -> /admin
+- Customer path: Role choice -> "Kundenportal" -> Magic Link per E-Mail
 
 ## Test API Endpoints (require Bearer token)
 - GET /api/admin/stats
