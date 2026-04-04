@@ -1,0 +1,95 @@
+{
+  "summary": "Iteration 60 - Admin Sidebar Default Collapsed State & Tooltip Tests - ALL TESTS PASSED. Verified: 1) Sidebar is COLLAPSED by default (sidebarOpen=false, classes: adm-layout adm-collapsed, adm-sidebar collapsed), 2) Nav labels hidden when collapsed (opacity:0, width:0px, position:absolute), 3) All 19 navigation items present and clickable, 4) Toggle button expands/collapses sidebar correctly, 5) Tooltip appears on hover via CSS ::after (content:'Dashboard', opacity:1), 6) CI Orange #FF6B00 used for active nav (color: rgb(255, 107, 0)), 7) No dollar signs - EUR only, 8) Mobile responsive: sidebar horizontal with flex-direction:row, collapse button hidden, 9) Admin login 2-step flow works, 10) Dashboard shows stats (72 leads, 5 new, 27 bookings, 3 chats) and System-Health panel",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_60_sidebar.py",
+    "/app/test_reports/pytest/pytest_results_iter60.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_iteration_60_sidebar.py"
+  ],
+  "success_rate": {
+    "backend": "100% (9/9 tests passed)",
+    "frontend": "100% (All sidebar, tooltip, toggle, mobile responsive tests passed)"
+  },
+  "test_credentials": {
+    "admin_email": "p.courbois@icloud.com",
+    "admin_password": "1def!xO2022!!"
+  },
+  "seed_data_creation": "None - used existing data",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 60 verified sidebar default-collapsed behavior. Key findings: 1) useState(false) at line 136 in Admin.js correctly initializes sidebarOpen to false, 2) CSS classes 'adm-collapsed' on layout and 'collapsed' on sidebar are applied on load, 3) Nav labels use opacity:0 and width:0px when collapsed, 4) Tooltip uses CSS ::after with content:attr(title) - shows on hover with opacity:1, 5) Toggle button data-testid='sidebar-toggle' works correctly, 6) Mobile (<=640px) uses flex-direction:row for horizontal sidebar, collapse button display:none, 7) All 19 nav items have title attributes for tooltips, 8) Orange #FF6B00 confirmed for active nav items",
+  "verified_features": {
+    "sidebar_collapsed_by_default": {
+      "status": "VERIFIED",
+      "details": "sidebarOpen useState(false), layout has 'adm-collapsed' class, sidebar has 'collapsed' class on initial load"
+    },
+    "nav_labels_hidden_when_collapsed": {
+      "status": "VERIFIED",
+      "details": "Nav labels have opacity:0, width:0px, position:absolute when sidebar collapsed"
+    },
+    "sidebar_toggle_button": {
+      "status": "VERIFIED",
+      "details": "data-testid='sidebar-toggle' expands/collapses sidebar, title changes between 'Ausklappen'/'Einklappen'"
+    },
+    "tooltip_on_hover": {
+      "status": "VERIFIED",
+      "details": "CSS ::after pseudo-element with content:attr(title), opacity:1 on hover, positioned to right of icon"
+    },
+    "all_19_nav_items": {
+      "status": "VERIFIED",
+      "details": "Dashboard, Projekte, Verträge, Billing, Outbound, Legal, Angebote & Rechnungen, Leads, Kommunikation, KI-Chats, WhatsApp, Aktivitäten, Kalender, Kunden, KI-Agenten, Benutzer, Webhooks, Audit, Monitoring"
+    },
+    "ci_orange_color": {
+      "status": "VERIFIED",
+      "details": "Active nav item color: rgb(255, 107, 0) = #FF6B00, border-left-color: rgb(255, 107, 0)"
+    },
+    "no_dollar_signs": {
+      "status": "VERIFIED",
+      "details": "No $ found in page text - EUR only"
+    },
+    "mobile_responsive": {
+      "status": "VERIFIED",
+      "details": "At 360px width: sidebar flex-direction:row, height:65px, position:static, collapse button display:none"
+    },
+    "logout_button": {
+      "status": "VERIFIED",
+      "details": "data-testid='admin-logout' with title='Abmelden'"
+    },
+    "dashboard_content": {
+      "status": "VERIFIED",
+      "details": "4 stat cards (72 Leads, 5 Neue, 27 Buchungen, 3 Chats), Neueste Leads table, System-Health panel"
+    }
+  },
+  "mocked_apis": {
+    "DeepSeek_LLM": "Routed through Emergent GPT-5.2 mock via EMERGENT_LLM_KEY"
+  },
+  "playwright_test_results": {
+    "desktop_1920x1080": {
+      "sidebar_collapsed_default": "PASS",
+      "nav_labels_hidden": "PASS",
+      "toggle_expand": "PASS",
+      "toggle_collapse": "PASS",
+      "tooltip_on_hover": "PASS",
+      "ci_orange_color": "PASS",
+      "no_dollar_signs": "PASS",
+      "logout_button": "PASS"
+    },
+    "mobile_360x800": {
+      "sidebar_horizontal": "PASS",
+      "collapse_button_hidden": "PASS",
+      "nav_items_row": "PASS"
+    }
+  }
+}

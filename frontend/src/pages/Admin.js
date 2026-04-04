@@ -133,7 +133,7 @@ const Admin = () => {
   const [systemHealth, setSystemHealth] = useState(null);
   const [monitorData, setMonitorData] = useState(null);
   const [monitorLoading, setMonitorLoading] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const headers = useMemo(() => ({ 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
@@ -2834,7 +2834,7 @@ const Admin = () => {
             </button>
           ))}
         </nav>
-        <button className="adm-logout" onClick={logout} data-testid="admin-logout"><I n="logout" /> <span className="adm-nav-label">Abmelden</span></button>
+        <button className="adm-logout" onClick={logout} data-testid="admin-logout" title="Abmelden"><I n="logout" /> <span className="adm-nav-label">Abmelden</span></button>
       </aside>
       <main className="adm-main">
         <header className="adm-topbar">
