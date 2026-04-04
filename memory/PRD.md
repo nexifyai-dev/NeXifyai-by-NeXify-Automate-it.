@@ -1,83 +1,74 @@
 # NeXifyAI — Product Requirements Document
 
-## Produkt
-B2B-Plattform "Starter/Growth AI Agenten AG" — API-First, Unified Communication, Deep Customer Memory (mem0), KI-Orchestrator (DeepSeek).
+## Originaler Auftrag
+B2B-Plattform "Starter/Growth AI Agenten AG" (NeXifyAI) — API-First, Unified Communication, Deep Customer Memory (mem0), KI-Orchestrator. Premium-Architektur mit absolutem Fokus auf Produktionsreife, Sicherheit und System-Konsistenz.
 
-## System-Architektur
-| Schicht | Technologie | Status |
-|---------|------------|--------|
-| Frontend | React 18, Three.js, Framer Motion | Produktiv |
-| Backend | FastAPI 3.11, 10 Route-Module | Produktiv |
-| Datenbank | MongoDB (Motor async, 35+ Collections) | Produktiv |
-| LLM | DeepSeek + GPT-5.2 Fallback | Produktiv |
-| Object Storage | Emergent Object Storage | Produktiv |
-| Payments | Stripe (Webhook Secret fehlt) | Konfiguriert |
-| E-Mail | Resend | Konfiguriert |
-| Background Jobs | APScheduler + Queue + DLQ | Aktiv |
+## Architektur
+- **Frontend**: React 18 SPA, Framer Motion, i18n (DE/NL/EN), Shadcn-Style Dark Theme
+- **Backend**: FastAPI (modular: 10 Route-Module), APScheduler, MongoDB
+- **Workers**: In-process JobQueue (Retry + Dead-Letter), Cron-Scheduler (7 Jobs)
+- **LLM**: DeepSeek (Primär), GPT-5.2 Fallback via Emergent
+- **Integrations**: Stripe, Object Storage, Resend (E-Mail)
+- **Security**: JWT Auth, Rate Limiting (SlowAPI), Security Headers, CORS
 
-## Implementierungsverlauf (2026-02-04)
+## Implementierte Features
 
 ### Backend
-1. Modular Refactoring (6530→10 Module) ✅
-2. Domain Layer (17 Modelle) ✅
-3. Memory/Audit (write_classified, audit_action) ✅
-4. Object Storage Migration (29 Dokumente) ✅
-5. Chat-Endpoint (generate_response_fallback) ✅
-6. Lead-Status Normalisierung (EN→DE, 16 Records) ✅
-7. **Quote-Request API** — dreifach gesichert ✅
-   - `/api/quote/request` → MongoDB (quote_requests) + Lead + Timeline + Memory
-   - Idempotent: Duplikat-E-Mails aktualisieren statt duplizieren
+- Modulare Route-Architektur (auth, public, admin, billing, portal, comms, contract, project, outbound, monitoring)
+- Worker/Scheduler-Layer: 8 Handler (email, payment_reminder, dunning, lead_followup, booking_reminder, quote_expiry, ai_task, status_transition)
+- 7 Scheduler-Jobs (Cron: Zahlungsreminder, Mahnungen, Follow-ups, Buchungserinnerungen, Angebotsablauf, Health-Check, Dead-Letter-Alert)
+- Oracle/Memory Service: write_classified, get_contact_oracle(), Oracle Snapshot
+- Billing Overview Dashboard API
+- Outbound Campaigns API
+- Monitoring Aliases (health, workers)
+- Memory Stats API
+- Rate Limiting (SlowAPI 200/min global)
+- Triple-secured action logic (MongoDB + Timeline + Memory Audit)
 
 ### Frontend
-8. UnifiedLogin Premium (2-Spalten, Framer-motion) ✅
-9. Chat Premium (Avatare, Timestamps, Disclaimer, Mobile) ✅
-10. Booking Premium (2-Step, Progress, Datums-Karten) ✅
-11. Legal (Datenschutz-Fix, 4 Seiten x 3 Sprachen) ✅
-12. **Pricing-Animationen** ✅
-    - price-glow-ring (rotierende Conic-Gradient auf HL-Card)
-    - price-badge-pulse (pulsierende Box-Shadow)
-    - Hover: translateY + Border-Glow + Radial-Gradient
-    - price-divider (Gradient-Trennlinie)
-13. **Custom Quote Bar** ✅
-    - "Individuelles Angebot" mit Icon, Beschreibung, 2 CTAs
-    - "Individuell anfragen" → Chat mit Pre-Fill
-    - "Beratung buchen" → Direct Booking Modal
-14. **Direkter Booking-Zugang** ✅
-    - Hero: 3 CTAs (Beratung + Termin + Leistungen)
-    - Contact: 2 CTAs (Beratung + Termin)
-    - Pricing: Custom Quote Bar (Angebot + Termin)
-15. Service-/Bundle-Cards: Hover-Animationen ✅
+- Unified Login (2-Spalten Premium)
+- Landing Page: 12 Sektionen (Hero, Solutions, UseCases, AppDev, Process, Integrations, Governance, Pricing, SEO, Services, Trust, FAQ, Contact)
+- Standalone Termin-Seite (/termin) — Premium 2-Spalten-Layout mit Trust-Signalen
+- BookingModal (2-Step: Datum → Details)
+- LiveChat mit KI-Backend
+- Legal Pages (Impressum, Datenschutz, AGB, KI-Hinweise) — 3 Sprachen
+- Animated Pricing mit Custom Quote Request
+- Customer Portal, Admin Dashboard, Quote Portal
 
-### Daten (Audit)
-| Sammlung | Anzahl | Status |
-|----------|--------|--------|
-| Leads | 49 | Normalisiert (nur DE-Status) |
-| Buchungen | 18 | Aktiv |
-| Timeline-Events | 346+ | Audit-Trail |
-| Memory-Einträge | 173+ | Persistent |
-| Legal-Audits | 39 | Compliance |
-| Quote-Requests | 5+ | Dreifach gesichert |
+## Key API Endpoints
+- `/api/health` — System Health
+- `/api/auth/login` — Admin JWT Login
+- `/api/booking` — Terminbuchung
+- `/api/contact` — Kontaktformular
+- `/api/chat/message` — KI-Chat
+- `/api/quote/request` — Custom Angebotsanfrage
+- `/api/admin/billing/overview` — Billing-Dashboard
+- `/api/admin/outbound/campaigns` — Outbound-Kampagnen
+- `/api/admin/oracle/snapshot` — Oracle IST-Stand
+- `/api/admin/oracle/contact/{id}` — Kontakt-Oracle
+- `/api/admin/memory/stats` — Memory-Statistiken
+- `/api/admin/monitoring/health` — System-Gesundheit
+- `/api/admin/monitoring/workers` — Worker-Status
 
-### Testing (7 Iterationen)
-| Iteration | Fokus | Ergebnis |
-|-----------|-------|----------|
-| 40 | Backend Refactoring | 100% |
-| 41 | Login UI | 100% (14/14) |
-| 42 | Chat-Bug | 100% |
-| 43 | Chat Premium + Legal | 100% (18/18) |
-| 44 | Booking + Contact | 100% (20/20) |
-| 45 | System-Audit (26 APIs) | 100% |
-| 46 | Lead-Status + Booking-Zugang | 100% |
-| 47 | Pricing-Animation + Quote-API | 100% |
+## DB-Schema
+leads, customers, quotes, invoices, bookings, contracts, projects, timeline_events, customer_memory, messages, chat_sessions, conversations, documents, audit_log, legal_audit, webhook_events, jobs, outbound_leads
 
-## Offene externe Abhängigkeiten
-| Abhängigkeit | Risiko | Maßnahme |
-|---|---|---|
-| Stripe Webhook Secret | Zahlungskreislauf nicht geschlossen | Kunde muss Key bereitstellen |
-| DEEPSEEK_API_KEY Produktionskey | Fallback via Emergent aktiv | Kunde muss Key bereitstellen |
-| Resend Domain-Verifizierung | Spam-Risiko | DNS konfigurieren |
-| Custom Domain | SEO/Branding | Deployment auf eigene Infra |
+## Testing Status
+- Iteration 48: 100% (30/30 Backend + Frontend) — verifiziert
+- Alle Admin-Endpunkte: 200 ✅
+- Worker: 4 aktiv, 7 Scheduler-Jobs ✅
+- Oracle: Operational ✅
+- Rate Limiting: Aktiv ✅
 
-## Admin Credentials
-- Email: p.courbois@icloud.com
-- Password: NxAi#Secure2026!
+## Nächste Schritte (Backlog)
+1. **P2**: Content & Copywriting Overhaul — perfektionierte Texte für alle Flows
+2. **P3**: Security Hardening — CORS-Einschränkung, Firewall-Regeln, Secrets-Audit
+3. **P4**: E2E Browser-Verifikation aller kritischen Pfade (Quote → Invoice → Payment)
+4. **P5**: DeepSeek Live-Migration (Concrete Routing, Tools, Memory)
+5. **P6**: Legal & Compliance Guardian (Operative Verdrahtung)
+6. **P7**: Outbound Lead Machine Härtung
+7. **P8**: Next.js Migration (Target-Architektur)
+8. **P9**: PydanticAI + LiteLLM + Temporal Adoption
+
+## Credentials
+- Admin: p.courbois@icloud.com / 1def!xO2022!!
