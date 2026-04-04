@@ -301,6 +301,11 @@ async def lifespan(app: FastAPI):
     await db.contracts.create_index("quote_id")
     await db.contract_appendices.create_index("contract_id")
     await db.contract_evidence.create_index("contract_id")
+    await db.webhook_events.create_index([("timestamp", -1)])
+    await db.webhook_events.create_index("event")
+    await db.webhook_events.create_index("order_id")
+    await db.documents.create_index("document_id", unique=True, sparse=True)
+    await db.documents.create_index("entity_id")
 
     # --- Admin User ---
     if ADMIN_PASSWORD:
@@ -382,6 +387,17 @@ app = FastAPI(title="NeXifyAI API", version="3.1.0", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch-all: Unhandled Exceptions → strukturierter JSON-Error statt 500 HTML."""
+    logger.error(f"Unhandled Exception on {request.method} {request.url.path}: {exc}", exc_info=True)
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Interner Serverfehler", "path": request.url.path},
+    )
+
 CORS_ORIGINS = [
     os.environ.get("FRONTEND_URL", "").rstrip("/"),
     "https://contract-os.preview.emergentagent.com",
@@ -406,7 +422,6 @@ async def security_headers(request: Request, call_next):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
     if request.url.path.startswith("/api/portal/") or request.url.path.startswith("/api/documents/"):

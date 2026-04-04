@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { LanguageProvider } from './i18n/LanguageContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import './index.css';
 import App from './App';
 import Admin from './pages/Admin';
@@ -30,10 +31,11 @@ function LegacyRedirect({ slug }) {
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <HelmetProvider>
-      <BrowserRouter>
-        <LanguageProvider>
-          <Routes>
+    <ErrorBoundary>
+      <HelmetProvider>
+        <BrowserRouter>
+          <LanguageProvider>
+            <Routes>
             {/* Root redirect */}
             <Route path="/" element={<LangRedirect />} />
 
@@ -78,5 +80,6 @@ root.render(
         </LanguageProvider>
       </BrowserRouter>
     </HelmetProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );
