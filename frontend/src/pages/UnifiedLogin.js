@@ -46,7 +46,9 @@ const UnifiedLogin = () => {
       });
       const data = await res.json();
       setRole(data.role);
-      if (data.role === 'admin') {
+      if (data.role === 'dual') {
+        setStep('role_choice');
+      } else if (data.role === 'admin') {
         setStep('password');
       } else if (data.role === 'customer') {
         await requestMagicLink();
@@ -237,6 +239,32 @@ const UnifiedLogin = () => {
                     {loading ? <><div className="ul-btn-spinner" /> Wird geprüft...</> : <>Weiter <I n="arrow_forward" /></>}
                   </button>
                   <p className="ul-hint">Noch kein Konto? Geben Sie Ihre E-Mail ein — wir leiten Sie weiter.</p>
+                </motion.div>
+              )}
+
+              {step === 'role_choice' && (
+                <motion.div className="ul-step" key="role_choice" data-testid="login-role-choice-step" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }} transition={{ duration: 0.3 }}>
+                  <div className="ul-role-badge"><I n="verified_user" /> Mehrfach-Zugang erkannt</div>
+                  <p className="ul-sub">Für <strong>{email}</strong> existieren mehrere Zugänge. Bitte wählen Sie:</p>
+                  <div className="ul-choice-grid">
+                    <button className="ul-choice-card" onClick={() => setStep('password')} data-testid="login-choice-admin">
+                      <div className="ul-choice-icon"><I n="admin_panel_settings" /></div>
+                      <div className="ul-choice-text">
+                        <strong>Administration</strong>
+                        <span>Mit Passwort anmelden</span>
+                      </div>
+                      <I n="arrow_forward" c="ul-choice-arrow" />
+                    </button>
+                    <button className="ul-choice-card" onClick={async () => { await requestMagicLink(); }} data-testid="login-choice-customer">
+                      <div className="ul-choice-icon"><I n="dashboard" /></div>
+                      <div className="ul-choice-text">
+                        <strong>Kundenportal</strong>
+                        <span>Zugangslink per E-Mail</span>
+                      </div>
+                      <I n="arrow_forward" c="ul-choice-arrow" />
+                    </button>
+                  </div>
+                  <button className="ul-link" onClick={() => { setStep('email'); setError(''); }} data-testid="login-role-back">Andere E-Mail verwenden</button>
                 </motion.div>
               )}
 

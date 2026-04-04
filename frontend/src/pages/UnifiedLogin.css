@@ -321,6 +321,80 @@
   color: rgba(96, 165, 250, 0.6);
 }
 
+/* ══════════ DUAL-ROLE CHOICE GRID ══════════ */
+.ul-choice-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 8px 0 4px;
+}
+
+.ul-choice-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 200ms ease;
+  text-align: left;
+  width: 100%;
+  color: inherit;
+  font-family: inherit;
+}
+
+.ul-choice-card:hover {
+  background: rgba(255, 155, 122, 0.04);
+  border-color: rgba(255, 155, 122, 0.18);
+}
+
+.ul-choice-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: rgba(255, 155, 122, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ul-choice-icon .material-symbols-outlined {
+  font-size: 20px;
+  color: rgba(255, 155, 122, 0.8);
+}
+
+.ul-choice-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ul-choice-text strong {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.ul-choice-text span {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.ul-choice-arrow {
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 18px !important;
+  transition: transform 200ms ease, color 200ms ease;
+}
+
+.ul-choice-card:hover .ul-choice-arrow {
+  color: rgba(255, 155, 122, 0.6);
+  transform: translateX(3px);
+}
+
 /* ══════════ FIELDS ══════════ */
 .ul-field {
   display: flex;
