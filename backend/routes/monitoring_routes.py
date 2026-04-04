@@ -71,6 +71,35 @@ async def admin_audit_health(current_user: dict = Depends(get_current_admin)):
     tariff_count = await S.db.quotes.count_documents({})
     checks["pricing"] = {"status": "ok", "quotes_in_system": tariff_count}
     
+    # 8. Workers status
+    if S.worker_mgr:
+        wm_status = S.worker_mgr.get_status()
+        checks["workers"] = {
+            "status": "ok" if wm_status.get("queue", {}).get("workers_active", 0) > 0 else "warn",
+            "active": wm_status.get("queue", {}).get("workers_active", 0),
+            "pending": wm_status.get("queue", {}).get("pending", 0),
+        }
+    else:
+        checks["workers"] = {"status": "not_initialized"}
+    
+    # 9. Scheduler status
+    if S.worker_mgr and hasattr(S.worker_mgr, 'scheduler'):
+        sched = S.worker_mgr.scheduler
+        sched_status = sched.get_status() if sched else {}
+        checks["scheduler"] = {
+            "status": "ok" if sched_status.get("running") else "warn",
+            "jobs_count": len(sched_status.get("jobs", [])),
+        }
+    else:
+        checks["scheduler"] = {"status": "not_initialized"}
+    
+    # 10. Memory service
+    if S.memory_svc:
+        mem_count = await S.db.customer_memory.count_documents({})
+        checks["memory"] = {"status": "ok", "entries": mem_count}
+    else:
+        checks["memory"] = {"status": "not_initialized"}
+    
     overall = "healthy"
     for k, v in checks.items():
         if isinstance(v, dict) and v.get("status") == "error":

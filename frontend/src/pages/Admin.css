@@ -280,3 +280,20 @@
 .adm-status-dot.pending{background:#f59e0b}
 .adm-status-dot.resolved{background:#3b82f6}
 .adm-status-dot.closed{background:#6b7b8d}
+
+
+/* === System Health Panel === */
+.adm-health-panel{background:rgba(15,21,28,.8);border:1px solid rgba(255,255,255,.04);border-radius:10px;padding:20px;margin-top:20px}
+.adm-health-panel h3{display:flex;align-items:center;gap:8px;font-size:.875rem;font-weight:700;color:rgba(255,255,255,.6);margin:0 0 14px}
+.adm-health-panel h3 .material-symbols-outlined{font-size:18px;color:#10b981}
+.adm-health-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.adm-health-card{display:flex;flex-direction:column;gap:2px;padding:12px 14px;background:rgba(12,17,23,.5);border:1px solid rgba(255,255,255,.04);border-radius:8px;position:relative;overflow:hidden}
+.adm-health-card span{font-size:.6875rem;font-weight:600;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.04em}
+.adm-health-card strong{font-size:.8125rem;font-weight:700;color:rgba(255,255,255,.7)}
+.adm-health-dot{width:6px;height:6px;border-radius:50%;position:absolute;top:10px;right:10px}
+.adm-health-card.ok .adm-health-dot{background:#10b981;box-shadow:0 0 6px rgba(16,185,129,.4)}
+.adm-health-card.warn .adm-health-dot{background:#f59e0b;box-shadow:0 0 6px rgba(245,158,11,.4)}
+.adm-health-card.err .adm-health-dot{background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,.4)}
+.adm-health-alert{display:flex;align-items:center;gap:6px;margin-top:10px;padding:8px 12px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.12);border-radius:6px;font-size:.75rem;font-weight:600;color:#ef4444}
+.adm-health-alert .material-symbols-outlined{font-size:16px}
+

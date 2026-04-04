@@ -16,7 +16,7 @@ const UnifiedLogin = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState('');
-  const [regData, setRegData] = useState({ vorname: '', nachname: '', unternehmen: '', telefon: '', nachricht: '' });
+  const [regData, setRegData] = useState({ vorname: '', nachname: '', unternehmen: '', telefon: '', nachricht: '', dsgvoAccepted: false });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -105,6 +105,10 @@ const UnifiedLogin = () => {
     setError('');
     if (!regData.vorname.trim() || !regData.nachname.trim()) {
       setError('Bitte Vor- und Nachname eingeben');
+      return;
+    }
+    if (!regData.dsgvoAccepted) {
+      setError('Bitte stimmen Sie der Datenschutzerklärung zu');
       return;
     }
     setLoading(true);
@@ -270,7 +274,8 @@ const UnifiedLogin = () => {
               {step === 'register' && (
                 <motion.div className="ul-step" key="register" data-testid="login-register-step" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }} transition={{ duration: 0.3 }}>
                   <div className="ul-role-badge ul-role-new"><I n="person_add" /> Konto erstellen</div>
-                  <p className="ul-sub">Für <strong>{email}</strong> liegt noch kein Konto vor.</p>
+                  <p className="ul-sub">Kostenlos registrieren und sofort Zugang zu Angeboten, Projektstatus und Rechnungen erhalten.</p>
+                  <p className="ul-sub-email">Registrierung für <strong>{email}</strong></p>
                   <div className="ul-field-row">
                     <div className="ul-field">
                       <label>Vorname *</label>
@@ -291,11 +296,20 @@ const UnifiedLogin = () => {
                   </div>
                   <div className="ul-field">
                     <label>Nachricht / Anfrage</label>
-                    <textarea value={regData.nachricht} onChange={e => setRegData({...regData, nachricht: e.target.value})} placeholder="Beschreiben Sie kurz Ihr Anliegen..." rows={3} data-testid="register-message" />
+                    <textarea value={regData.nachricht} onChange={e => setRegData({...regData, nachricht: e.target.value})} placeholder="Beschreiben Sie kurz Ihr Anliegen oder Projekt..." rows={3} data-testid="register-message" />
                   </div>
-                  <button className="ul-btn" onClick={submitRegistration} disabled={loading || !regData.vorname.trim() || !regData.nachname.trim()} data-testid="register-submit-btn">
+                  <label className="ul-checkbox" data-testid="register-dsgvo">
+                    <input type="checkbox" checked={regData.dsgvoAccepted} onChange={e => setRegData({...regData, dsgvoAccepted: e.target.checked})} />
+                    <span>Ich habe die <a href="/de/datenschutz" target="_blank" rel="noopener noreferrer">Datenschutzerklärung</a> gelesen und stimme der Verarbeitung meiner Daten zu.</span>
+                  </label>
+                  <button className="ul-btn" onClick={submitRegistration} disabled={loading || !regData.vorname.trim() || !regData.nachname.trim() || !regData.dsgvoAccepted} data-testid="register-submit-btn">
                     {loading ? <><div className="ul-btn-spinner" /> Wird registriert...</> : <>Konto erstellen <I n="arrow_forward" /></>}
                   </button>
+                  <div className="ul-trust-row">
+                    <span><I n="lock" /> Verschlüsselt</span>
+                    <span><I n="verified_user" /> DSGVO-konform</span>
+                    <span><I n="shield" /> Kein Spam</span>
+                  </div>
                   <button className="ul-link" onClick={() => { setStep('email'); setError(''); }} data-testid="register-back-email">Andere E-Mail verwenden</button>
                 </motion.div>
               )}
@@ -303,10 +317,20 @@ const UnifiedLogin = () => {
               {step === 'registered' && (
                 <motion.div className="ul-step" key="done" data-testid="login-registered" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
                   <div className="ul-check-icon"><I n="check_circle" /></div>
-                  <h2>Konto erstellt</h2>
-                  <p className="ul-info">Vielen Dank! Ihr Konto wurde erfolgreich angelegt. Wir melden uns in Kürze bei Ihnen.</p>
-                  <p className="ul-muted">Sie erhalten eine E-Mail mit Ihren Zugangsdaten, sobald Ihr Konto freigeschaltet wurde.</p>
-                  <a href="/" className="ul-btn" data-testid="register-back-home">Zurück zur Startseite</a>
+                  <h2>Willkommen bei NeXifyAI</h2>
+                  <p className="ul-info">Ihr Konto wurde erfolgreich angelegt. Wir freuen uns, Sie als neuen Kunden begrüßen zu dürfen.</p>
+                  <div className="ul-success-steps">
+                    <div className="ul-success-step"><I n="check" /> Kontodaten gespeichert</div>
+                    <div className="ul-success-step"><I n="check" /> Bestätigungs-E-Mail wird gesendet</div>
+                    <div className="ul-success-step"><I n="schedule" /> Freischaltung innerhalb von 2 Stunden</div>
+                  </div>
+                  <p className="ul-muted">Sie erhalten eine E-Mail mit Ihrem persönlichen Zugangslink, sobald Ihr Konto freigeschaltet wurde.</p>
+                  <div className="ul-success-actions">
+                    <a href="/termin" className="ul-btn" data-testid="register-book-meeting">
+                      <I n="calendar_month" /> Strategiegespräch buchen
+                    </a>
+                    <a href="/" className="ul-btn ul-btn-secondary" data-testid="register-back-home">Zurück zur Startseite</a>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -321,11 +345,11 @@ const UnifiedLogin = () => {
           <motion.div className="ul-legal" data-testid="login-legal-links" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
             <a href="/">Startseite</a>
             <span className="ul-dot" />
-            <a href="/impressum">Impressum</a>
+            <a href="/de/impressum">Impressum</a>
             <span className="ul-dot" />
-            <a href="/datenschutz">Datenschutz</a>
+            <a href="/de/datenschutz">Datenschutz</a>
             <span className="ul-dot" />
-            <a href="/agb">AGB</a>
+            <a href="/de/agb">AGB</a>
           </motion.div>
         </div>
       </div>

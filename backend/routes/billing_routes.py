@@ -42,7 +42,12 @@ class QuoteRequest(BaseModel):
     customer_company: Optional[str] = ""
     customer_phone: Optional[str] = ""
     customer_country: Optional[str] = "DE"
+    customer_industry: Optional[str] = ""
+    use_case: Optional[str] = ""
     notes: Optional[str] = ""
+    discount_percent: Optional[float] = 0
+    discount_reason: Optional[str] = ""
+    special_items: Optional[list] = []
 
 class OfferDiscoveryRequest(BaseModel):
     tier: str
@@ -372,7 +377,16 @@ async def admin_create_invoice(data: dict, current_user: dict = Depends(get_curr
         if not quote:
             raise HTTPException(404, "Angebot nicht gefunden")
         calc = quote.get("calculation", {})
-        amount = data.get("amount_eur") or calc.get("activation_fee_eur", 0)
+        inv_type = data.get("type", "activation")
+        if inv_type == "activation":
+            amount = data.get("amount_eur") or calc.get("upfront_eur") or calc.get("activation_fee_eur", 0)
+            desc = f"Aktivierungsanzahlung {calc.get('tier_name', '')}"
+        elif inv_type == "recurring":
+            amount = data.get("amount_eur") or calc.get("recurring_eur", 0)
+            desc = f"Monatliche Rate {calc.get('tier_name', '')}"
+        else:
+            amount = data.get("amount_eur", 0)
+            desc = data.get("description", "")
         customer = quote.get("customer", {})
     else:
         amount = data.get("amount_eur", 0)
@@ -397,7 +411,7 @@ async def admin_create_invoice(data: dict, current_user: dict = Depends(get_curr
         "tax_rate": tax_rate,
         "tax_eur": ust,
         "total_eur": brutto,
-        "description": data.get("description", ""),
+        "description": data.get("description") or (desc if quote_id else ""),
         "date": now.strftime("%d.%m.%Y"),
         "due_date": (now + timedelta(days=14)).strftime("%d.%m.%Y"),
         "created_at": now.isoformat(),

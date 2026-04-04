@@ -45,11 +45,24 @@ def _compute_doc_hash(contract: dict) -> str:
 async def create_contract_endpoint(data: dict, current_user: dict = Depends(get_current_admin)):
     """Vertrag erstellen (aus Quote oder frei)."""
     customer = data.get("customer", {})
+    quote_id = data.get("quote_id", "")
+    tier_key = data.get("tier_key", "")
+    calc = data.get("calculation", {})
+
+    # Auto-populate from quote if provided
+    if quote_id and not customer.get("email"):
+        quote = await S.db.quotes.find_one({"quote_id": quote_id}, {"_id": 0})
+        if quote:
+            customer = customer or quote.get("customer", {})
+            if not tier_key:
+                tier_key = quote.get("tier", "")
+            if not calc:
+                calc = quote.get("calculation", {})
+
     if not customer.get("email"):
         raise HTTPException(400, "customer.email erforderlich")
-    tier_key = data.get("tier_key", "")
+
     contract_type = data.get("contract_type", "standard")
-    calc = data.get("calculation", {})
     # Auto-calculate if tier given
     if tier_key and not calc:
         from commercial import calc_contract as cc

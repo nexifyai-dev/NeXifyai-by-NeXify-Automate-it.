@@ -114,6 +114,7 @@ const Admin = () => {
   const [complianceSummary, setComplianceSummary] = useState(null);
   const [legalAudit, setLegalAudit] = useState([]);
   const [legalRisks, setLegalRisks] = useState([]);
+  const [systemHealth, setSystemHealth] = useState(null);
 
   const headers = useMemo(() => ({ 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
@@ -135,8 +136,12 @@ const Admin = () => {
     } catch (err) { setLoginErr(err.message); } finally { setLoginBusy(false); }
   };
 
-  /* Load stats */
-  useEffect(() => { if (!token) return; apiFetch('/api/admin/stats').then(d => d && setStats(d)); }, [token, apiFetch]);
+  /* Load stats + system health */
+  useEffect(() => {
+    if (!token) return;
+    apiFetch('/api/admin/stats').then(d => d && setStats(d));
+    apiFetch('/api/admin/audit/health').then(d => d && setSystemHealth(d));
+  }, [token, apiFetch]);
 
   /* Load leads */
   useEffect(() => {
@@ -483,6 +488,44 @@ const Admin = () => {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* System Health Panel */}
+      {systemHealth && (
+        <div className="adm-health-panel" data-testid="admin-system-health">
+          <h3><I n="monitor_heart" /> System-Health</h3>
+          <div className="adm-health-grid">
+            <div className={`adm-health-card ${systemHealth.overall === 'healthy' ? 'ok' : 'warn'}`}>
+              <span className="adm-health-dot" /><span>System</span>
+              <strong>{systemHealth.overall === 'healthy' ? 'Operativ' : 'Warnung'}</strong>
+            </div>
+            <div className={`adm-health-card ${systemHealth.checks?.database?.status === 'ok' ? 'ok' : 'err'}`}>
+              <span className="adm-health-dot" /><span>Datenbank</span>
+              <strong>{systemHealth.checks?.database?.status === 'ok' ? 'Verbunden' : 'Fehler'}</strong>
+            </div>
+            <div className={`adm-health-card ${systemHealth.checks?.workers?.status === 'ok' ? 'ok' : 'warn'}`}>
+              <span className="adm-health-dot" /><span>Workers ({systemHealth.checks?.workers?.active || 0})</span>
+              <strong>{systemHealth.checks?.workers?.status === 'ok' ? 'Aktiv' : 'Prüfen'}</strong>
+            </div>
+            <div className={`adm-health-card ${systemHealth.checks?.llm?.status === 'ok' ? 'ok' : 'warn'}`}>
+              <span className="adm-health-dot" /><span>KI-Engine</span>
+              <strong>{systemHealth.checks?.llm?.status === 'ok' ? (systemHealth.checks?.llm?.provider || 'Aktiv') : 'Inaktiv'}</strong>
+            </div>
+            <div className={`adm-health-card ${systemHealth.checks?.scheduler?.status === 'ok' ? 'ok' : 'warn'}`}>
+              <span className="adm-health-dot" /><span>Scheduler ({systemHealth.checks?.scheduler?.jobs_count || 0} Jobs)</span>
+              <strong>{systemHealth.checks?.scheduler?.status === 'ok' ? 'Läuft' : 'Gestoppt'}</strong>
+            </div>
+            <div className={`adm-health-card ${systemHealth.checks?.memory?.status === 'ok' ? 'ok' : 'warn'}`}>
+              <span className="adm-health-dot" /><span>Memory ({systemHealth.checks?.memory?.entries || 0})</span>
+              <strong>{systemHealth.checks?.memory?.status === 'ok' ? 'Aktiv' : 'Inaktiv'}</strong>
+            </div>
+          </div>
+          {systemHealth.checks?.recent_errors_24h > 0 && (
+            <div className="adm-health-alert" data-testid="health-errors-alert">
+              <I n="warning" /> {systemHealth.checks.recent_errors_24h} Fehler in den letzten 24h
+            </div>
+          )}
         </div>
       )}
     </div>
