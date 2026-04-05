@@ -1,18 +1,22 @@
 # NeXifyAI — Changelog
 
-## 2026-04-04
+## 2026-04-05
+
+### NeXify AI Master Chat Interface — Vollständig implementiert (Iteration 65)
+- **Neues Feature**: NeXify AI Master als zentrales Chat-Interface im Admin-Panel
+  - Arcee AI (trinity-large-preview) als LLM mit SSE-Streaming
+  - mem0 Brain-Integration: Kontextsuche vor jeder Antwort, asynchrones Speichern
+  - Vollständiger System-Prompt: Orchestrator-Rolle, Hierarchien, Autonomie-Regeln, Brain-Protokoll, Unternehmenswissen, Tarife
+  - Conversation-Persistenz in MongoDB (nexify_ai_conversations + nexify_ai_messages)
+  - Admin-UI: Chat-Sidebar mit Konversationsliste, Brain-Toggle, Quick-Action-Buttons, Markdown-Rendering, Typing-Animation
+- Neue Dateien: `/app/backend/routes/nexify_ai_routes.py`
+- Neue CSS: `.nxai-*` Styles in Admin.css
+- Tests: 15/15 Backend-Tests + alle Frontend-Elemente verifiziert
 
 ### External API v1 — Vollständig implementiert (Iteration 64)
-- **Neues Feature**: Externe API v1 mit API-Key-Authentifizierung
-  - `/api/v1/health`, `/api/v1/docs` (öffentlich)
-  - Contacts CRUD: GET/POST/PUT `/api/v1/contacts`
-  - Leads CRUD: GET/POST `/api/v1/leads`
-  - Read-Only: `/api/v1/quotes`, `/api/v1/contracts`, `/api/v1/projects`, `/api/v1/invoices`
-  - System Stats: `/api/v1/stats`
-  - Webhooks: GET/POST/DELETE `/api/v1/webhooks`
-- **API-Key-System**: SHA-256 Hash-Speicherung, Rate-Limiting, Scope-basierte Berechtigungen, Ablaufdatum
-- **Admin-Panel**: API-Zugang View mit Key-Verwaltung, cURL-Beispiele, API-Dokumentation Link
-- Neue Dateien: `/app/backend/routes/api_v1_routes.py`, Tests: `/app/backend/tests/test_api_v1_external.py`
+- Externe API v1 mit API-Key-Authentifizierung (SHA-256 Hash, Rate-Limiting, Scopes)
+- Endpoints: Contacts CRUD, Leads CRUD, Quotes/Contracts/Projects/Invoices Read, Stats, Webhooks, Health, Docs
+- Admin-Panel: API-Zugang View mit Key-Verwaltung und cURL-Beispiele
 
 ### P1 Content & Copywriting Overhaul (Iteration 63)
 - **BUGFIX**: TrustSection i18n — war immer Deutsch, jetzt korrekt DE/NL/EN via `useLanguage()` Hook

@@ -8,9 +8,9 @@ B2B-Plattform "Starter/Growth AI Agenten AG" (NeXifyAI) — API-First, Unified C
 - Contract Operating System (master contracts, modular appendices, digital acceptance)
 - Unified Communication (LiveChat, Booking, Contact Forms)
 - Background Worker/Scheduler Layer (APScheduler)
-- KI-Orchestrator (Target: DeepSeek, Current Mock: Emergent GPT-5.2)
+- KI-Orchestrator: NeXify AI Master (Arcee trinity-large-preview + mem0 Brain)
 - Multi-language support: DE/NL/EN
-- Legal compliance: D/A/CH (Impressum, Datenschutz, AGB, KI-Hinweise, Widerruf, Cookies, AVV)
+- Legal compliance: D/A/CH (7 docs x 3 langs = 21 routes)
 - External API v1 with API-Key authentication
 
 ## Architecture
@@ -18,6 +18,8 @@ B2B-Plattform "Starter/Growth AI Agenten AG" (NeXifyAI) — API-First, Unified C
 - Backend: FastAPI (Python) with modular routes
 - Database: MongoDB
 - Auth: JWT + Magic Links (internal), API Keys (external)
+- LLM: Arcee AI (trinity-large-preview) via OpenAI-compatible API
+- Memory: mem0 Brain (user_id: pascal-courbois, agent_id: nexify-ai-master)
 - Workers: APScheduler
 - CI: Dutch Orange (#FF6B00) and White only
 
@@ -25,25 +27,23 @@ B2B-Plattform "Starter/Growth AI Agenten AG" (NeXifyAI) — API-First, Unified C
 
 ### Completed (verified via testing)
 - [x] Worker/Scheduler-Layer (APScheduler, Queue, Dead-letter)
-- [x] Services scaffolding (comms.py, outbound.py, billing.py, llm_provider.py)
+- [x] Services scaffolding (comms, outbound, billing, llm_provider)
 - [x] Public Auth Security
-- [x] Mobile Menu Overlay & Floating Actions
-- [x] Hero 3D Scene
-- [x] System-wide Design/Brand Harmonization (all breakpoints)
-- [x] Admin Sidebar (collapsed default, hover tooltips)
-- [x] Customer Portal Sidebar + Active Features
-- [x] Comprehensive Legal Texts (7 docs x 3 langs = 21 routes) — Iter 62
-- [x] TrustSection i18n Bug Fix + enhanced copy — Iter 63
+- [x] Hero 3D Scene + Design/Brand Harmonization
+- [x] Admin Sidebar + Customer Portal Sidebar (collapsed, tooltips)
+- [x] Customer Portal Active Features
+- [x] P0 Comprehensive Legal Texts (21 routes) — Iter 62
+- [x] P1 TrustSection i18n Bug Fix + enhanced copy — Iter 63
 - [x] External API v1 with API-Key Authentication — Iter 64
-  - Contacts CRUD, Leads CRUD, Quotes/Contracts/Projects/Invoices Read
-  - Stats, Webhooks, Health, Docs endpoints
-  - Admin API Key Management (create/list/toggle/delete)
-  - Frontend API-Zugang panel with cURL examples
+- [x] NeXify AI Master Chat Interface — Iter 65
+  - Arcee AI (trinity-large-preview) streaming SSE
+  - mem0 Brain integration (search + store)
+  - Full system prompt (Orchestrator, Company knowledge, Tarife)
+  - Conversation persistence in MongoDB
+  - Admin UI: Chat, Conversation sidebar, Brain toggle, Quick actions
 
-### In Progress
-- [ ] P2: DeepSeek Live-Migration (requires DEEPSEEK_API_KEY — already configured in .env)
-
-### Backlog
+### Backlog (Priority Order)
+- [ ] DeepSeek Live-Migration (replace GPT-5.2 mock)
 - [ ] Projektchat / Build-Handover-Kontext härten
 - [ ] Revolut/Stripe Live-Webhooks & Billing-Status-Sync
 - [ ] Legal & Compliance Guardian (operative wiring)
@@ -52,19 +52,23 @@ B2B-Plattform "Starter/Growth AI Agenten AG" (NeXifyAI) — API-First, Unified C
 - [ ] Next.js Migration (target architecture)
 - [ ] PydanticAI + LiteLLM + Temporal Adoption
 
-## External API v1 Reference
-- Base URL: `/api/v1`
-- Auth: `X-API-Key: nxa_live_...` header
+## External API v1
+- Base URL: /api/v1, Auth: X-API-Key header
 - Endpoints: /health, /docs, /stats, /contacts, /leads, /quotes, /contracts, /projects, /invoices, /webhooks
-- Admin Key Mgmt: /api/admin/api-keys (CRUD)
-- Scopes: all, contacts:read/write, leads:read/write, quotes:read, contracts:read, projects:read, invoices:read, stats:read, webhooks:read/write
+
+## NeXify AI Master
+- Route: /api/admin/nexify-ai/chat (SSE streaming)
+- LLM: Arcee AI trinity-large-preview
+- Memory: mem0 Brain (pascal-courbois / nexify-ai-master / nexify-automate-core)
+- Features: Conversations CRUD, Memory search/store, Brain toggle, Quick actions
 
 ## Key DB Collections
-projects, contracts, documents, webhook_events, outbound_leads, contacts, api_keys, webhooks
+projects, contracts, documents, webhook_events, outbound_leads, contacts, api_keys, webhooks, nexify_ai_conversations, nexify_ai_messages
 
 ## Testing History
-- Iteration 60: Admin Sidebar (100% Pass)
-- Iteration 61: Customer Portal (100% Pass)
-- Iteration 62: Legal Pages (100% Pass)
-- Iteration 63: TrustSection i18n Fix (100% Pass)
-- Iteration 64: External API v1 (100% Pass — 24/24 backend + frontend)
+- Iteration 60: Admin Sidebar (100%)
+- Iteration 61: Customer Portal (100%)
+- Iteration 62: Legal Pages (100%)
+- Iteration 63: TrustSection i18n Fix (100%)
+- Iteration 64: External API v1 (100%, 24/24)
+- Iteration 65: NeXify AI Master (100%, 15/15 backend + all frontend)
