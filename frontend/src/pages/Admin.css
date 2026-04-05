@@ -24,9 +24,10 @@
 @media(max-width:640px){.adm-sidebar-logo{display:none}}
 .adm-collapse-btn{position:absolute;right:-12px;top:28px;transform:translateY(-50%);background:#0e141c;border:1px solid rgba(255,255,255,0.08);color:#6b7b8d;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 200ms;z-index:20;opacity:0}
 .adm-sidebar:hover .adm-collapse-btn,.adm-collapse-btn:focus{opacity:1}
-.adm-sidebar.collapsed .adm-collapse-btn{position:static;transform:none;margin:0 auto 8px;opacity:1;width:28px;height:28px;border-radius:6px;right:auto;top:auto}
+.adm-sidebar.collapsed .adm-collapse-btn{position:static;transform:none;margin:0 auto 8px;opacity:1;width:36px;height:36px;border-radius:8px;right:auto;top:auto;flex-shrink:0}
 .adm-collapse-btn:hover{color:#fff;background:rgba(255,107,0,0.1);border-color:rgba(255,107,0,0.3)}
 .adm-collapse-btn .material-symbols-outlined{font-size:14px}
+.adm-sidebar.collapsed .adm-collapse-btn .material-symbols-outlined{font-size:18px}
 @media(max-width:640px){.adm-collapse-btn{display:none}}
 .adm-sidebar-nav{display:flex;flex-direction:column;gap:2px;flex:1}
 @media(max-width:640px){.adm-sidebar-nav{flex-direction:row;gap:4px}}
@@ -325,4 +326,3 @@
 .adm-health-card.err .adm-health-dot{background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,.4)}
 .adm-health-alert{display:flex;align-items:center;gap:6px;margin-top:10px;padding:8px 12px;background:var(--nx-err-bg);border:1px solid rgba(239,68,68,.12);border-radius:var(--r-sm);font-size:.75rem;font-weight:600;color:var(--nx-err)}
 .adm-health-alert .material-symbols-outlined{font-size:16px}
-
