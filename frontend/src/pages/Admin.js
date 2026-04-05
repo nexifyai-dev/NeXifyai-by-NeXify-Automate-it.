@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import AgentView from './AgentView';
 import './Admin.css';
+import './AgentView.css';
 
 const API = process.env.REACT_APP_BACKEND_URL || '';
 const I = ({ n }) => <span className="material-symbols-outlined">{n}</span>;
@@ -465,6 +467,7 @@ const Admin = () => {
     { id: 'leads', icon: 'people', label: 'Leads' },
     { id: 'calendar', icon: 'calendar_month', label: 'Kalender' },
     { id: 'customers', icon: 'person_search', label: 'Kunden' },
+    { id: 'nexifyai', icon: 'smart_toy', label: 'NeXifyAI' },
   ];
 
   return (
@@ -490,6 +493,7 @@ const Admin = () => {
           {view === 'leads' && <LeadsView />}
           {view === 'calendar' && <CalendarView />}
           {view === 'customers' && <CustomersView />}
+          {view === 'nexifyai' && <AgentView headers={headers} apiFetch={apiFetch} />}
         </div>
       </main>
     </div>

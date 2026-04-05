@@ -11,7 +11,7 @@ import os
 import secrets
 import logging
 from datetime import datetime, timezone, timedelta
-from typing import Optional, List
+from typing import Optional, List, Any
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Depends, status, Request, Response
@@ -963,6 +963,204 @@ async def admin_calendar_data(user = Depends(get_current_admin), month: str = No
     ).sort("date", 1).to_list(200)
     
     return {"bookings": bookings, "blocked_slots": blocked, "month": month}
+
+
+# ═══════════════════════════════════════════════════════════════════
+# NEXIFY AI AGENT — Master Agent with Brain, Code Exec, API Proxy
+# ═══════════════════════════════════════════════════════════════════
+
+from agent import (
+    agent_chat, mem0_store, mem0_search, mem0_get_all, mem0_delete,
+    execute_code, call_external_api, agent_sessions,
+    llm_chat, MASTER_SYSTEM_PROMPT, LLM_PROVIDERS,
+)
+
+
+class AgentChatRequest(BaseModel):
+    session_id: str
+    message: str
+    auto_brain: bool = True
+
+
+class AgentCodeRequest(BaseModel):
+    code: str
+    language: str = "python"
+    timeout: int = Field(default=30, le=60)
+
+
+class AgentApiCallRequest(BaseModel):
+    url: str
+    method: str = "GET"
+    headers: Optional[dict] = None
+    body: Optional[Any] = None
+    timeout: int = Field(default=30, le=60)
+
+
+class AgentBrainStoreRequest(BaseModel):
+    content: str
+    metadata: Optional[dict] = None
+    memory_layer: str = "KNOWLEDGE"
+
+
+class AgentBrainSearchRequest(BaseModel):
+    query: str
+    top_k: int = Field(default=10, le=50)
+
+
+# --- Agent Chat ---
+
+@app.post("/api/admin/agent/chat")
+async def admin_agent_chat(req: AgentChatRequest, user=Depends(get_current_admin)):
+    """Chat with NeXify AI Master Agent."""
+    result = await agent_chat(
+        session_id=req.session_id,
+        message=req.message,
+        db=db,
+        auto_brain=req.auto_brain,
+    )
+    await log_audit("agent_chat", user["email"], {
+        "session_id": req.session_id,
+        "provider": result.get("provider"),
+        "model": result.get("model"),
+    })
+    return result
+
+
+@app.get("/api/admin/agent/sessions")
+async def admin_agent_sessions(user=Depends(get_current_admin)):
+    """List agent chat sessions."""
+    sessions = await db.agent_sessions.find(
+        {}, {"_id": 0, "messages": {"$slice": -1}}
+    ).sort("updated_at", -1).to_list(50)
+    return {"sessions": sessions}
+
+
+@app.get("/api/admin/agent/sessions/{session_id}")
+async def admin_agent_session_detail(session_id: str, user=Depends(get_current_admin)):
+    """Get full agent session history."""
+    session = await db.agent_sessions.find_one(
+        {"session_id": session_id}, {"_id": 0}
+    )
+    if not session:
+        # Check in-memory
+        if session_id in agent_sessions:
+            return {
+                "session_id": session_id,
+                "messages": agent_sessions[session_id],
+            }
+        raise HTTPException(status_code=404, detail="Session nicht gefunden")
+    return session
+
+
+@app.delete("/api/admin/agent/sessions/{session_id}")
+async def admin_agent_session_delete(session_id: str, user=Depends(get_current_admin)):
+    """Delete an agent session."""
+    await db.agent_sessions.delete_one({"session_id": session_id})
+    if session_id in agent_sessions:
+        del agent_sessions[session_id]
+    await log_audit("agent_session_deleted", user["email"], {"session_id": session_id})
+    return {"success": True}
+
+
+# --- Brain (mem0) ---
+
+@app.post("/api/admin/agent/brain/store")
+async def admin_agent_brain_store(req: AgentBrainStoreRequest, user=Depends(get_current_admin)):
+    """Store knowledge in the Brain (mem0)."""
+    messages = [
+        {"role": "user", "content": req.content},
+        {"role": "assistant", "content": "Gespeichert."},
+    ]
+    metadata = req.metadata or {}
+    metadata.setdefault("memory_layer", req.memory_layer)
+    metadata.setdefault("tenant", "nexify-automate")
+    metadata.setdefault("scope", "global_company_knowledge")
+    metadata.setdefault("trust_level", "official_internal_source")
+    metadata.setdefault("stored_by", user["email"])
+
+    result = await mem0_store(messages, metadata)
+    await log_audit("brain_store", user["email"], {"content_preview": req.content[:200]})
+    return result
+
+
+@app.post("/api/admin/agent/brain/search")
+async def admin_agent_brain_search(req: AgentBrainSearchRequest, user=Depends(get_current_admin)):
+    """Search the Brain (mem0)."""
+    result = await mem0_search(req.query, top_k=req.top_k)
+    return result
+
+
+@app.get("/api/admin/agent/brain/memories")
+async def admin_agent_brain_list(user=Depends(get_current_admin)):
+    """List all memories in the Brain."""
+    result = await mem0_get_all()
+    return result
+
+
+@app.delete("/api/admin/agent/brain/{memory_id}")
+async def admin_agent_brain_delete(memory_id: str, user=Depends(get_current_admin)):
+    """Delete a memory from the Brain."""
+    result = await mem0_delete(memory_id)
+    await log_audit("brain_delete", user["email"], {"memory_id": memory_id})
+    return result
+
+
+# --- Code Execution ---
+
+@app.post("/api/admin/agent/execute")
+async def admin_agent_execute(req: AgentCodeRequest, user=Depends(get_current_admin)):
+    """Execute code in a sandboxed environment."""
+    result = await execute_code(req.code, req.language, req.timeout)
+    await log_audit("agent_code_exec", user["email"], {
+        "language": req.language,
+        "returncode": result.get("returncode"),
+        "duration_ms": result.get("duration_ms"),
+    })
+    return result
+
+
+# --- API Proxy ---
+
+@app.post("/api/admin/agent/api-call")
+async def admin_agent_api_call(req: AgentApiCallRequest, user=Depends(get_current_admin)):
+    """Call an external API."""
+    result = await call_external_api(
+        url=req.url,
+        method=req.method,
+        headers=req.headers,
+        body=req.body,
+        timeout=req.timeout,
+    )
+    await log_audit("agent_api_call", user["email"], {
+        "url": req.url,
+        "method": req.method,
+        "status": result.get("status"),
+    })
+    return result
+
+
+# --- Agent Status ---
+
+@app.get("/api/admin/agent/status")
+async def admin_agent_status(user=Depends(get_current_admin)):
+    """Get agent status and available providers."""
+    providers = []
+    for p in LLM_PROVIDERS:
+        key = os.environ.get(p["key_env"], "")
+        providers.append({
+            "name": p["name"],
+            "model": p["model"],
+            "available": bool(key),
+            "fallback_model": p.get("fallback_model"),
+        })
+
+    from agent import MEM0_API_KEY as mem0_key
+    return {
+        "brain_connected": bool(mem0_key),
+        "llm_providers": providers,
+        "active_sessions": len(agent_sessions),
+        "capabilities": ["chat", "brain", "code_execution", "api_calls"],
+    }
 
 
 # ═══════════════════════════════════════════════════════════════════
