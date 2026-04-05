@@ -7,64 +7,69 @@ NeXifyAI by NeXify — B2B AI Agency Platform. API-First, Unified Communication,
 - **Frontend**: React 18 SPA
 - **Backend**: FastAPI (Python)
 - **Datenbanken**: MongoDB (CRM, Projekte), Supabase PostgreSQL (Oracle Tasks, AI Agents, Brain Notes, Audit Logs)
-- **AI**: Arcee AI (Master Orchestrator), DeepSeek (Sub-Agenten via LLMProvider), mem0 (Brain Memory)
+- **AI**: DeepSeek (Primary Master + Sub-Agenten), Arcee AI (Fallback), mem0 (Brain Memory)
+- **Intelligence**: Crawl4AI (Web-Crawling), Nutrient AI (Document Processing)
 - **Workers**: APScheduler (24/7 autonome Task-Verarbeitung)
 
 ## Implementierte Module
 
 ### 1. Unified Login Stack
-- 2-Schritt-Anmeldung (E-Mail -> Rollenauswahl -> Passwort)
-- Admin- und Kundenportal-Trennung, JWT Auth
+- 2-Schritt-Anmeldung, Admin/Kundenportal-Trennung, JWT Auth
 
 ### 2. Oracle System (Supabase)
 - Autonome Task-Verarbeitung (alle 90s)
 - 9 KI-Agenten: Nexus, Strategist, Forge, Lexi, Scout, Scribe, Pixel, Care, Rank
-- Brain-Notes & Knowledge-Base, Score-basierte Verifikation
+- Score-basierte Verifikation
 
 ### 3. Granulares Status-Modell (Zentrale Leitstelle)
-- 13 definierte Status: erkannt, eingeplant, gestartet, in_bearbeitung, wartet_auf_input, wartet_auf_freigabe, in_loop, erfolgreich_abgeschlossen, erfolgreich_validiert, fehlgeschlagen, blockiert, abgebrochen, eskaliert
-- Loop-Tracking, Evidence-Pakete, Automatische Eskalation
-- Status-History (JSONB) mit Audit-Trail
-- Manuelle Eskalation/Abbruch durch Admin
+- 13 definierte Status: erkannt bis eskaliert
+- Loop-Tracking, Evidence-Pakete, Auto-Eskalation
 
 ### 4. Service-Boilerplate-System
-- 9 Leistungskonzepte: Starter/Growth AI (499/1299 EUR/Mo), SEO Starter/Growth (799/1499 EUR/Mo), Website Starter/Pro/Enterprise (2990/7490/14900 EUR), App MVP/Pro (9900/24900 EUR)
-- Template-Instanziierung: Sofortige Projekterstellung mit Milestones, Tasks, Agenten-Zuweisungen
+- 9 Leistungskonzepte mit Template-Instanziierung
 
-### 5. Platform-Härtung (AUFTRAG.txt)
-- .env.template mit dokumentierten Keys
-- Stripe vollständig entfernt, Revolut aktiv
-- /api/health mit 8 Service-Checks (MongoDB, Supabase, DeepSeek, Arcee, mem0, Resend, Revolut, Workers)
-- API-Key Startup-Validierung mit Graceful Degradation
-- Sub-Agenten migriert auf LLMProvider (DeepSeek primary)
-- Status-Migration: Legacy-EN -> Granular-DE (2634 Tasks migriert)
-- Oracle Views aktualisiert (varchar(50), neue Status)
-- Frontend deutsche Labels in OracleView
-- Logging-System (JsonFormatter für Production)
-- Dokumentation: SETUP.md, .env.template
+### 5. DeepSeek Live-Migration (NEU)
+- Master Orchestrator migriert von Arcee AI zu DeepSeek
+- DeepSeek = Primary, Arcee = Fallback
+- Streaming-Chat, Tool-Execution, Follow-up alles auf DeepSeek
+- Status-Endpoint zeigt master_llm='deepseek'
 
-### 6. NeXify AI Master Chat
-- Kontextbewusste KI-Konversationen (Arcee AI)
-- Brain-Integration (mem0), Direkte Tools
-- Schnellaktionen: Morgen-Briefing, Lead-Analyse, System-Check
+### 6. Intelligence Center (NEU)
+- **Crawl4AI**: Web-Crawling, Firmen-Recherche, Wettbewerbsmonitoring
+  - Live mit Playwright Chromium
+  - Endpoints: /api/admin/intelligence/crawl, research-company, monitor-competitor
+  - Master-AI Tools: crawl_url, research_company, monitor_competitor
+- **Nutrient AI**: PDF-Analyse, Vertrags-Risikoscoring, Dokumenten-Chat
+  - Endpoints: /api/admin/intelligence/analyze-document, contract-risk, document-chat
+  - Benötigt NUTRIENT_API_KEY (nutrient.io/sdk/try)
+- Frontend: Intelligence-Tab mit Status-Cards und Crawl-Interface
 
-### 7. CRM & Pipeline
-- Leads, Kontakte, Angebote, Verträge, Rechnungen, Timeline
+### 7. Platform-Härtung
+- .env.template, Health-Check (8 Services), Startup-Key-Validierung
+- Sub-Agenten auf LLMProvider migriert, Status-Migration EN->DE
+- Stripe entfernt, Revolut aktiv
 
-## API Endpoints (Neu)
-- `GET /api/health` — Öffentlicher Health-Check (8 Services)
+### 8. NeXify AI Master Chat
+- DeepSeek-powered Konversationen mit mem0 Brain
+- Intelligence-Tools direkt im Chat verfügbar
+- Schnellaktionen, Proaktiver Modus
+
+## API Endpoints (Aktuell)
+- `GET /api/health` — 8 Services Health-Check
+- `GET /api/admin/nexify-ai/status` — Master LLM Status (DeepSeek/Arcee)
 - `GET /api/admin/oracle/leitstelle` — Live-Statusübersicht
-- `GET /api/admin/oracle/tasks/{id}/transitions` — Task-Statusübergänge
-- `POST /api/admin/oracle/tasks/{id}/escalate` — Manuelle Eskalation
-- `POST /api/admin/oracle/tasks/{id}/cancel` — Manueller Abbruch
 - `GET /api/admin/service-templates` — 9 Boilerplates
-- `GET /api/admin/service-templates/{key}` — Template-Detail
-- `POST /api/admin/service-templates/instantiate` — Projekt aus Template
+- `POST /api/admin/intelligence/crawl` — Web-Crawling
+- `POST /api/admin/intelligence/research-company` — Firmen-Recherche
+- `POST /api/admin/intelligence/monitor-competitor` — Monitoring
+- `POST /api/admin/intelligence/analyze-document` — PDF-Analyse
+- `POST /api/admin/intelligence/contract-risk` — Risikoscoring
+- `GET /api/admin/intelligence/status` — Intelligence Status
 
-## Testing: Iteration 78, 100% Pass (Backend 35/35, Frontend 100%)
+## Testing: Iteration 79, 100% Pass (Backend 9/9, Frontend 100%)
 
 ## Backlog
 - P1: Legal & Compliance Guardian (operative Verdrahtung)
-- P2: DeepSeek Live-Migration für Master Orchestrator (Arcee -> DeepSeek)
+- NUTRIENT_API_KEY konfigurieren (nutrient.io/sdk/try)
 - server.py Refactoring (nach Stabilisierung)
 - Next.js Migration, PydanticAI + LiteLLM + Temporal
