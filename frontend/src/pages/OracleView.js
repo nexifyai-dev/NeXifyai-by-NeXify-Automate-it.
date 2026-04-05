@@ -14,7 +14,7 @@ const OracleView = ({ token }) => {
   const [tab, setTab] = useState('overview');
   const [loading, setLoading] = useState(false);
   const [agentInvoke, setAgentInvoke] = useState({ agent: '', message: '', result: null, loading: false });
-  const [newTask, setNewTask] = useState({ title: '', description: '', priority: 5 });
+  const [newTask, setNewTask] = useState({ title: '', description: '', priority: 5, task_type: 'general' });
   const [error, setError] = useState(null);
   const intervalRef = useRef(null);
 
@@ -90,7 +90,7 @@ const OracleView = ({ token }) => {
         body: JSON.stringify(newTask)
       });
       if (resp.ok) {
-        setNewTask({ title: '', description: '', priority: 5 });
+        setNewTask({ title: '', description: '', priority: 5, task_type: 'general' });
         loadDashboard();
       }
     } catch (e) { /* silent */ }
@@ -310,6 +310,9 @@ const OracleView = ({ token }) => {
           <div className="ora-create-task" data-testid="oracle-create-task">
             <input className="ora-input" placeholder="Task-Titel..." value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} data-testid="oracle-task-title" />
             <input className="ora-input" placeholder="Beschreibung..." value={newTask.description} onChange={e => setNewTask({ ...newTask, description: e.target.value })} data-testid="oracle-task-desc" />
+            <select className="ora-select" value={newTask.task_type} onChange={e => setNewTask({ ...newTask, task_type: e.target.value })} data-testid="oracle-task-type">
+              {['general','agent_task','user_request','project_task','system_task','improvement','monitoring','security','infrastructure','verification','optimization','deployment','configuration','data','crm','email','llm','kpi'].map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
             <select className="ora-select" value={newTask.priority} onChange={e => setNewTask({ ...newTask, priority: parseInt(e.target.value) })} data-testid="oracle-task-priority">
               {[1,2,3,4,5,6,7,8,9,10].map(p => <option key={p} value={p}>P{p}</option>)}
             </select>

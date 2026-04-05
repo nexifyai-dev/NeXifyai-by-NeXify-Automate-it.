@@ -164,15 +164,15 @@ async def nexify_tasks(status: str = None, limit: int = 50) -> list:
 
 
 async def insert_oracle_task(task_type: str, title: str, description: str, priority: int = 5, owner_agent: str = "nexify-ai-master", payload: dict = None, tags: list = None) -> str:
-    """Insert a new task into oracle_ready_queue."""
+    """Insert a new task into oracle_tasks table."""
     import uuid
     task_id = str(uuid.uuid4())
     await execute(
-        """INSERT INTO oracle_ready_queue (id, type, priority, status, owner_agent, created_by, payload, created_at, tags)
-           VALUES ($1, $2, $3, 'pending', $4, 'nexify-ai-master', $5::jsonb, NOW(), $6)""",
+        """INSERT INTO oracle_tasks (id, type, priority, status, owner_agent, created_by, payload, created_at, tags, title, description)
+           VALUES ($1, $2, $3, 'pending', $4, 'nexify-ai-master', $5::jsonb, NOW(), $6, $7, $8)""",
         task_id, task_type, priority, owner_agent,
         __import__('json').dumps(payload or {"title": title, "description": description}),
-        tags or []
+        tags or [], title, description
     )
     return task_id
 
@@ -182,12 +182,12 @@ async def update_oracle_task_status(task_id: str, status: str, result: dict = No
     import json
     if result:
         await execute(
-            "UPDATE oracle_ready_queue SET status=$1, result=$2::jsonb, completed_at=NOW() WHERE id::text=$3",
+            "UPDATE oracle_tasks SET status=$1, result=$2::jsonb, completed_at=NOW() WHERE id::text=$3",
             status, json.dumps(result), task_id
         )
     else:
         await execute(
-            "UPDATE oracle_ready_queue SET status=$1 WHERE id::text=$2",
+            "UPDATE oracle_tasks SET status=$1 WHERE id::text=$2",
             status, task_id
         )
 

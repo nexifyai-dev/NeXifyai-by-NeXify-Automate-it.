@@ -112,25 +112,35 @@ async def get_oracle_queue(limit: int = 50, admin: dict = Depends(get_admin)):
 class CreateTaskRequest(BaseModel):
     title: str
     description: str = ""
-    task_type: str = "manual"
+    task_type: str = "general"
     priority: int = 5
     owner_agent: str = "nexify-ai-master"
     tags: list = []
+
+
+VALID_ORACLE_TASK_TYPES = [
+    'infrastructure', 'security', 'migration', 'verification', 'optimization',
+    'response', 'escalation', 'intake', 'observation', 'user_request',
+    'agent_task', 'improvement', 'monitoring', 'agent', 'data', 'general',
+    'deployment', 'configuration', 'project_task', 'system_task',
+    'email', 'telegram', 'llm', 'kpi', 'crm'
+]
 
 
 @router.post("/api/admin/oracle/tasks")
 async def create_oracle_task(body: CreateTaskRequest, admin: dict = Depends(get_admin)):
     """Neuen Oracle-Task erstellen."""
     try:
+        task_type = body.task_type if body.task_type in VALID_ORACLE_TASK_TYPES else "general"
         task_id = await supa.insert_oracle_task(
-            task_type=body.task_type,
+            task_type=task_type,
             title=body.title,
             description=body.description,
             priority=body.priority,
             owner_agent=body.owner_agent,
             tags=body.tags
         )
-        return {"task_id": task_id, "status": "pending", "created": True}
+        return {"task_id": task_id, "status": "pending", "type": task_type, "created": True}
     except Exception as e:
         raise HTTPException(500, str(e))
 
