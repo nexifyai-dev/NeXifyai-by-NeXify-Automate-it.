@@ -1,39 +1,22 @@
 # Test Credentials
 
 ## Admin Login
-- Email: p.courbois@icloud.com
-- Password: 1def!xO2022!!
-- Login URL: /login
-- Login Flow: Email → Weiter → Role Selection "Administration" → Password → Anmelden
+- **Email**: p.courbois@icloud.com
+- **Password**: 1def!xO2022!!
+- **Login Flow**: 2-Step (Email → "Weiter" → "Administration" → Password → "Anmelden")
+- **Login Endpoint**: POST /api/admin/login (form-urlencoded: username, password)
+- **Auth Header**: Authorization: Bearer {access_token}
 
-## API Authentication
-- POST /api/admin/login (form-encoded: username=email&password=pw)
-- Returns: { access_token: "JWT..." }
-- Use: Authorization: Bearer {token}
+## App URLs
+- **Frontend**: https://contract-os.preview.emergentagent.com
+- **Admin Panel**: https://contract-os.preview.emergentagent.com/admin
 
 ## Key API Endpoints
-- Dashboard Stats: GET /api/admin/stats
-- System Health: GET /api/admin/monitoring/health
-- Customers: GET /api/admin/customers (NOT /contacts)
-- Leads: GET /api/admin/leads
-- Contracts: GET /api/admin/contracts
-- Invoices: GET /api/admin/invoices
-- Quotes: GET /api/admin/quotes
-- Bookings: GET /api/admin/bookings
-
-## Oracle System Endpoints
-- Dashboard: GET /api/admin/oracle/dashboard
-- Health: GET /api/admin/oracle/health
-- Agents: GET /api/admin/oracle/agents
-- Brain Search: GET /api/admin/oracle/brain?q=query
-- Tasks: GET/POST /api/admin/oracle/tasks
-- Engine Status: GET /api/admin/oracle/engine/status
-- Engine Trigger: POST /api/admin/oracle/engine/trigger
-- Font Audit: POST /api/admin/oracle/engine/font-audit
-- Knowledge Sync: POST /api/admin/oracle/engine/sync-knowledge
-- Invoke Agent: POST /api/admin/oracle/invoke-agent
-
-## NeXify AI
-- Chat (SSE): POST /api/admin/nexify-ai/chat
-- Conversations: GET /api/admin/nexify-ai/conversations
-- Status: GET /api/admin/nexify-ai/status
+- GET /api/admin/stats
+- GET /api/admin/oracle/leitstelle
+- GET /api/admin/oracle/dashboard
+- GET /api/admin/service-templates
+- POST /api/admin/service-templates/instantiate
+- POST /api/admin/nexify-ai/chat
+- GET /api/admin/nexify-ai/conversations
+- GET /api/admin/nexify-ai/status
