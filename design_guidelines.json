@@ -1,0 +1,134 @@
+{
+  "theme": {
+    "name": "NeXifyAI B2B Harmonized",
+    "archetype": "Archetype 4 (Swiss & High-Contrast - Dark Dashboard Variant)",
+    "colors": {
+      "background": "#0f1923",
+      "surface_glass": "rgba(19, 26, 34, 0.85)",
+      "primary_accent": "#FE9B7B",
+      "text_primary": "#e2e8f0",
+      "text_secondary": "#c8d1dc",
+      "text_muted": "#6b7b8d",
+      "border": "rgba(255, 255, 255, 0.08)"
+    },
+    "shadows": {
+      "glass": "0 4px 30px rgba(0, 0, 0, 0.1)",
+      "card": "0 2px 8px rgba(0, 0, 0, 0.2)"
+    },
+    "radii": {
+      "card": "8px",
+      "input": "6px",
+      "button": "6px",
+      "badge": "9999px"
+    }
+  },
+  "typography": {
+    "font_family": {
+      "headings": "Manrope, sans-serif",
+      "body": "system-ui, -apple-system, sans-serif"
+    },
+    "sizes": {
+      "h1": "text-2xl md:text-3xl font-semibold tracking-tight text-[#e2e8f0]",
+      "h2": "text-xl md:text-2xl font-semibold tracking-tight text-[#e2e8f0]",
+      "h3": "text-lg font-medium text-[#e2e8f0]",
+      "body": "text-sm leading-relaxed text-[#c8d1dc]",
+      "small": "text-xs text-[#6b7b8d]",
+      "overline": "text-[11px] font-bold uppercase tracking-[0.1em] text-[#6b7b8d]"
+    }
+  },
+  "layout_and_spacing": {
+    "global_spacing": {
+      "section_gap": "gap-8",
+      "widget_gap": "gap-6",
+      "element_gap": "gap-4"
+    },
+    "breakpoints": {
+      "mobile": "default (w < 768px)",
+      "tablet": "md (w >= 768px)",
+      "desktop": "lg (w >= 1024px)"
+    },
+    "structural_elements": {
+      "sidebar": {
+        "width_collapsed": "w-16",
+        "width_expanded": "w-64",
+        "icon_size": "w-5 h-5",
+        "padding": "p-3"
+      },
+      "topbar": {
+        "height": "h-16",
+        "padding": "px-6",
+        "alignment": "flex items-center justify-between"
+      },
+      "main_content": {
+        "padding_mobile": "p-4",
+        "padding_desktop": "p-8"
+      }
+    }
+  },
+  "components": {
+    "cards": {
+      "background": "bg-[#131a22]/85 backdrop-blur-xl",
+      "border": "border border-white/10",
+      "radius": "rounded-[8px]",
+      "padding": "p-4 md:p-6",
+      "header_spacing": "mb-4 md:mb-6"
+    },
+    "buttons": {
+      "base": "inline-flex items-center justify-center font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#FE9B7B]/50 disabled:opacity-50 disabled:pointer-events-none rounded-[6px]",
+      "sizes": {
+        "sm": "h-8 px-3 text-xs",
+        "md": "h-10 px-4 py-2 text-sm",
+        "lg": "h-12 px-8 text-base"
+      },
+      "variants": {
+        "primary": "bg-[#FE9B7B] text-[#0f1923] hover:bg-[#FE9B7B]/90",
+        "secondary": "bg-white/5 text-[#e2e8f0] hover:bg-white/10 border border-white/10",
+        "ghost": "hover:bg-white/5 text-[#c8d1dc] hover:text-[#e2e8f0]"
+      }
+    },
+    "forms_and_inputs": {
+      "base": "flex w-full bg-[#0f1923]/50 border border-white/10 text-[#e2e8f0] placeholder:text-[#6b7b8d] focus:outline-none focus:ring-1 focus:ring-[#FE9B7B] focus:border-[#FE9B7B] transition-colors rounded-[6px]",
+      "sizes": {
+        "default": "h-10 px-3 py-2 text-sm"
+      },
+      "labels": "block mb-1.5 text-xs font-medium text-[#c8d1dc]"
+    },
+    "tables": {
+      "container": "w-full overflow-hidden rounded-[8px] border border-white/10 bg-[#131a22]/50",
+      "header_row": "border-b border-white/10 bg-[#0f1923]/50 h-10",
+      "header_cell": "px-4 py-3 text-left align-middle text-xs font-medium uppercase tracking-wider text-[#6b7b8d]",
+      "body_row": "border-b border-white/5 transition-colors hover:bg-white/[0.02] h-14",
+      "body_cell": "p-4 align-middle text-sm text-[#c8d1dc]"
+    },
+    "badges": {
+      "base": "inline-flex items-center justify-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none",
+      "variants": {
+        "default": "border-transparent bg-white/10 text-[#e2e8f0]",
+        "primary": "border-transparent bg-[#FE9B7B]/20 text-[#FE9B7B]",
+        "success": "border-transparent bg-emerald-500/20 text-emerald-400"
+      }
+    }
+  },
+  "icons": {
+    "library": "@phosphor-icons/react",
+    "weight": "regular",
+    "sizes": {
+      "sidebar": "20px",
+      "button": "16px",
+      "table_action": "18px",
+      "hero_stat": "24px"
+    }
+  },
+  "instructions_to_main_agent": [
+    "CRITICAL: We are using .js and .jsx files exclusively. Do NOT create or use .tsx files.",
+    "CRITICAL: ALL interactive elements (buttons, inputs, links, tabs) and key informational elements (stats, balances, headers) MUST have a `data-testid` attribute using kebab-case role-based naming (e.g., `data-testid='login-submit-button'`, `data-testid='crm-leads-table'`).",
+    "Strictly enforce component consistencies defined in this JSON. Specifically: Ensure all cards use `p-4 md:p-6` to resolve padding irregularities.",
+    "Eliminate inconsistent heading sizes by mapping all page titles to the `h1` definition, section titles to `h2`, and widget titles to `h3`.",
+    "Apply `backdrop-blur-xl` correctly to all glass surfaces with the exact background color `bg-[#131a22]/85` as defined in the glass card spec.",
+    "Ensure table structures follow the specific height (`h-10` header, `h-14` rows) and text alignment specifications provided to unify CRM views.",
+    "Apply the Coral accent (`#FE9B7B`) exclusively for primary actions, active states, and key highlights to avoid overwhelming the dark theme.",
+    "Harmonize button sizing globally across the app ensuring they default to the `md` (`h-10`) size unless explicitly inside a compact area like a table row (`sm`).",
+    "Sidebar tooltips must be present when collapsed. Maintain strict icon sizes (`w-5 h-5`) and proper transition effects.",
+    "Use Phosphor icons. If not installed, run `yarn add @phosphor-icons/react`."
+  ]
+}
