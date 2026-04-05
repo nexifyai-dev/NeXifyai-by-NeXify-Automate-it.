@@ -1315,3 +1315,130 @@ async def admin_delete_agent(agent_id: str, admin: dict = Depends(get_admin_from
     if r.deleted_count == 0:
         raise HTTPException(404, "Agent nicht gefunden")
     return {"deleted": True}
+
+
+# ══════════════════════════════════════════════════════════════
+# PROACTIVE MODE — Autonomous Scheduling & Self-Activation
+# ══════════════════════════════════════════════════════════════
+
+PROACTIVE_TASKS = {
+    "morning_briefing": {
+        "name": "Morgen-Briefing",
+        "description": "Tägliche Systemübersicht: Neue Leads, offene Angebote, fällige Aufgaben",
+        "cron": "0 8 * * *",
+        "prompt": "Erstelle ein Morgen-Briefing: 1) Neue Leads seit gestern, 2) Offene Angebote die bald ablaufen, 3) Fällige Buchungen heute, 4) Systemstatus. Fasse alles kompakt zusammen.",
+    },
+    "lead_analysis": {
+        "name": "Lead-Analyse",
+        "description": "Wöchentliche Lead-Pipeline-Analyse mit Empfehlungen",
+        "cron": "0 10 * * 1",
+        "prompt": "Analysiere die aktuelle Lead-Pipeline: Conversion-Rate, durchschnittliche Verweildauer pro Status, Top-Quellen, Empfehlungen zur Optimierung. Nutze die Tools list_leads und system_stats.",
+    },
+    "brain_maintenance": {
+        "name": "Brain-Wartung",
+        "description": "Wöchentliche Brain-Konsistenzprüfung und Wissensoptimierung",
+        "cron": "0 22 * * 5",
+        "prompt": "Prüfe das Brain auf veraltete oder widersprüchliche Einträge. Suche nach: 1) Veralteten Projektstatus, 2) Doppelten Einträgen, 3) Fehlenden Kontextinformationen. Dokumentiere Befunde.",
+    },
+    "health_check": {
+        "name": "System-Health-Check",
+        "description": "Stündlicher System-Gesundheitscheck",
+        "cron": "0 */4 * * *",
+        "prompt": "Führe einen schnellen System-Health-Check durch: Prüfe system_stats und worker_status. Melde Anomalien.",
+    },
+}
+
+
+class ProactiveModeRequest(BaseModel):
+    enabled: bool
+    tasks: Optional[list] = None
+
+
+@router.get("/api/admin/nexify-ai/proactive")
+async def get_proactive_config(admin: dict = Depends(get_admin_from_token)):
+    """Get proactive mode configuration."""
+    config = await S.db.nexify_ai_config.find_one({"config_id": "proactive"}, {"_id": 0})
+    if not config:
+        config = {"config_id": "proactive", "enabled": False, "active_tasks": [], "history": []}
+
+    # Enrich with task definitions
+    available = {}
+    for tid, tdef in PROACTIVE_TASKS.items():
+        available[tid] = {
+            **tdef,
+            "active": tid in config.get("active_tasks", []),
+        }
+
+    return {
+        "enabled": config.get("enabled", False),
+        "available_tasks": available,
+        "active_tasks": config.get("active_tasks", []),
+        "last_run": config.get("last_run"),
+        "history": config.get("history", [])[-10:],
+    }
+
+
+@router.put("/api/admin/nexify-ai/proactive")
+async def update_proactive_config(body: ProactiveModeRequest, admin: dict = Depends(get_admin_from_token)):
+    """Enable/disable proactive mode and configure tasks."""
+    active_tasks = body.tasks or list(PROACTIVE_TASKS.keys()) if body.enabled else []
+    valid_tasks = [t for t in active_tasks if t in PROACTIVE_TASKS]
+
+    await S.db.nexify_ai_config.update_one(
+        {"config_id": "proactive"},
+        {"$set": {
+            "config_id": "proactive",
+            "enabled": body.enabled,
+            "active_tasks": valid_tasks,
+            "updated_at": utcnow().isoformat(),
+            "updated_by": admin.get("email"),
+        }},
+        upsert=True
+    )
+
+    return {"enabled": body.enabled, "active_tasks": valid_tasks}
+
+
+@router.post("/api/admin/nexify-ai/proactive/trigger/{task_id}")
+async def trigger_proactive_task(task_id: str, admin: dict = Depends(get_admin_from_token)):
+    """Manually trigger a proactive task."""
+    if task_id not in PROACTIVE_TASKS:
+        raise HTTPException(404, f"Unbekannte Aufgabe: {task_id}")
+
+    task = PROACTIVE_TASKS[task_id]
+
+    # Create a conversation for this proactive task
+    convo_id = new_id("nxc")
+    await S.db.nexify_ai_conversations.insert_one({
+        "conversation_id": convo_id,
+        "title": f"[Proaktiv] {task['name']}",
+        "created_at": utcnow().isoformat(),
+        "updated_at": utcnow().isoformat(),
+        "created_by": "system:proactive",
+        "is_proactive": True,
+        "message_count": 0,
+    })
+
+    # Store the system message
+    await S.db.nexify_ai_messages.insert_one({
+        "message_id": new_id("msg"),
+        "conversation_id": convo_id,
+        "role": "user",
+        "content": task["prompt"],
+        "created_at": utcnow().isoformat(),
+    })
+
+    # Log to history
+    await S.db.nexify_ai_config.update_one(
+        {"config_id": "proactive"},
+        {
+            "$set": {"last_run": utcnow().isoformat()},
+            "$push": {"history": {
+                "$each": [{"task_id": task_id, "name": task["name"], "conversation_id": convo_id, "triggered_at": utcnow().isoformat(), "triggered_by": admin.get("email")}],
+                "$slice": -50,
+            }}
+        },
+        upsert=True
+    )
+
+    return {"triggered": True, "task_id": task_id, "conversation_id": convo_id, "name": task["name"]}

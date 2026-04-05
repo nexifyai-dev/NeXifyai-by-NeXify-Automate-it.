@@ -1816,13 +1816,46 @@ const Admin = () => {
   const [nxEditAgent, setNxEditAgent] = useState(null); // null = closed, 'new' = create mode, agent_id = edit mode
   const [nxAgentForm, setNxAgentForm] = useState({ name: '', role: '', system_prompt: '', model: '', tools: [], status: 'active' });
   const [showAgentForm, setShowAgentForm] = useState(false);
+  const [nxProactive, setNxProactive] = useState(null);
 
   const loadNxAgents = useCallback(async () => {
     const d = await apiFetch('/api/admin/nexify-ai/agents');
     if (d?.agents) setNxAgents(d.agents);
   }, [apiFetch]);
 
-  useEffect(() => { if (token && view === 'agents') loadNxAgents(); }, [token, view, loadNxAgents]);
+  const loadNxProactive = useCallback(async () => {
+    const d = await apiFetch('/api/admin/nexify-ai/proactive');
+    if (d) setNxProactive(d);
+  }, [apiFetch]);
+
+  useEffect(() => { if (token && view === 'agents') { loadNxAgents(); loadNxProactive(); } }, [token, view, loadNxAgents, loadNxProactive]);
+
+  const toggleProactive = async (enabled) => {
+    await apiFetch('/api/admin/nexify-ai/proactive', {
+      method: 'PUT',
+      body: JSON.stringify({ enabled, tasks: nxProactive?.active_tasks || [] })
+    });
+    loadNxProactive();
+  };
+
+  const toggleProactiveTask = async (taskId) => {
+    const current = nxProactive?.active_tasks || [];
+    const newTasks = current.includes(taskId) ? current.filter(t => t !== taskId) : [...current, taskId];
+    await apiFetch('/api/admin/nexify-ai/proactive', {
+      method: 'PUT',
+      body: JSON.stringify({ enabled: nxProactive?.enabled ?? false, tasks: newTasks })
+    });
+    loadNxProactive();
+  };
+
+  const triggerProactiveTask = async (taskId) => {
+    const d = await apiFetch(`/api/admin/nexify-ai/proactive/trigger/${taskId}`, { method: 'POST' });
+    if (d?.conversation_id) {
+      setNxActiveConvo(d.conversation_id);
+      setView('nexify_ai');
+    }
+    loadNxProactive();
+  };
 
   const saveNxAgent = async () => {
     if (nxEditAgent && nxEditAgent !== 'new') {
@@ -1910,6 +1943,58 @@ const Admin = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Proactive Mode */}
+      <div style={{marginTop:24,padding:20,background:'var(--nx-glass)',border:'1px solid var(--nx-border)',borderRadius:'var(--r-md)'}} data-testid="proactive-mode">
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+          <div>
+            <h3 style={{color:'#fff',fontSize:'.9375rem',fontWeight:700,margin:0}}>Autonomer Modus</h3>
+            <p style={{fontSize:'.75rem',color:'#6b7b8d',margin:'4px 0 0'}}>NeXify AI arbeitet proaktiv — erstellt Briefings, analysiert Leads, prüft Systemstatus</p>
+          </div>
+          <button
+            className={`adm-btn ${nxProactive?.enabled ? 'adm-btn-primary' : 'adm-btn-secondary'}`}
+            style={{padding:'8px 16px',width:'auto',fontSize:'.75rem'}}
+            onClick={() => toggleProactive(!nxProactive?.enabled)}
+            data-testid="proactive-toggle"
+          >
+            <I n={nxProactive?.enabled ? 'toggle_on' : 'toggle_off'} />
+            {nxProactive?.enabled ? 'Aktiv' : 'Inaktiv'}
+          </button>
+        </div>
+        {nxProactive?.available_tasks && (
+          <div style={{display:'grid',gap:8}}>
+            {Object.entries(nxProactive.available_tasks).map(([tid, task]) => (
+              <div key={tid} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 14px',background:'rgba(255,255,255,.02)',border:'1px solid rgba(255,255,255,.04)',borderRadius:8}} data-testid={`proactive-task-${tid}`}>
+                <button
+                  style={{width:18,height:18,borderRadius:4,border:'1px solid ' + (task.active ? '#FE9B7B' : 'rgba(255,255,255,.1)'),background: task.active ? 'rgba(254,155,123,.15)' : 'transparent',cursor:'pointer',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}
+                  onClick={() => toggleProactiveTask(tid)}
+                  data-testid={`proactive-check-${tid}`}
+                >
+                  {task.active && <I n="check" />}
+                </button>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:'.8125rem',fontWeight:600,color:'#e2e8f0'}}>{task.name}</div>
+                  <div style={{fontSize:'.6875rem',color:'#6b7b8d'}}>{task.description}</div>
+                </div>
+                <div style={{fontSize:'.625rem',color:'#4a5568',fontFamily:'var(--f-mono)',flexShrink:0}}>{task.cron}</div>
+                <button className="adm-btn-sm" style={{padding:'4px 10px',fontSize:'.6875rem'}} onClick={() => triggerProactiveTask(tid)} data-testid={`proactive-run-${tid}`}>
+                  <I n="play_arrow" /> Jetzt
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        {nxProactive?.history?.length > 0 && (
+          <div style={{marginTop:12,paddingTop:12,borderTop:'1px solid rgba(255,255,255,.04)'}}>
+            <div style={{fontSize:'.6875rem',color:'#4a5568',marginBottom:6}}>Letzte Ausführungen</div>
+            {nxProactive.history.slice(-5).reverse().map((h, i) => (
+              <div key={i} style={{fontSize:'.6875rem',color:'#6b7b8d',padding:'3px 0'}}>
+                {fmtTime(h.triggered_at)} — {h.name} ({h.triggered_by})
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Legacy Agent Task Execution */}
