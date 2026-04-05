@@ -2971,11 +2971,11 @@ curl ${API}/api/v1/docs`}
     <div className={`adm-layout ${sidebarOpen ? '' : 'adm-collapsed'}`} data-testid="admin-panel">
       <aside className={`adm-sidebar ${sidebarOpen ? '' : 'collapsed'}`} data-testid="admin-sidebar">
         <div className="adm-sidebar-top">
-          <div className="adm-sidebar-logo"><img src="/icon-mark.svg" alt="" width="28" height="28" /><span>NeXify<em>AI</em></span></div>
+          <div className="adm-sidebar-logo"><img src="/icon-mark.svg" alt="NeXifyAI" width="32" height="32" /><span>NeXify<em>AI</em></span></div>
+          <button className="adm-collapse-btn" onClick={() => setSidebarOpen(!sidebarOpen)} data-testid="sidebar-toggle" title={sidebarOpen ? 'Einklappen' : 'Ausklappen'}>
+            <I n={sidebarOpen ? 'chevron_left' : 'chevron_right'} />
+          </button>
         </div>
-        <button className="adm-collapse-btn" onClick={() => setSidebarOpen(!sidebarOpen)} data-testid="sidebar-toggle" title={sidebarOpen ? 'Einklappen' : 'Ausklappen'}>
-          <I n={sidebarOpen ? 'chevron_left' : 'chevron_right'} />
-        </button>
         <nav className="adm-sidebar-nav">
           {navItems.map(n => (
             <button key={n.id} className={`adm-nav-item ${view === n.id ? 'active' : ''}`} onClick={() => { setView(n.id); setSelectedBooking(null); setCustDetail(null); setSelectedChat(null); setSelectedConvo(null); }} data-testid={`nav-${n.id}`} title={n.label}>
