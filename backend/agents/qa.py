@@ -37,5 +37,5 @@ ANTWORTFORMAT:
 """
 
 
-def create_qa_agent(db):
-    return SubAgent("qa", SYSTEM_PROMPT, db)
+def create_qa_agent(db, llm_provider=None):
+    return SubAgent("qa", SYSTEM_PROMPT, db, llm_provider=llm_provider)

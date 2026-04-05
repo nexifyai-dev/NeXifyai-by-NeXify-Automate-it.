@@ -27,5 +27,5 @@ Strukturierte Analyse mit:
 """
 
 
-def create_research_agent(db):
-    return SubAgent("research", SYSTEM_PROMPT, db)
+def create_research_agent(db, llm_provider=None):
+    return SubAgent("research", SYSTEM_PROMPT, db, llm_provider=llm_provider)

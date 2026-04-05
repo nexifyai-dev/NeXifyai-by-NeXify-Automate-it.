@@ -51,6 +51,7 @@ class _AppState:
     orchestrator = None
     agents = {}
     memory_svc = None
+    oracle_engine = None
     rate_limit_storage = {}
 
 S = _AppState()

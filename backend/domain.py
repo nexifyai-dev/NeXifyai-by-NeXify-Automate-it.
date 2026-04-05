@@ -522,9 +522,9 @@ def create_payment(invoice_id: str, amount: float, method: str, **kwargs) -> dic
         "invoice_id": invoice_id,
         "amount": amount,
         "currency": kwargs.get("currency", "EUR"),
-        "method": method,  # stripe, revolut, bank_transfer, cash
+        "method": method,  # revolut, bank_transfer, cash
         "status": PaymentStatus.PENDING.value,
-        "provider_ref": kwargs.get("provider_ref", ""),  # Stripe session_id etc.
+        "provider_ref": kwargs.get("provider_ref", ""),  # Revolut order_id etc.
         "customer_email": kwargs.get("customer_email", ""),
         "idempotency_key": kwargs.get("idempotency_key", new_id("idem")),
         "metadata": kwargs.get("metadata", {}),

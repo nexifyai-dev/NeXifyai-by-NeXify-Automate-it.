@@ -776,3 +776,6 @@ async def oracle_contact(identifier: str, current_user: dict = Depends(get_curre
     else:
         result = await S.memory_svc.get_contact_oracle(contact_id=identifier)
     return result
+
+
+# Public health-check moved to public_routes.py

@@ -27,5 +27,5 @@ ANTWORTFORMAT:
 """
 
 
-def create_design_agent(db):
-    return SubAgent("design", SYSTEM_PROMPT, db)
+def create_design_agent(db, llm_provider=None):
+    return SubAgent("design", SYSTEM_PROMPT, db, llm_provider=llm_provider)

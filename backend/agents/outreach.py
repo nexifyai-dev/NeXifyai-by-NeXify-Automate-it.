@@ -35,5 +35,5 @@ ANTWORTFORMAT:
 """
 
 
-def create_outreach_agent(db):
-    return SubAgent("outreach", SYSTEM_PROMPT, db)
+def create_outreach_agent(db, llm_provider=None):
+    return SubAgent("outreach", SYSTEM_PROMPT, db, llm_provider=llm_provider)

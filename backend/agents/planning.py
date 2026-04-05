@@ -30,5 +30,5 @@ ANTWORTFORMAT:
 """
 
 
-def create_planning_agent(db):
-    return SubAgent("planning", SYSTEM_PROMPT, db)
+def create_planning_agent(db, llm_provider=None):
+    return SubAgent("planning", SYSTEM_PROMPT, db, llm_provider=llm_provider)

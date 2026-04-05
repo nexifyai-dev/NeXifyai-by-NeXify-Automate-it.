@@ -259,6 +259,23 @@ async def lifespan(app: FastAPI):
     db_client = AsyncIOMotorClient(MONGO_URL)
     db = db_client[DB_NAME]
 
+    # --- Startup API-Key Validation (Graceful Degradation) ---
+    key_checks = {
+        "DEEPSEEK_API_KEY": ("DeepSeek (LLM)", True),
+        "ARCEE_API_KEY": ("Arcee AI (Master)", True),
+        "MEM0_API_KEY": ("mem0 (Brain)", True),
+        "RESEND_API_KEY": ("Resend (E-Mail)", False),
+        "REVOLUT_SECRET_KEY": ("Revolut (Zahlungen)", False),
+        "ALT_SUPABASE_POSTGRESQL": ("Supabase (Oracle)", True),
+    }
+    for key_name, (service_name, is_critical) in key_checks.items():
+        val = os.environ.get(key_name, "").strip()
+        if not val:
+            level = "KRITISCH" if is_critical else "WARNUNG"
+            logger.warning(f"[STARTUP] {level}: {key_name} fehlt — {service_name} deaktiviert")
+        else:
+            logger.info(f"[STARTUP] OK: {service_name} konfiguriert")
+
     # --- Indexes ---
     await db.leads.create_index("email")
     await db.leads.create_index("created_at")
@@ -336,18 +353,18 @@ async def lifespan(app: FastAPI):
     outbound_svc = OutboundLeadMachine(db, worker_manager=worker_mgr, comms_service=comms_svc)
     legal_svc = LegalGuardian(db, memory_svc=memory_svc)
 
-    # --- Agent Layer ---
-    orchestrator = Orchestrator(db)
+    # --- Agent Layer (LLMProvider-basiert) ---
+    orchestrator = Orchestrator(db, llm_provider=llm_provider)
     agents = {
-        "research": create_research_agent(db),
-        "outreach": create_outreach_agent(db),
-        "offer": create_offer_agent(db),
-        "support": create_support_agent(db),
-        "intake": create_intake_agent(db),
-        "planning": create_planning_agent(db),
-        "finance": create_finance_agent(db),
-        "design": create_design_agent(db),
-        "qa": create_qa_agent(db),
+        "research": create_research_agent(db, llm_provider=llm_provider),
+        "outreach": create_outreach_agent(db, llm_provider=llm_provider),
+        "offer": create_offer_agent(db, llm_provider=llm_provider),
+        "support": create_support_agent(db, llm_provider=llm_provider),
+        "intake": create_intake_agent(db, llm_provider=llm_provider),
+        "planning": create_planning_agent(db, llm_provider=llm_provider),
+        "finance": create_finance_agent(db, llm_provider=llm_provider),
+        "design": create_design_agent(db, llm_provider=llm_provider),
+        "qa": create_qa_agent(db, llm_provider=llm_provider),
     }
 
     # --- Object Storage ---
@@ -368,6 +385,9 @@ async def lifespan(app: FastAPI):
     shared.S.orchestrator = orchestrator
     shared.S.agents = agents
     shared.S.memory_svc = memory_svc
+    # Oracle Engine über Scheduler zugänglich machen
+    if worker_mgr and hasattr(worker_mgr, 'scheduler') and worker_mgr.scheduler:
+        shared.S.oracle_engine = worker_mgr.scheduler._oracle_engine
     shared.init_config()
     shared.S.ADVISOR_SYSTEM_PROMPT = get_system_prompt()
 

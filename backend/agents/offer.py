@@ -30,5 +30,5 @@ ANTWORTFORMAT:
 """
 
 
-def create_offer_agent(db):
-    return SubAgent("offer", SYSTEM_PROMPT, db)
+def create_offer_agent(db, llm_provider=None):
+    return SubAgent("offer", SYSTEM_PROMPT, db, llm_provider=llm_provider)

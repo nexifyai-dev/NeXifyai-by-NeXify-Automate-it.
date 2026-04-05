@@ -33,5 +33,5 @@ ANTWORTFORMAT:
 """
 
 
-def create_support_agent(db):
-    return SubAgent("support", SYSTEM_PROMPT, db)
+def create_support_agent(db, llm_provider=None):
+    return SubAgent("support", SYSTEM_PROMPT, db, llm_provider=llm_provider)

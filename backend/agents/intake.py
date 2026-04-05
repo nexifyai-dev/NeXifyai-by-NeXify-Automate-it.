@@ -31,5 +31,5 @@ ANTWORTFORMAT:
 """
 
 
-def create_intake_agent(db):
-    return SubAgent("intake", SYSTEM_PROMPT, db)
+def create_intake_agent(db, llm_provider=None):
+    return SubAgent("intake", SYSTEM_PROMPT, db, llm_provider=llm_provider)

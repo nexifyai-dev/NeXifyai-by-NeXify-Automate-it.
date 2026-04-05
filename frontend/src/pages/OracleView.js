@@ -204,10 +204,10 @@ const OracleView = ({ token }) => {
           <div className="ora-card ora-card--wide" data-testid="oracle-status-card">
             <h3 className="ora-card-title"><span className="material-symbols-outlined">monitoring</span> Oracle-Status</h3>
             <div className="ora-status-grid">
-              <StatusItem label="Pending" value={oStatus.pending} color="#f59e0b" />
-              <StatusItem label="Running" value={oStatus.running} color="#06b6d4" />
-              <StatusItem label="Completed (24h)" value={oStatus.completed_24h} color="#10b981" />
-              <StatusItem label="Failed" value={oStatus.failed} color="#ef4444" />
+              <StatusItem label="Erkannt" value={oStatus.pending} color="#3b82f6" />
+              <StatusItem label="In Bearbeitung" value={oStatus.running} color="#06b6d4" />
+              <StatusItem label="Validiert (24h)" value={oStatus.completed_24h} color="#10b981" />
+              <StatusItem label="Fehlgeschlagen" value={oStatus.failed} color="#ef4444" />
               <StatusItem label="Knowledge" value={oStatus.knowledge_entries} color="#8b5cf6" />
               <StatusItem label="Unverarbeitet" value={oStatus.unprocessed_knowledge_tasks} color="#94a3b8" />
             </div>
@@ -234,7 +234,7 @@ const OracleView = ({ token }) => {
       {tab === 'queue' && (
         <div className="ora-section" data-testid="oracle-queue-section">
           <div className="ora-section-header">
-            <h3>Task-Queue ({dashboard?.queue_pending} pending, {dashboard?.queue_running} running)</h3>
+            <h3>Task-Queue ({dashboard?.queue_pending} erkannt, {dashboard?.queue_running} in Bearbeitung)</h3>
             <button className="ora-btn-sm" onClick={loadDashboard} data-testid="oracle-queue-refresh">
               <span className="material-symbols-outlined">refresh</span>
             </button>
@@ -438,11 +438,11 @@ const OracleView = ({ token }) => {
           {/* Pipeline Stats */}
           {engineStatus?.pipeline && (
             <div className="ora-grid" style={{marginTop:16}}>
-              <StatCard icon="pending" label="Pending" value={engineStatus.pipeline.pending} color="#f59e0b" />
-              <StatCard icon="sync" label="Running" value={engineStatus.pipeline.running} color="#06b6d4" />
-              <StatCard icon="check_circle" label="Erledigt (24h)" value={engineStatus.pipeline.completed_24h} color="#10b981" />
+              <StatCard icon="visibility" label="Erkannt" value={engineStatus.pipeline.pending} color="#3b82f6" />
+              <StatCard icon="engineering" label="In Bearbeitung" value={engineStatus.pipeline.running} color="#06b6d4" />
+              <StatCard icon="verified" label="Validiert (24h)" value={engineStatus.pipeline.completed_24h} color="#10b981" />
               <StatCard icon="error" label="Fehlgeschlagen (24h)" value={engineStatus.pipeline.failed_24h} color="#ef4444" />
-              <StatCard icon="replay" label="Reassigned (24h)" value={engineStatus.pipeline.reassigned_24h} color="#a78bfa" />
+              <StatCard icon="loop" label="Reassigned (24h)" value={engineStatus.pipeline.reassigned_24h} color="#a78bfa" />
               <StatCard icon="database" label="Tasks Gesamt" value={engineStatus.pipeline.total} color="#6366f1" />
             </div>
           )}

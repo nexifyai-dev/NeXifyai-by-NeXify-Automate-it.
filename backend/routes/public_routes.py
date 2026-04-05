@@ -138,7 +138,52 @@ class AnalyticsEvent(BaseModel):
 
 @router.get("/api/health")
 async def health():
-    return {"status": "healthy", "version": "3.0.0", "timestamp": datetime.now(timezone.utc).isoformat()}
+    """Öffentlicher Health-Check — Status aller Dienste."""
+    services = {}
+    overall = "healthy"
+
+    # MongoDB
+    try:
+        await S.db.command("ping")
+        services["mongodb"] = {"status": "ok"}
+    except Exception as e:
+        services["mongodb"] = {"status": "error", "error": str(e)[:100]}
+        overall = "degraded"
+
+    # Supabase
+    try:
+        from services import supabase_client as supa
+        result = await supa.fetchval("SELECT 1")
+        services["supabase"] = {"status": "ok" if result == 1 else "warn"}
+    except Exception as e:
+        services["supabase"] = {"status": "error", "error": str(e)[:100]}
+        overall = "degraded"
+
+    # API-Key Checks
+    for key_name, label in [
+        ("DEEPSEEK_API_KEY", "deepseek"), ("ARCEE_API_KEY", "arcee"),
+        ("MEM0_API_KEY", "mem0"), ("RESEND_API_KEY", "resend"),
+        ("REVOLUT_SECRET_KEY", "revolut"),
+    ]:
+        val = os.environ.get(key_name, "")
+        services[label] = {"status": "ok" if val and len(val) > 5 else "missing", "configured": bool(val)}
+
+    # Workers
+    if S.worker_mgr:
+        wm = S.worker_mgr.get_status()
+        services["workers"] = {"status": "ok", "active": wm.get("queue", {}).get("workers_active", 0)}
+    else:
+        services["workers"] = {"status": "not_initialized"}
+
+    if any(s.get("status") == "error" for s in services.values()):
+        overall = "degraded"
+
+    return {
+        "status": overall,
+        "services": services,
+        "version": "3.2",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 @router.get("/api/company")

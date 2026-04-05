@@ -32,5 +32,5 @@ ANTWORTFORMAT:
 """
 
 
-def create_finance_agent(db):
-    return SubAgent("finance", SYSTEM_PROMPT, db)
+def create_finance_agent(db, llm_provider=None):
+    return SubAgent("finance", SYSTEM_PROMPT, db, llm_provider=llm_provider)

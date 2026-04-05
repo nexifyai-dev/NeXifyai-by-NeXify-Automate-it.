@@ -1,20 +1,14 @@
 """
 NeXifyAI Orchestrator — Central AI Agent Router.
+Nutzt LLMProvider (DeepSeek primary, Emergent fallback).
 Routes tasks to specialized sub-agents based on intent.
-Maintains audit trail in timeline_events.
 """
 import os
+import json
 import logging
-from emergentintegrations.llm.chat import LlmChat, UserMessage
-from domain import create_timeline_event, utcnow, new_id, Channel
+from domain import create_timeline_event, utcnow, new_id
 
 logger = logging.getLogger("nexifyai.orchestrator")
-
-MODEL_PROVIDER = "openai"
-MODEL_NAME = "gpt-5.2"
-
-def _get_key():
-    return os.environ.get("EMERGENT_LLM_KEY", "")
 
 AGENT_ROLES = {
     "intake": "Leadaufnahme, Discovery und Erstklassifikation",
@@ -49,41 +43,35 @@ Wenn die Aufgabe direkt ohne Sub-Agent lösbar ist, antworte:
 
 
 class Orchestrator:
-    """Central orchestrator that routes tasks to sub-agents."""
+    """Central orchestrator using LLMProvider abstraction."""
 
-    def __init__(self, db):
+    def __init__(self, db, llm_provider=None):
         self.db = db
-        self._sessions = {}
-
-    def _get_chat(self, session_id: str) -> LlmChat:
-        if session_id not in self._sessions:
-            chat = LlmChat(
-                api_key=_get_key(),
-                session_id=f"orch_{session_id}",
-                system_message=ORCHESTRATOR_SYSTEM,
-            )
-            chat.with_model(MODEL_PROVIDER, MODEL_NAME)
-            self._sessions[session_id] = chat
-        return self._sessions[session_id]
+        self.llm_provider = llm_provider
 
     async def route(self, task: str, context: dict = None, session_id: str = None) -> dict:
-        """Route a task to the appropriate sub-agent."""
         sid = session_id or new_id("orch")
-        chat = self._get_chat(sid)
+
+        if not self.llm_provider:
+            return {"session_id": sid, "error": "LLM-Provider nicht initialisiert", "timestamp": str(utcnow())}
 
         prompt = f"AUFGABE: {task}"
         if context:
             prompt += f"\n\nKONTEXT: {str(context)[:2000]}"
 
         try:
-            response = await chat.send_message(UserMessage(text=prompt))
-            import json
+            response = await self.llm_provider.chat_with_history(
+                session_id=f"orch_{sid}",
+                user_message=prompt,
+                system_prompt=ORCHESTRATOR_SYSTEM,
+                temperature=0.3,
+            )
+
             try:
                 result = json.loads(response)
             except json.JSONDecodeError:
                 result = {"agent": "self", "response": response, "raw": True}
 
-            # Audit
             evt = create_timeline_event(
                 "orchestrator", sid, "task_routed",
                 actor="orchestrator", actor_type="ai",
@@ -91,50 +79,46 @@ class Orchestrator:
             )
             await self.db.timeline_events.insert_one(evt)
 
-            return {
-                "session_id": sid,
-                "routing": result,
-                "timestamp": str(utcnow()),
-            }
+            return {"session_id": sid, "routing": result, "timestamp": str(utcnow())}
         except Exception as e:
             logger.error(f"Orchestrator error: {e}")
             return {"session_id": sid, "error": str(e), "timestamp": str(utcnow())}
 
 
 class SubAgent:
-    """Base class for specialized sub-agents."""
+    """Base class for specialized sub-agents using LLMProvider."""
 
-    def __init__(self, name: str, system_prompt: str, db):
+    def __init__(self, name: str, system_prompt: str, db, llm_provider=None):
         self.name = name
         self.db = db
         self.system_prompt = system_prompt
-        self._sessions = {}
-
-    def _get_chat(self, session_id: str) -> LlmChat:
-        if session_id not in self._sessions:
-            chat = LlmChat(
-                api_key=_get_key(),
-                session_id=f"{self.name}_{session_id}",
-                system_message=self.system_prompt,
-            )
-            chat.with_model(MODEL_PROVIDER, MODEL_NAME)
-            self._sessions[session_id] = chat
-        return self._sessions[session_id]
+        self.llm_provider = llm_provider
 
     async def execute(self, task: str, context: str = "", session_id: str = None) -> dict:
         sid = session_id or new_id(self.name[:4])
-        chat = self._get_chat(sid)
+
+        if not self.llm_provider:
+            return {"agent": self.name, "session_id": sid, "error": "LLM-Provider nicht initialisiert", "timestamp": str(utcnow())}
+
         prompt = task
         if context:
             prompt = f"KONTEXT:\n{context}\n\nAUFGABE:\n{task}"
+
         try:
-            response = await chat.send_message(UserMessage(text=prompt))
+            response = await self.llm_provider.chat_with_history(
+                session_id=f"{self.name}_{sid}",
+                user_message=prompt,
+                system_prompt=self.system_prompt,
+                temperature=0.5,
+            )
+
             evt = create_timeline_event(
                 "agent", sid, f"{self.name}_executed",
                 actor=self.name, actor_type="ai",
                 details={"task": task[:200], "response_preview": response[:200]}
             )
             await self.db.timeline_events.insert_one(evt)
+
             return {"agent": self.name, "session_id": sid, "response": response, "timestamp": str(utcnow())}
         except Exception as e:
             logger.error(f"SubAgent {self.name} error: {e}")

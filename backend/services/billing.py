@@ -176,7 +176,7 @@ class BillingService:
     async def process_payment_webhook(self, provider: str, event_data: dict) -> dict:
         """
         Payment-Webhook verarbeiten — idempotent.
-        Unterstützt: Revolut, Stripe, manuelle Überweisung.
+        Unterstützt: Revolut, manuelle Überweisung.
         """
         order_id = event_data.get("order_id", "")
         event_type = event_data.get("event", "")
