@@ -2,7 +2,7 @@
    NeXifyAI Admin Panel — Premium Dark Theme
    ═══════════════════════════════════════════════ */
 *{box-sizing:border-box;margin:0;padding:0}
-.adm-layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh;background:#0c1117;color:#c8d1dc;font-family:'Manrope','Plus Jakarta Sans','Inter',sans-serif;transition:grid-template-columns 300ms ease}
+.adm-layout{display:grid;grid-template-columns:240px 1fr;height:100vh;background:#0c1117;color:#c8d1dc;font-family:'Manrope','Plus Jakarta Sans','Inter',sans-serif;transition:grid-template-columns 300ms ease;overflow:hidden}
 .adm-layout.adm-collapsed{grid-template-columns:64px 1fr}
 @media(max-width:1024px){.adm-layout{grid-template-columns:64px 1fr}.adm-layout.adm-collapsed{grid-template-columns:64px 1fr}}
 @media(max-width:640px){.adm-layout{grid-template-columns:1fr;grid-template-rows:auto 1fr}.adm-layout.adm-collapsed{grid-template-columns:1fr}}
@@ -47,8 +47,8 @@
 .adm-topbar-user{display:flex;align-items:center;gap:6px;font-size:.8125rem;color:#6b7b8d}
 
 /* ── MAIN ── */
-.adm-main{display:flex;flex-direction:column;min-height:100vh}
-.adm-content{flex:1;padding:24px;overflow-y:auto}
+.adm-main{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.adm-content{flex:1;padding:24px;overflow-y:auto;min-height:0}
 .adm-content--fullbleed{padding:0;overflow:hidden}
 @media(max-width:640px){.adm-content{padding:16px}.adm-content--fullbleed{padding:0}}
 
@@ -207,7 +207,7 @@
 .adm-modal-actions .adm-btn-secondary{flex:1}
 
 /* ── LOGIN (Premium Split Layout) ── */
-.adm-login{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;background:#0c1117}
+.adm-login{height:100vh;display:grid;grid-template-columns:1fr 1fr;background:#0c1117;overflow:hidden}
 .adm-login-left{display:flex;flex-direction:column;justify-content:center;padding:48px 56px;background:rgba(14,20,28,0.6);border-right:1px solid rgba(255,255,255,0.04)}
 .adm-login-brand{margin-bottom:48px}
 .adm-login-logo{display:flex;align-items:center;gap:10px;margin-bottom:12px}

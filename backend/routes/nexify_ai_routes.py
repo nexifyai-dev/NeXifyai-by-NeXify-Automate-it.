@@ -587,14 +587,62 @@ async def store_memory(body: MemoryStoreRequest, admin: dict = Depends(get_admin
 
 @router.get("/api/admin/nexify-ai/status")
 async def nexify_ai_status(admin: dict = Depends(get_admin_from_token)):
-    """Check NeXify AI system status."""
-    arcee_ok = bool(ARCEE_API_KEY)
-    mem0_ok = bool(MEM0_API_KEY)
+    """Check NeXify AI system status with real connectivity tests."""
     msg_count = await S.db.nexify_ai_messages.count_documents({})
     conv_count = await S.db.nexify_ai_conversations.count_documents({})
+
+    # Arcee AI — real connectivity test (parallel with mem0)
+    arcee_status = {"configured": False, "connected": False, "model": ARCEE_MODEL, "url": ARCEE_API_URL, "error": None}
+    mem0_status = {"configured": False, "connected": False, "user_id": MEM0_USER_ID, "agent_id": MEM0_AGENT_ID, "error": None}
+
+    async def check_arcee():
+        if not ARCEE_API_KEY:
+            return
+        arcee_status["configured"] = True
+        try:
+            async with httpx.AsyncClient(timeout=5) as client:
+                resp = await client.post(
+                    ARCEE_API_URL,
+                    headers={"Authorization": f"Bearer {ARCEE_API_KEY}", "Content-Type": "application/json"},
+                    json={"model": ARCEE_MODEL, "messages": [{"role": "user", "content": "ping"}], "max_tokens": 1, "stream": False}
+                )
+                arcee_status["connected"] = resp.status_code == 200
+                if resp.status_code != 200:
+                    arcee_status["error"] = f"HTTP {resp.status_code}"
+        except Exception as e:
+            arcee_status["error"] = str(e)[:80]
+
+    async def check_mem0():
+        if not MEM0_API_KEY:
+            return
+        mem0_status["configured"] = True
+        try:
+            async with httpx.AsyncClient(timeout=5) as client:
+                resp = await client.post(
+                    "https://api.mem0.ai/v1/memories/search/",
+                    headers={"Authorization": f"Token {MEM0_API_KEY}", "Content-Type": "application/json"},
+                    json={"query": "health", "user_id": MEM0_USER_ID, "top_k": 1}
+                )
+                mem0_status["connected"] = resp.status_code == 200
+                if resp.status_code != 200:
+                    mem0_status["error"] = f"HTTP {resp.status_code}"
+        except Exception as e:
+            mem0_status["error"] = str(e)[:80]
+
+    await asyncio.gather(check_arcee(), check_mem0())
+
+    # WhatsApp session status
+    wa_session = await S.db.whatsapp_sessions.find_one({}, {"_id": 0}, sort=[("created_at", -1)])
+    wa_status = wa_session.get("status", "unpaired") if wa_session else "not_configured"
+
+    # MongoDB — already proven by the queries above
+    db_connected = True
+
     return {
-        "arcee": {"configured": arcee_ok, "model": ARCEE_MODEL, "url": ARCEE_API_URL},
-        "mem0": {"configured": mem0_ok, "user_id": MEM0_USER_ID, "agent_id": MEM0_AGENT_ID},
+        "arcee": arcee_status,
+        "mem0": mem0_status,
+        "whatsapp": {"status": wa_status, "connected": wa_status == "connected"},
+        "database": {"connected": db_connected},
         "stats": {"conversations": conv_count, "messages": msg_count}
     }
 

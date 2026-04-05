@@ -3086,14 +3086,14 @@ const Admin = () => {
     if (monitorLoading) return <div className="adm-loading"><I n="sync" /> Lade Systemstatus...</div>;
     if (!monitorData) return <div className="adm-empty"><I n="monitor_heart" /><p>Systemstatus konnte nicht geladen werden.</p><button className="adm-btn adm-btn-primary" onClick={loadMonitoring}>Erneut laden</button></div>;
     const sys = monitorData.systems || {};
-    const StatusDot = ({ s }) => <span style={{width:8,height:8,borderRadius:'50%',display:'inline-block',background:s==='ok'||s==='operational'||s==='configured'||s==='healthy'?'#10b981':s==='not_configured'?'#f59e0b':s==='attention'||s==='degraded'?'#f97316':'#ef4444',marginRight:8,flexShrink:0}} />;
+    const StatusDot = ({ s }) => <span style={{width:8,height:8,borderRadius:'50%',display:'inline-block',background:s==='ok'||s==='operational'||s==='healthy'||s==='connected'?'#10b981':s==='configured'||s==='fallback'||s==='pairing'?'#f59e0b':'#ef4444',marginRight:8,flexShrink:0}} />;
     const Card = ({ icon, title, status, children }) => (
       <div className="adm-wa-card" style={{padding:'16px 18px'}} data-testid={`monitor-${title.toLowerCase().replace(/\s/g,'-')}`}>
         <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
           <StatusDot s={status} />
           <I n={icon} style={{fontSize:18,color:'#FE9B7B'}} />
           <span style={{fontWeight:600,color:'#fff',fontSize:'.875rem'}}>{title}</span>
-          <span className="adm-badge" style={{marginLeft:'auto',background:status==='ok'||status==='configured'||status==='healthy'?'#10b98122':'#f59e0b22',color:status==='ok'||status==='configured'||status==='healthy'?'#10b981':'#f59e0b',fontSize:'.625rem'}}>{status}</span>
+          <span className="adm-badge" style={{marginLeft:'auto',background:status==='ok'||status==='operational'||status==='healthy'||status==='connected'?'#10b98122':status==='configured'||status==='fallback'?'#f59e0b22':'#ef444422',color:status==='ok'||status==='operational'||status==='healthy'||status==='connected'?'#10b981':status==='configured'||status==='fallback'?'#f59e0b':'#ef4444',fontSize:'.625rem'}}>{status || 'unbekannt'}</span>
         </div>
         <div style={{fontSize:'.75rem',color:'#6b7b8d',display:'flex',flexDirection:'column',gap:4}}>{children}</div>
       </div>
@@ -3120,13 +3120,13 @@ const Admin = () => {
             {sys.llm?.metrics && <span>Calls: {sys.llm.metrics.calls} | Errors: {sys.llm.metrics.errors}</span>}
           </Card>
           <Card icon="payment" title="Revolut" status={sys.payments?.revolut?.status}><span>API-Key: {sys.payments?.revolut?.api_key_set ? 'Gesetzt' : 'Fehlt'}</span></Card>
-          <Card icon="webhook" title="Webhooks" status="ok">
-            <span>Events gesamt: {sys.webhooks?.total_events}</span>
+          <Card icon="webhook" title="Webhooks" status={sys.webhooks?.total_events > 0 ? 'ok' : 'nicht konfiguriert'}>
+            <span>Events gesamt: {sys.webhooks?.total_events || 0}</span>
           </Card>
-          <Card icon="shield" title="Memory / Audit" status="ok">
-            <span>Timeline: {sys.memory_audit?.timeline_events}</span>
-            <span>Legal Audits: {sys.memory_audit?.legal_audits}</span>
-            <span>Memory: {sys.memory_audit?.memory_entries}</span>
+          <Card icon="shield" title="Memory / Audit" status={sys.memory_audit?.timeline_events > 0 ? 'ok' : 'leer'}>
+            <span>Timeline: {sys.memory_audit?.timeline_events || 0}</span>
+            <span>Legal Audits: {sys.memory_audit?.legal_audits || 0}</span>
+            <span>Memory: {sys.memory_audit?.memory_entries || 0}</span>
           </Card>
           <Card icon="report_problem" title="Dead Letter Queue" status={sys.dead_letter_queue?.status}>
             <span>Einträge: {sys.dead_letter_queue?.count}</span>
@@ -3135,10 +3135,15 @@ const Admin = () => {
           <Card icon="cloud_upload" title="Object Storage" status={sys.object_storage?.status}>
             <span>Initialisiert: {sys.object_storage?.initialized ? 'Ja' : 'Nein'}</span>
           </Card>
-          <Card icon="folder" title="Dokumente" status="ok">
-            <span>Gesamt: {sys.documents?.total}</span>
-            <span>Object Storage: {sys.documents?.in_storage}</span>
-            <span>MongoDB: {sys.documents?.in_mongodb}</span>
+          <Card icon="folder" title="Dokumente" status={sys.documents?.total > 0 ? 'ok' : 'leer'}>
+            <span>Gesamt: {sys.documents?.total || 0}</span>
+            <span>Object Storage: {sys.documents?.in_storage || 0}</span>
+            <span>MongoDB: {sys.documents?.in_mongodb || 0}</span>
+          </Card>
+          <Card icon="chat" title="WhatsApp" status={waStatus?.status === 'connected' ? 'connected' : waStatus?.status === 'pairing' ? 'pairing' : 'nicht verbunden'}>
+            <span>Status: {waStatus?.status || 'Nicht konfiguriert'}</span>
+            {waStatus?.phone_number && <span>Telefon: {waStatus.phone_number}</span>}
+            {(!waStatus?.status || waStatus?.status === 'disconnected' || waStatus?.status === 'unpaired') && <span style={{color:'#f59e0b'}}>WhatsApp Business API nicht integriert</span>}
           </Card>
         </div>
         <p style={{marginTop:16,fontSize:'.6875rem',color:'#6b7b8d'}}>Stand: {fmtTime(monitorData.timestamp)}</p>
@@ -3417,22 +3422,32 @@ curl ${API}/api/v1/docs`}
         </div>
         <div className="nxai-ctrl-section" style={{borderBottom:'none'}}>
           <h4>Verbindung</h4>
-          <div style={{display:'flex',flexDirection:'column',gap:4}}>
-            {nxStatus && <>
+          {!nxStatus ? (
+            <div style={{fontSize:'.6875rem',color:'#4a5568'}}>Prüfe Verbindungen...</div>
+          ) : (
+            <div style={{display:'flex',flexDirection:'column',gap:4}}>
               <div style={{display:'flex',alignItems:'center',gap:6,fontSize:'.6875rem'}}>
-                <span className="nxai-ctrl-dot" style={{background:nxStatus.arcee?.configured?'#10b981':'#ef4444'}} />
+                <span className="nxai-ctrl-dot" style={{background:nxStatus.arcee?.connected?'#10b981':nxStatus.arcee?.configured?'#f59e0b':'#ef4444'}} />
                 <span style={{color:'#c8d1dc'}}>Arcee AI</span>
+                <span style={{fontSize:'.5625rem',color:'#4a5568',marginLeft:'auto'}}>{nxStatus.arcee?.connected?'verbunden':nxStatus.arcee?.configured?'konfiguriert':'fehlt'}</span>
               </div>
               <div style={{display:'flex',alignItems:'center',gap:6,fontSize:'.6875rem'}}>
-                <span className="nxai-ctrl-dot" style={{background:nxStatus.mem0?.configured?'#10b981':'#ef4444'}} />
+                <span className="nxai-ctrl-dot" style={{background:nxStatus.mem0?.connected?'#10b981':nxStatus.mem0?.configured?'#f59e0b':'#ef4444'}} />
                 <span style={{color:'#c8d1dc'}}>mem0 Brain</span>
+                <span style={{fontSize:'.5625rem',color:'#4a5568',marginLeft:'auto'}}>{nxStatus.mem0?.connected?'verbunden':nxStatus.mem0?.configured?'konfiguriert':'fehlt'}</span>
               </div>
-            </>}
-            <div style={{display:'flex',alignItems:'center',gap:6,fontSize:'.6875rem'}}>
-              <span className="nxai-ctrl-dot" style={{background:'#10b981'}} />
-              <span style={{color:'#c8d1dc'}}>MongoDB</span>
+              <div style={{display:'flex',alignItems:'center',gap:6,fontSize:'.6875rem'}}>
+                <span className="nxai-ctrl-dot" style={{background:nxStatus.whatsapp?.connected?'#10b981':'#ef4444'}} />
+                <span style={{color:'#c8d1dc'}}>WhatsApp</span>
+                <span style={{fontSize:'.5625rem',color:'#4a5568',marginLeft:'auto'}}>{nxStatus.whatsapp?.status||'nicht verbunden'}</span>
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:6,fontSize:'.6875rem'}}>
+                <span className="nxai-ctrl-dot" style={{background:'#10b981'}} />
+                <span style={{color:'#c8d1dc'}}>MongoDB</span>
+                <span style={{fontSize:'.5625rem',color:'#4a5568',marginLeft:'auto'}}>verbunden</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
