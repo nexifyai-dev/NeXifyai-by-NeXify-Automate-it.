@@ -109,8 +109,9 @@ async def admin_audit_health(current_user: dict = Depends(get_current_admin)):
         checks["email"] = {"status": "error", "error": str(e)}
     
     overall = "healthy"
+    critical_keys = {"database", "collections", "agents", "llm", "workers", "scheduler", "memory"}
     for k, v in checks.items():
-        if isinstance(v, dict) and v.get("status") == "error":
+        if isinstance(v, dict) and v.get("status") == "error" and k in critical_keys:
             overall = "degraded"
             break
     

@@ -132,7 +132,7 @@ Qualitätsstandard: Professionell, präzise, handlungsorientiert.
         messages.append({"role": "system", "content": f"[KONTEXT]\n{context}\n[/KONTEXT]"})
     messages.append({"role": "user", "content": user_message})
 
-    result = await chat_completion(messages, model=model, temperature=temperature)
+    result = await chat_completion(messages, model=model, temperature=temperature, max_tokens=6000)
     if "error" in result:
         return {"agent": agent_name, "error": result["error"]}
     return {

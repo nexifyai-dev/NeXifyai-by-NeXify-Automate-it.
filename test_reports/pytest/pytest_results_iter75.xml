@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="19" time="74.270" timestamp="2026-04-05T06:31:00.437737+00:00" hostname="agent-env-ba57f1c5-2c1c-49c6-a3fe-28cd8f27846c"><testcase classname="tests.test_e2e_iter75.TestAdminAuth" name="test_admin_login_success" time="0.264" /><testcase classname="tests.test_e2e_iter75.TestAdminAuth" name="test_admin_login_invalid_credentials" time="0.177" /><testcase classname="tests.test_e2e_iter75.TestAdminDashboard" name="test_admin_stats" time="0.282" /><testcase classname="tests.test_e2e_iter75.TestAdminDashboard" name="test_audit_health" time="4.297" /><testcase classname="tests.test_e2e_iter75.TestOracleSystem" name="test_oracle_health" time="3.484" /><testcase classname="tests.test_e2e_iter75.TestOracleSystem" name="test_oracle_dashboard" time="4.214" /><testcase classname="tests.test_e2e_iter75.TestOracleSystem" name="test_oracle_agents" time="0.677" /><testcase classname="tests.test_e2e_iter75.TestOracleSystem" name="test_oracle_brain_search" time="0.651" /><testcase classname="tests.test_e2e_iter75.TestOracleSystem" name="test_oracle_tasks_list" time="0.564" /><testcase classname="tests.test_e2e_iter75.TestOracleSystem" name="test_oracle_task_creation" time="0.454" /><testcase classname="tests.test_e2e_iter75.TestOracleEngine" name="test_engine_status" time="2.825" /><testcase classname="tests.test_e2e_iter75.TestOracleEngine" name="test_font_audit" time="0.792" /><testcase classname="tests.test_e2e_iter75.TestOracleEngine" name="test_knowledge_sync" time="0.594" /><testcase classname="tests.test_e2e_iter75.TestNeXifyAI" name="test_nexify_ai_status" time="1.673" /><testcase classname="tests.test_e2e_iter75.TestNeXifyAI" name="test_nexify_ai_conversations" time="0.105" /><testcase classname="tests.test_e2e_iter75.TestNeXifyAI" name="test_nexify_ai_chat" time="52.448"><failure message="requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)">/root/.venv/lib/python3.11/site-packages/requests/models.py:976: in json
+    return complexjson.loads(self.text, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/decoder.py:355: in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+During handling of the above exception, another exception occurred:
+tests/test_e2e_iter75.py:263: in test_nexify_ai_chat
+    data = resp.json()
+           ^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/models.py:980: in json
+    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
+E   requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)</failure></testcase><testcase classname="tests.test_e2e_iter75.TestCRMEndpoints" name="test_leads_list" time="0.387" /><testcase classname="tests.test_e2e_iter75.TestCRMEndpoints" name="test_contacts_list" time="0.106"><failure message="assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_e2e_iter75.py:293: in test_contacts_list
+    assert resp.status_code == 200
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_e2e_iter75.TestCRMEndpoints" name="test_contracts_list" time="0.121" /></testsuite></testsuites>

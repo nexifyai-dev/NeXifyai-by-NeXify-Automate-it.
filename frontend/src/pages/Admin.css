@@ -2,7 +2,7 @@
    NeXifyAI Admin Panel — Premium Dark Theme
    ═══════════════════════════════════════════════ */
 *{box-sizing:border-box;margin:0;padding:0}
-.adm-layout{display:grid;grid-template-columns:240px 1fr;height:100vh;background:#0c1117;color:#c8d1dc;font-family:'Manrope','Plus Jakarta Sans','Inter',sans-serif;transition:grid-template-columns 300ms ease;overflow:hidden}
+.adm-layout{display:grid;grid-template-columns:240px 1fr;height:100vh;background:#0c1117;color:#c8d1dc;font-family:var(--f-display);transition:grid-template-columns 300ms ease;overflow:hidden}
 .adm-layout.adm-collapsed{grid-template-columns:64px 1fr}
 @media(max-width:1024px){.adm-layout{grid-template-columns:64px 1fr}.adm-layout.adm-collapsed{grid-template-columns:64px 1fr}}
 @media(max-width:640px){.adm-layout{grid-template-columns:1fr;grid-template-rows:auto 1fr}.adm-layout.adm-collapsed{grid-template-columns:1fr}}
