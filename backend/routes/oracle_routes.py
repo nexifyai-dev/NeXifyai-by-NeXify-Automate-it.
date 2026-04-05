@@ -371,6 +371,94 @@ async def oracle_health(admin: dict = Depends(get_admin)):
     return result
 
 
+# ════════════════════════════════════════════════════════════
+# AUTONOMOUS ENGINE — Live Status & Trigger
+# ════════════════════════════════════════════════════════════
+
+@router.get("/api/admin/oracle/engine/status")
+async def oracle_engine_status(admin: dict = Depends(get_admin)):
+    """Oracle Engine Live-Status: Stats, Scheduler, letzte Zyklen."""
+    try:
+        # Engine stats from scheduler
+        worker_status = {}
+        try:
+            if hasattr(S, 'worker_mgr') and S.worker_mgr:
+                worker_status = S.worker_mgr.scheduler.get_status()
+        except Exception:
+            pass
+
+        # Task-Pipeline-Stats
+        stats = {
+            "pending": await supa.fetchval("SELECT count(*) FROM oracle_tasks WHERE status='pending'"),
+            "running": await supa.fetchval("SELECT count(*) FROM oracle_tasks WHERE status='running'"),
+            "completed_24h": await supa.fetchval("SELECT count(*) FROM oracle_tasks WHERE status='completed' AND completed_at > NOW() - INTERVAL '24 hours'"),
+            "failed_24h": await supa.fetchval("SELECT count(*) FROM oracle_tasks WHERE status='failed' AND completed_at > NOW() - INTERVAL '24 hours'"),
+            "reassigned_24h": await supa.fetchval("SELECT count(*) FROM oracle_tasks WHERE retry_count > 0 AND created_at > NOW() - INTERVAL '24 hours'"),
+            "total": await supa.fetchval("SELECT count(*) FROM oracle_tasks"),
+        }
+
+        # Letzte 10 abgeschlossene Tasks
+        recent = await supa.fetch(
+            """SELECT id, type, title, status, owner_agent, priority, completed_at,
+                      LEFT(result::text, 300) as result_preview
+               FROM oracle_tasks WHERE status IN ('completed','failed')
+               ORDER BY completed_at DESC LIMIT 10"""
+        )
+
+        # Letzte Audit-Einträge
+        audits = await supa.fetch(
+            "SELECT action, status, details, created_at FROM audit_logs WHERE resource='oracle-engine' ORDER BY created_at DESC LIMIT 10"
+        )
+
+        return {
+            "pipeline": stats,
+            "scheduler": worker_status,
+            "recent_tasks": [_serialize(r) for r in recent],
+            "recent_audits": [_serialize(a) for a in audits],
+            "timestamp": utcnow().isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+@router.post("/api/admin/oracle/engine/trigger")
+async def trigger_oracle_cycle(admin: dict = Depends(get_admin)):
+    """Manueller Trigger: Oracle-Processing-Zyklus sofort ausführen."""
+    try:
+        from services.oracle_engine import OracleEngine
+        engine = OracleEngine(S.db)
+        await engine.start()
+        await engine.process_cycle()
+        stats = engine.get_stats()
+        return {"triggered": True, "stats": stats, "timestamp": utcnow().isoformat()}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+@router.post("/api/admin/oracle/engine/font-audit")
+async def trigger_font_audit(admin: dict = Depends(get_admin)):
+    """Manueller Trigger: Font-Audit sofort ausführen."""
+    try:
+        from services.oracle_engine import OracleEngine
+        engine = OracleEngine(S.db)
+        audit = await engine.run_font_audit()
+        return {"audit": audit, "timestamp": utcnow().isoformat()}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+@router.post("/api/admin/oracle/engine/sync-knowledge")
+async def trigger_knowledge_sync(admin: dict = Depends(get_admin)):
+    """Manueller Trigger: Knowledge-Sync sofort ausführen."""
+    try:
+        from services.oracle_engine import OracleEngine
+        engine = OracleEngine(S.db)
+        await engine.sync_knowledge()
+        return {"synced": True, "timestamp": utcnow().isoformat()}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
 # ── Serialization helper ──
 def _serialize(obj):
     """Convert asyncpg Record / datetime to JSON-safe dict."""

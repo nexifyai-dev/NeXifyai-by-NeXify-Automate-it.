@@ -56,7 +56,7 @@
 .ora-queue-badge--completed{background:rgba(16,185,129,.12);color:#34d399}
 .ora-queue-badge--failed{background:rgba(239,68,68,.12);color:#f87171}
 .ora-queue-badge--blocked{background:rgba(148,163,184,.12);color:#94a3b8}
-.ora-queue-type{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:#94a3b8;flex:1}
+.ora-queue-type{font-family:var(--f-mono, 'JetBrains Mono', monospace);font-size:.75rem;color:#94a3b8;flex:1}
 .ora-queue-agent{color:#a78bfa;font-size:.75rem}
 .ora-queue-pri{font-weight:700;color:#64748b;font-size:.75rem}
 
@@ -72,7 +72,7 @@
 .ora-table th{padding:10px 14px;text-align:left;font-weight:600;color:#94a3b8;font-size:.6875rem;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid rgba(255,255,255,.06)}
 .ora-table td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.03);color:#cbd5e1}
 .ora-table tbody tr:hover{background:rgba(255,255,255,.02)}
-.ora-cell-mono{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:#94a3b8}
+.ora-cell-mono{font-family:var(--f-mono, 'JetBrains Mono', monospace);font-size:.75rem;color:#94a3b8}
 .ora-cell-date{font-size:.75rem;color:#64748b;white-space:nowrap}
 .ora-cell-pri{font-weight:700;color:#f59e0b}
 
@@ -138,6 +138,12 @@
 
 /* ── Empty State ── */
 .ora-empty{font-size:.8125rem;color:#475569;font-style:italic;padding:12px 0}
+
+/* ── Engine ── */
+.ora-engine-actions{display:flex;gap:10px;flex-wrap:wrap}
+.ora-btn--secondary{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.ora-btn--secondary:hover{background:rgba(255,255,255,.08)}
+.ora-btn .material-symbols-outlined{font-size:18px}
 
 /* ── Responsive ── */
 @media(max-width:768px){

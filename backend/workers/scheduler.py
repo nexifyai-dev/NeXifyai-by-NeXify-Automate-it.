@@ -30,9 +30,51 @@ class WorkerScheduler:
         self.job_queue = job_queue
         self.scheduler = AsyncIOScheduler(timezone="Europe/Berlin")
         self._job_registry = {}
+        self._oracle_engine = None
 
     async def start(self):
         """Scheduler mit allen geplanten Jobs starten."""
+        # Oracle Engine initialisieren
+        from services.oracle_engine import OracleEngine
+        self._oracle_engine = OracleEngine(self.db)
+        await self._oracle_engine.start()
+
+        # --- Oracle Task-Processing: alle 90 Sekunden ---
+        self.scheduler.add_job(
+            self._oracle_process_cycle,
+            IntervalTrigger(seconds=90),
+            id="oracle_process",
+            name="Oracle Task-Processing",
+            replace_existing=True,
+        )
+
+        # --- Oracle Knowledge-Sync: alle 30 Minuten ---
+        self.scheduler.add_job(
+            self._oracle_knowledge_sync,
+            IntervalTrigger(minutes=30),
+            id="oracle_knowledge_sync",
+            name="Oracle Knowledge-Sync",
+            replace_existing=True,
+        )
+
+        # --- Oracle Task-Derivation: alle 6 Stunden ---
+        self.scheduler.add_job(
+            self._oracle_derive_tasks,
+            IntervalTrigger(hours=6),
+            id="oracle_derive_tasks",
+            name="Oracle Task-Derivation",
+            replace_existing=True,
+        )
+
+        # --- Font-Audit: alle 12 Stunden ---
+        self.scheduler.add_job(
+            self._oracle_font_audit,
+            IntervalTrigger(hours=12),
+            id="oracle_font_audit",
+            name="Font-Audit",
+            replace_existing=True,
+        )
+
         # --- Zahlungsreminder: täglich 09:00 ---
         self.scheduler.add_job(
             self._check_payment_reminders,
@@ -449,8 +491,32 @@ class WorkerScheduler:
                 "next_run": str(job.next_run_time) if job.next_run_time else None,
                 "trigger": str(job.trigger),
             })
+        oracle_stats = self._oracle_engine.get_stats() if self._oracle_engine else {}
         return {
             "running": self.scheduler.running,
             "jobs": jobs,
             "count": len(jobs),
+            "oracle_engine": oracle_stats,
         }
+
+    # ──────────── Oracle Engine Wrapper ────────────
+
+    async def _oracle_process_cycle(self):
+        """Oracle Task-Processing Zyklus."""
+        if self._oracle_engine:
+            await self._oracle_engine.process_cycle()
+
+    async def _oracle_knowledge_sync(self):
+        """Oracle Knowledge-Sync."""
+        if self._oracle_engine:
+            await self._oracle_engine.sync_knowledge()
+
+    async def _oracle_derive_tasks(self):
+        """Oracle Task-Derivation."""
+        if self._oracle_engine:
+            await self._oracle_engine.derive_tasks()
+
+    async def _oracle_font_audit(self):
+        """Oracle Font-Audit."""
+        if self._oracle_engine:
+            await self._oracle_engine.run_font_audit()

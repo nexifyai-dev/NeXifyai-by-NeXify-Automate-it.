@@ -352,8 +352,8 @@
 .nxai-msg.user .nxai-msg-bubble{background:rgba(254,155,123,.08);border:1px solid rgba(254,155,123,.12);color:#f0f4f8}
 .nxai-msg-bubble p{margin:0 0 8px}
 .nxai-msg-bubble p:last-child{margin:0}
-.nxai-msg-bubble code{background:rgba(0,0,0,.3);padding:2px 6px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.75rem}
-.nxai-msg-bubble pre{background:rgba(0,0,0,.3);padding:12px;border-radius:6px;overflow-x:auto;margin:8px 0;font-family:'JetBrains Mono',monospace;font-size:.75rem;line-height:1.5;border:1px solid rgba(255,255,255,.04)}
+.nxai-msg-bubble code{background:rgba(0,0,0,.3);padding:2px 6px;border-radius:3px;font-family:var(--f-mono);font-size:.75rem}
+.nxai-msg-bubble pre{background:rgba(0,0,0,.3);padding:12px;border-radius:6px;overflow-x:auto;margin:8px 0;font-family:var(--f-mono);font-size:.75rem;line-height:1.5;border:1px solid rgba(255,255,255,.04)}
 .nxai-msg-bubble pre code{background:none;padding:0}
 .nxai-msg-bubble ul,.nxai-msg-bubble ol{margin:6px 0;padding-left:20px}
 .nxai-msg-bubble li{margin:2px 0}

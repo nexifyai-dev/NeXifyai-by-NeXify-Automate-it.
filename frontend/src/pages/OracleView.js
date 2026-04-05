@@ -16,6 +16,8 @@ const OracleView = ({ token }) => {
   const [agentInvoke, setAgentInvoke] = useState({ agent: '', message: '', result: null, loading: false });
   const [newTask, setNewTask] = useState({ title: '', description: '', priority: 5, task_type: 'general' });
   const [error, setError] = useState(null);
+  const [engineStatus, setEngineStatus] = useState(null);
+  const [fontAudit, setFontAudit] = useState(null);
   const intervalRef = useRef(null);
 
   const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -97,6 +99,41 @@ const OracleView = ({ token }) => {
     setLoading(false);
   };
 
+  const loadEngineStatus = useCallback(async () => {
+    try {
+      const resp = await fetch(`${API}/api/admin/oracle/engine/status`, { headers });
+      if (resp.ok) setEngineStatus(await resp.json());
+    } catch (e) { /* silent */ }
+  }, [token]); // eslint-disable-line
+
+  const triggerCycle = async () => {
+    setLoading(true);
+    try {
+      await fetch(`${API}/api/admin/oracle/engine/trigger`, { method: 'POST', headers });
+      loadEngineStatus();
+      loadDashboard();
+    } catch (e) { /* silent */ }
+    setLoading(false);
+  };
+
+  const triggerFontAudit = async () => {
+    setLoading(true);
+    try {
+      const resp = await fetch(`${API}/api/admin/oracle/engine/font-audit`, { method: 'POST', headers });
+      if (resp.ok) setFontAudit(await resp.json());
+    } catch (e) { /* silent */ }
+    setLoading(false);
+  };
+
+  const triggerKnowledgeSync = async () => {
+    setLoading(true);
+    try {
+      await fetch(`${API}/api/admin/oracle/engine/sync-knowledge`, { method: 'POST', headers });
+      loadDashboard();
+    } catch (e) { /* silent */ }
+    setLoading(false);
+  };
+
   useEffect(() => {
     loadDashboard();
     loadHealth();
@@ -108,7 +145,8 @@ const OracleView = ({ token }) => {
     if (tab === 'agents') loadAgents();
     if (tab === 'tasks') loadTasks();
     if (tab === 'brain') searchBrain('');
-  }, [tab, loadAgents, loadTasks, searchBrain]);
+    if (tab === 'engine') loadEngineStatus();
+  }, [tab, loadAgents, loadTasks, searchBrain, loadEngineStatus]);
 
   const counts = dashboard?.counts || {};
   const oStatus = dashboard?.oracle_status || {};
@@ -145,6 +183,7 @@ const OracleView = ({ token }) => {
           { id: 'brain', label: 'Brain', icon: 'neurology' },
           { id: 'tasks', label: 'Oracle-Tasks', icon: 'task_alt' },
           { id: 'invoke', label: 'Agent aufrufen', icon: 'play_arrow' },
+          { id: 'engine', label: 'Autonome Engine', icon: 'manufacturing' },
         ].map(t => (
           <button key={t.id} className={`ora-tab ${tab === t.id ? 'ora-tab--active' : ''}`} onClick={() => setTab(t.id)} data-testid={`oracle-tab-${t.id}`}>
             <span className="material-symbols-outlined">{t.icon}</span> {t.label}
@@ -366,6 +405,117 @@ const OracleView = ({ token }) => {
                   <div className="ora-invoke-text">{agentInvoke.result.response}</div>
                 </>
               )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══ AUTONOMOUS ENGINE ═══ */}
+      {tab === 'engine' && (
+        <div className="ora-section" data-testid="oracle-engine-section">
+          <div className="ora-section-header">
+            <h3>Autonome Engine — 24/7 Task-Processing</h3>
+            <div style={{display:'flex',gap:8}}>
+              <button className="ora-btn-sm" onClick={loadEngineStatus} data-testid="oracle-engine-refresh">
+                <span className="material-symbols-outlined">refresh</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="ora-engine-actions" data-testid="oracle-engine-actions">
+            <button className="ora-btn" onClick={triggerCycle} disabled={loading} data-testid="oracle-engine-trigger">
+              <span className="material-symbols-outlined">bolt</span> Zyklus starten
+            </button>
+            <button className="ora-btn ora-btn--secondary" onClick={triggerKnowledgeSync} disabled={loading} data-testid="oracle-engine-sync">
+              <span className="material-symbols-outlined">sync</span> Knowledge-Sync
+            </button>
+            <button className="ora-btn ora-btn--secondary" onClick={triggerFontAudit} disabled={loading} data-testid="oracle-engine-font-audit">
+              <span className="material-symbols-outlined">text_format</span> Font-Audit
+            </button>
+          </div>
+
+          {/* Pipeline Stats */}
+          {engineStatus?.pipeline && (
+            <div className="ora-grid" style={{marginTop:16}}>
+              <StatCard icon="pending" label="Pending" value={engineStatus.pipeline.pending} color="#f59e0b" />
+              <StatCard icon="sync" label="Running" value={engineStatus.pipeline.running} color="#06b6d4" />
+              <StatCard icon="check_circle" label="Erledigt (24h)" value={engineStatus.pipeline.completed_24h} color="#10b981" />
+              <StatCard icon="error" label="Fehlgeschlagen (24h)" value={engineStatus.pipeline.failed_24h} color="#ef4444" />
+              <StatCard icon="replay" label="Reassigned (24h)" value={engineStatus.pipeline.reassigned_24h} color="#a78bfa" />
+              <StatCard icon="database" label="Tasks Gesamt" value={engineStatus.pipeline.total} color="#6366f1" />
+            </div>
+          )}
+
+          {/* Scheduler Jobs */}
+          {engineStatus?.scheduler?.jobs && (
+            <div className="ora-card" style={{marginTop:16}} data-testid="oracle-scheduler-jobs">
+              <h3 className="ora-card-title"><span className="material-symbols-outlined">schedule</span> Scheduler-Jobs ({engineStatus.scheduler.count})</h3>
+              <div className="ora-table-wrap">
+                <table className="ora-table">
+                  <thead><tr><th>Job</th><th>Nächster Lauf</th><th>Trigger</th></tr></thead>
+                  <tbody>
+                    {engineStatus.scheduler.jobs.map(j => (
+                      <tr key={j.id}>
+                        <td><strong>{j.name}</strong></td>
+                        <td className="ora-cell-date">{j.next_run ? fmtDate(j.next_run) : '-'}</td>
+                        <td className="ora-cell-mono">{j.trigger}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Recent Completed/Failed Tasks */}
+          {engineStatus?.recent_tasks?.length > 0 && (
+            <div className="ora-card" style={{marginTop:16}} data-testid="oracle-recent-tasks">
+              <h3 className="ora-card-title"><span className="material-symbols-outlined">history</span> Letzte verarbeitete Tasks</h3>
+              <div className="ora-table-wrap">
+                <table className="ora-table">
+                  <thead><tr><th>Titel</th><th>Typ</th><th>Status</th><th>Agent</th><th>Abgeschlossen</th></tr></thead>
+                  <tbody>
+                    {engineStatus.recent_tasks.map(t => (
+                      <tr key={t.id}>
+                        <td>{t.title || '-'}</td>
+                        <td className="ora-cell-mono">{t.type}</td>
+                        <td><span className={`ora-queue-badge ora-queue-badge--${t.status}`}>{t.status}</span></td>
+                        <td>{t.owner_agent || '-'}</td>
+                        <td className="ora-cell-date">{fmtDate(t.completed_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Font Audit Results */}
+          {fontAudit?.audit && (
+            <div className="ora-card" style={{marginTop:16}} data-testid="oracle-font-audit-result">
+              <h3 className="ora-card-title"><span className="material-symbols-outlined">text_format</span> Font-Audit Ergebnis</h3>
+              <div className="ora-status-grid">
+                <StatusItem label="Dateien gescannt" value={fontAudit.audit.files_scanned} color="#06b6d4" />
+                <StatusItem label="Schriften gefunden" value={fontAudit.audit.unique_fonts} color="#8b5cf6" />
+                <StatusItem label="Issues" value={fontAudit.audit.issue_count} color={fontAudit.audit.issue_count > 0 ? '#ef4444' : '#10b981'} />
+              </div>
+              {fontAudit.audit.issues?.length > 0 && (
+                <div className="ora-brain-list" style={{marginTop:12}}>
+                  {fontAudit.audit.issues.map((issue, i) => (
+                    <div key={i} className="ora-brain-card" style={{borderColor: issue.severity === 'error' ? 'rgba(239,68,68,.3)' : 'rgba(245,158,11,.3)'}}>
+                      <div className="ora-brain-top">
+                        <strong style={{color: issue.severity === 'error' ? '#f87171' : '#fbbf24'}}>{issue.font}</strong>
+                        <span className="ora-brain-type" style={{background: issue.severity === 'error' ? 'rgba(239,68,68,.1)' : 'rgba(245,158,11,.1)', color: issue.severity === 'error' ? '#f87171' : '#fbbf24'}}>{issue.severity}</span>
+                      </div>
+                      <p className="ora-brain-content">Dateien: {issue.files.join(', ')}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{marginTop:12}}>
+                <p className="ora-empty" style={{fontStyle:'normal'}}>Standard-Schriften: {fontAudit.audit.standard?.join(' | ')}</p>
+              </div>
             </div>
           )}
         </div>
