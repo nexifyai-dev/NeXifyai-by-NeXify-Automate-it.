@@ -341,8 +341,8 @@
 .nxai-mem-badge{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:12px;font-size:.6875rem;font-weight:600;background:rgba(16,185,129,.08);color:#10b981;border:1px solid rgba(16,185,129,.15)}
 .nxai-mem-badge.off{background:rgba(255,255,255,.03);color:#4a5568;border-color:rgba(255,255,255,.06)}
 .nxai-mem-badge .material-symbols-outlined{font-size:14px}
-.nxai-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth}
-.nxai-msg{display:flex;gap:10px;max-width:820px;animation:nxaiFadeIn 200ms ease}
+.nxai-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
+.nxai-msg{display:flex;gap:10px;max-width:820px;animation:nxaiFadeIn 200ms ease forwards;animation-iteration-count:1}
 .nxai-msg.user{flex-direction:row-reverse;margin-left:auto}
 .nxai-msg-avatar{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.75rem;font-weight:700}
 .nxai-msg.assistant .nxai-msg-avatar{background:rgba(254,155,123,.12);color:#FE9B7B}

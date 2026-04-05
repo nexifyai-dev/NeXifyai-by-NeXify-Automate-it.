@@ -2717,10 +2717,14 @@ const Admin = () => {
     if (d) setNxStatus(d);
   }, [apiFetch]);
 
-  const nxScrollToBottom = () => {
+  const nxScrollToBottom = (force = false) => {
     requestAnimationFrame(() => {
-      if (nxMessagesContainerRef.current) {
-        nxMessagesContainerRef.current.scrollTop = nxMessagesContainerRef.current.scrollHeight;
+      const el = nxMessagesContainerRef.current;
+      if (!el) return;
+      // Only auto-scroll if user is near the bottom (within 150px) or forced
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
+      if (nearBottom || force) {
+        el.scrollTop = el.scrollHeight;
       }
     });
   };
@@ -2742,33 +2746,6 @@ const Admin = () => {
     return html;
   };
 
-  const executeNxTool = async (toolName, params) => {
-    try {
-      const resp = await fetch(`${API}/api/admin/nexify-ai/execute-tool`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tool: toolName, params })
-      });
-      return await resp.json();
-    } catch (e) { return { error: e.message }; }
-  };
-
-  const extractAndRunTools = async (text) => {
-    const toolRegex = /```tool\s*\n?([\s\S]*?)```/g;
-    let match;
-    const toolCalls = [];
-    while ((match = toolRegex.exec(text)) !== null) {
-      try { toolCalls.push(JSON.parse(match[1].trim())); } catch (e) { /* skip invalid */ }
-    }
-    if (toolCalls.length === 0) return null;
-    const results = [];
-    for (const tc of toolCalls) {
-      const r = await executeNxTool(tc.tool, tc.params || {});
-      results.push({ tool: tc.tool, ...r });
-    }
-    return results;
-  };
-
   const sendNxMessage = async () => {
     const msg = nxInput.trim();
     if (!msg || nxStreaming) return;
@@ -2776,9 +2753,9 @@ const Admin = () => {
     setNxStreaming(true);
     setNxStreamText('');
 
-    const userMsg = { role: 'user', content: msg, created_at: new Date().toISOString() };
+    const userMsg = { role: 'user', content: msg, created_at: new Date().toISOString(), _key: 'u_' + Date.now() };
     setNxMessages(prev => [...prev, userMsg]);
-    setTimeout(nxScrollToBottom, 100);
+    setTimeout(() => nxScrollToBottom(true), 50);
 
     try {
       const resp = await fetch(`${API}/api/admin/nexify-ai/chat`, {
@@ -2790,7 +2767,9 @@ const Admin = () => {
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
       let fullText = '';
+      let followText = '';
       let newConvoId = nxActiveConvo;
+      let inFollowUp = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -2806,30 +2785,62 @@ const Admin = () => {
               setNxStreamText(fullText);
               nxScrollToBottom();
             }
+            if (data.follow_content) {
+              if (!inFollowUp) {
+                inFollowUp = true;
+                // Strip tool blocks from displayed text
+                const clean = fullText.replace(/```tool\s*\n?[\s\S]*?```/g, '').trim();
+                fullText = clean + '\n\n';
+                setNxStreamText(fullText);
+              }
+              followText += data.follow_content;
+              setNxStreamText(fullText + followText);
+              nxScrollToBottom();
+            }
+            if (data.tool_status === 'executing') {
+              setNxStreamText(prev => prev + '\n\n⏳ Tools werden ausgeführt...\n');
+              nxScrollToBottom();
+            }
+            if (data.tool_status === 'interpreting') {
+              // Clear the "executing" indicator and prepare for follow-up
+              const clean = fullText.replace(/```tool\s*\n?[\s\S]*?```/g, '').replace(/⏳.*\n?/g, '').trim();
+              fullText = clean + '\n\n';
+              setNxStreamText(fullText);
+            }
             if (data.conversation_id) newConvoId = data.conversation_id;
             if (data.done) {
-              // Check for tool calls in the response
-              const toolResults = await extractAndRunTools(fullText);
-              let finalContent = fullText;
-              if (toolResults) {
-                finalContent += '\n\n---\n**Tool-Ergebnisse:**\n```json\n' + JSON.stringify(toolResults, null, 2) + '\n```';
-              }
-              setNxMessages(prev => [...prev, { role: 'assistant', content: finalContent, created_at: new Date().toISOString(), tools_used: !!toolResults }]);
+              const finalContent = inFollowUp ? (fullText + followText).trim() : fullText.trim();
+              setNxMessages(prev => [...prev, {
+                role: 'assistant',
+                content: finalContent,
+                created_at: new Date().toISOString(),
+                _key: 'a_' + Date.now()
+              }]);
               setNxStreamText('');
               if (!nxActiveConvo && newConvoId) setNxActiveConvo(newConvoId);
             }
             if (data.error) {
-              setNxMessages(prev => [...prev, { role: 'assistant', content: `Fehler: ${data.error}`, created_at: new Date().toISOString() }]);
+              setNxMessages(prev => [...prev, {
+                role: 'assistant',
+                content: `Fehler: ${data.error}`,
+                created_at: new Date().toISOString(),
+                _key: 'e_' + Date.now()
+              }]);
               setNxStreamText('');
             }
           } catch (e) { /* skip parse errors */ }
         }
       }
     } catch (e) {
-      setNxMessages(prev => [...prev, { role: 'assistant', content: `Verbindungsfehler: ${e.message}`, created_at: new Date().toISOString() }]);
+      setNxMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `Verbindungsfehler: ${e.message}`,
+        created_at: new Date().toISOString(),
+        _key: 'err_' + Date.now()
+      }]);
     }
     setNxStreaming(false);
-    setTimeout(nxScrollToBottom, 200);
+    setTimeout(() => nxScrollToBottom(true), 100);
     loadNxConversations();
   };
 
@@ -3171,7 +3182,7 @@ curl ${API}/api/v1/docs`}
             </div>
           )}
           {nxMessages.map((m, i) => (
-            <div key={i} className={`nxai-msg ${m.role}`}>
+            <div key={m._key || m.message_id || `msg_${i}_${m.created_at}`} className={`nxai-msg ${m.role}`}>
               <div className="nxai-msg-avatar">{m.role === 'assistant' ? 'NX' : 'PC'}</div>
               <div>
                 <div className="nxai-msg-bubble" dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }} />

@@ -3,6 +3,7 @@ NeXifyAI — NeXify AI Master Chat Routes
 Arcee AI (trinity-large-preview) + mem0 Brain Integration
 """
 import os
+import re
 import json
 import logging
 import asyncio
@@ -334,17 +335,59 @@ async def delete_conversation(conversation_id: str, admin: dict = Depends(get_ad
 # ══════════════════════════════════════════════════════════════
 # CHAT (Streaming via Arcee AI)
 # ══════════════════════════════════════════════════════════════
+TOOL_REGEX = re.compile(r'```tool\s*\n?([\s\S]*?)```')
+
+def _extract_tool_calls(text: str) -> list:
+    """Extract tool calls from ```tool blocks in AI response."""
+    calls = []
+    for m in TOOL_REGEX.finditer(text):
+        try:
+            calls.append(json.loads(m.group(1).strip()))
+        except (json.JSONDecodeError, ValueError):
+            pass
+    return calls
+
+
+def _strip_tool_blocks(text: str) -> str:
+    """Remove ```tool blocks from text for clean display."""
+    return TOOL_REGEX.sub('', text).strip()
+
+
+async def _run_tool(tool_name: str, params: dict) -> dict:
+    """Execute a single tool server-side. Reuses the execute_tool handler logic."""
+    body = ToolRequest(tool=tool_name, params=params)
+    admin_fake = {"email": "nexify-ai-master"}
+    return await execute_tool(body, admin_fake)
+
+
+async def _call_arcee_sync(messages: list) -> str:
+    """Make a non-streaming call to Arcee and return the full text."""
+    try:
+        async with httpx.AsyncClient(timeout=90) as client:
+            resp = await client.post(
+                ARCEE_API_URL,
+                headers={"Authorization": f"Bearer {ARCEE_API_KEY}", "Content-Type": "application/json"},
+                json={"model": ARCEE_MODEL, "messages": messages, "stream": False, "temperature": 0.5}
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                return data.get("choices", [{}])[0].get("message", {}).get("content", "")
+            logger.error(f"Arcee follow-up error {resp.status_code}: {resp.text[:300]}")
+            return ""
+    except Exception as e:
+        logger.error(f"Arcee follow-up exception: {e}")
+        return ""
+
+
 @router.post("/api/admin/nexify-ai/chat")
 async def nexify_ai_chat(body: ChatRequest, request: Request, admin: dict = Depends(get_admin_from_token)):
-    """Stream a NeXify AI Master response."""
+    """Stream a NeXify AI Master response with server-side tool execution."""
     if not ARCEE_API_KEY:
         raise HTTPException(500, "ARCEE_API_KEY nicht konfiguriert")
 
     conversation_id = body.conversation_id
-    is_new = False
     if not conversation_id:
         conversation_id = new_id("nxc")
-        is_new = True
         await S.db.nexify_ai_conversations.insert_one({
             "conversation_id": conversation_id,
             "title": body.message[:80],
@@ -355,16 +398,15 @@ async def nexify_ai_chat(body: ChatRequest, request: Request, admin: dict = Depe
         })
 
     # Store user message
-    user_msg_id = new_id("msg")
     await S.db.nexify_ai_messages.insert_one({
-        "message_id": user_msg_id,
+        "message_id": new_id("msg"),
         "conversation_id": conversation_id,
         "role": "user",
         "content": body.message,
         "created_at": utcnow().isoformat()
     })
 
-    # Load conversation history (last 20 messages for context)
+    # Load conversation history
     history = []
     async for m in S.db.nexify_ai_messages.find(
         {"conversation_id": conversation_id}, {"_id": 0}
@@ -372,7 +414,7 @@ async def nexify_ai_chat(body: ChatRequest, request: Request, admin: dict = Depe
         history.append({"role": m["role"], "content": m["content"]})
     history.reverse()
 
-    # Optionally search mem0 for context
+    # mem0 context
     memory_context = ""
     if body.use_memory and MEM0_API_KEY:
         memories = await mem0_search(body.message, top_k=5)
@@ -384,37 +426,24 @@ async def nexify_ai_chat(body: ChatRequest, request: Request, admin: dict = Depe
                     if text:
                         mem_texts.append(f"- {text}")
             if mem_texts:
-                memory_context = "\n\n[BRAIN CONTEXT — Geladene Erinnerungen]\n" + "\n".join(mem_texts) + "\n[/BRAIN CONTEXT]"
+                memory_context = "\n\n[BRAIN CONTEXT]\n" + "\n".join(mem_texts) + "\n[/BRAIN CONTEXT]"
 
-    # Build messages for Arcee
-    messages = [{"role": "system", "content": SYSTEM_PROMPT + memory_context}]
-    messages.extend(history)
+    llm_messages = [{"role": "system", "content": SYSTEM_PROMPT + memory_context}]
+    llm_messages.extend(history)
 
     async def stream_response():
         full_response = ""
         try:
             async with httpx.AsyncClient(timeout=120) as client:
                 async with client.stream(
-                    "POST",
-                    ARCEE_API_URL,
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {ARCEE_API_KEY}"
-                    },
-                    json={
-                        "model": ARCEE_MODEL,
-                        "messages": messages,
-                        "stream": True,
-                        "temperature": 0.7
-                    }
+                    "POST", ARCEE_API_URL,
+                    headers={"Content-Type": "application/json", "Authorization": f"Bearer {ARCEE_API_KEY}"},
+                    json={"model": ARCEE_MODEL, "messages": llm_messages, "stream": True, "temperature": 0.7}
                 ) as resp:
                     if resp.status_code != 200:
                         error_body = await resp.aread()
-                        error_msg = f"Arcee API Fehler ({resp.status_code}): {error_body.decode()[:300]}"
-                        logger.error(error_msg)
-                        yield f"data: {json.dumps({'error': error_msg})}\n\n"
+                        yield f"data: {json.dumps({'error': f'Arcee API Fehler ({resp.status_code}): {error_body.decode()[:300]}'})}\n\n"
                         return
-
                     async for line in resp.aiter_lines():
                         if not line or not line.startswith("data: "):
                             continue
@@ -436,23 +465,75 @@ async def nexify_ai_chat(body: ChatRequest, request: Request, admin: dict = Depe
             logger.error(f"Streaming error: {e}")
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
 
+        # ── Server-side tool execution ──
+        tool_calls = _extract_tool_calls(full_response)
+        tool_results = []
+        if tool_calls:
+            yield f"data: {json.dumps({'tool_status': 'executing', 'tools_count': len(tool_calls)})}\n\n"
+            for tc in tool_calls[:5]:  # max 5 tools per turn
+                t_name = tc.get("tool", "unknown")
+                t_params = tc.get("params", {})
+                try:
+                    result = await _run_tool(t_name, t_params)
+                    tool_results.append({"tool": t_name, "result": result})
+                except Exception as exc:
+                    tool_results.append({"tool": t_name, "error": str(exc)})
+
+            # Build follow-up: feed tool results back to AI for natural interpretation
+            tool_summary = json.dumps(tool_results, ensure_ascii=False, default=str)[:8000]
+            follow_msgs = llm_messages + [
+                {"role": "assistant", "content": full_response},
+                {"role": "user", "content": f"[SYSTEM — Tool-Ergebnisse]\n{tool_summary}\n[/SYSTEM]\n\nInterpretiere die Ergebnisse kurz und präzise für den Nutzer. Kein JSON ausgeben. Keine Tool-Blöcke."}
+            ]
+            yield f"data: {json.dumps({'tool_status': 'interpreting'})}\n\n"
+
+            # Stream the follow-up response
+            follow_text = ""
+            try:
+                async with httpx.AsyncClient(timeout=90) as client:
+                    async with client.stream(
+                        "POST", ARCEE_API_URL,
+                        headers={"Content-Type": "application/json", "Authorization": f"Bearer {ARCEE_API_KEY}"},
+                        json={"model": ARCEE_MODEL, "messages": follow_msgs, "stream": True, "temperature": 0.5}
+                    ) as resp2:
+                        if resp2.status_code == 200:
+                            async for line2 in resp2.aiter_lines():
+                                if not line2 or not line2.startswith("data: "):
+                                    continue
+                                ds2 = line2[6:]
+                                if ds2.strip() == "[DONE]":
+                                    break
+                                try:
+                                    c2 = json.loads(ds2)
+                                    d2 = c2.get("choices", [{}])[0].get("delta", {})
+                                    ct2 = d2.get("content", "")
+                                    if ct2:
+                                        follow_text += ct2
+                                        yield f"data: {json.dumps({'follow_content': ct2, 'conversation_id': conversation_id})}\n\n"
+                                except json.JSONDecodeError:
+                                    continue
+            except Exception as e:
+                logger.error(f"Follow-up streaming error: {e}")
+
+            # The final stored message: strip tool blocks from initial + append follow-up
+            clean_initial = _strip_tool_blocks(full_response)
+            full_response = (clean_initial + "\n\n" + follow_text).strip() if follow_text else clean_initial
+
         # Store assistant response
         if full_response:
-            asst_msg_id = new_id("msg")
             await S.db.nexify_ai_messages.insert_one({
-                "message_id": asst_msg_id,
+                "message_id": new_id("msg"),
                 "conversation_id": conversation_id,
                 "role": "assistant",
                 "content": full_response,
                 "created_at": utcnow().isoformat(),
-                "memory_loaded": bool(memory_context)
+                "memory_loaded": bool(memory_context),
+                "tools_used": [tc.get("tool") for tc in tool_calls] if tool_calls else []
             })
             await S.db.nexify_ai_conversations.update_one(
                 {"conversation_id": conversation_id},
-                {"$set": {"updated_at": utcnow().isoformat()},
-                 "$inc": {"message_count": 2}}
+                {"$set": {"updated_at": utcnow().isoformat()}, "$inc": {"message_count": 2}}
             )
-            # Async store to mem0 (fire and forget)
             if body.use_memory and MEM0_API_KEY:
                 asyncio.create_task(mem0_store(
                     messages=[
@@ -460,13 +541,9 @@ async def nexify_ai_chat(body: ChatRequest, request: Request, admin: dict = Depe
                         {"role": "assistant", "content": full_response[:2000]}
                     ],
                     run_id=f"chat-{conversation_id}",
-                    metadata={
-                        "tenant": "nexify-automate",
-                        "scope": "operational",
-                        "memory_layer": "STATE",
-                        "source": "admin_chat",
-                        "conversation_id": conversation_id
-                    }
+                    metadata={"tenant": "nexify-automate", "scope": "operational",
+                              "memory_layer": "STATE", "source": "admin_chat",
+                              "conversation_id": conversation_id}
                 ))
 
         yield f"data: {json.dumps({'done': True, 'conversation_id': conversation_id})}\n\n"
@@ -474,11 +551,7 @@ async def nexify_ai_chat(body: ChatRequest, request: Request, admin: dict = Depe
     return StreamingResponse(
         stream_response(),
         media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no"
-        }
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"}
     )
 
 
