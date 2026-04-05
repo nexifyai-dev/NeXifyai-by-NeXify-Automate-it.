@@ -106,6 +106,16 @@ Das System führt das Tool serverseitig aus und gibt dir das Ergebnis automatisc
 ### Code (nur wenn Shell nicht reicht)
 - **execute_python** — Python-Code ausführen (code) — max 30s, Sandbox
 
+### Oracle System (Supabase)
+- **oracle_dashboard** — Oracle-Gesamtstatus: Tasks, Queue, Agenten, Brain-Stats, Knowledge
+- **oracle_search_brain** — Brain-Notes durchsuchen (query, limit) — 10.144+ Einträge
+- **oracle_search_knowledge** — Knowledge-Base durchsuchen (category, limit) — 156+ Einträge
+- **oracle_search_memory** — Memory-Entries durchsuchen (category, limit) — 56+ Einträge
+- **oracle_create_task** — Neuen Oracle-Task erstellen (title, description, priority, owner_agent, tags)
+- **oracle_list_tasks** — Oracle-Tasks auflisten (status, limit) — 2.624+ Tasks
+- **oracle_create_brain_note** — Brain-Note speichern (title, content, note_type, tags)
+- **oracle_invoke_deepseek_agent** — Fachagenten über DeepSeek aufrufen (agent_name, message, context) — Nicht Master!
+
 ### Administration
 - **audit_log** / **list_api_keys** / **self_status** / **update_config**
 
@@ -114,10 +124,12 @@ Das System führt das Tool serverseitig aus und gibt dir das Ergebnis automatisc
 ### Architektur
 - Frontend: React 18 SPA (Port 3000)
 - Backend: FastAPI (Port 8001), Python
-- Datenbank: MongoDB
+- Datenbank: MongoDB (CRM) + Supabase PostgreSQL (Oracle System, Brain, Knowledge, Tasks)
 - Auth: JWT (Admin) + Magic Links (Kunden) + API Keys (extern)
-- LLM: Arcee AI (trinity-large-preview) via OpenAI-kompatible API
+- LLM Master: Arcee AI (trinity-large-preview) — Du
+- LLM Fachagenten: DeepSeek (deepseek-chat) — Alle Sub-Agenten
 - Memory: mem0 Brain (user: pascal-courbois, agent: nexify-ai-master, app: nexify-automate-core)
+- Oracle: Supabase PostgreSQL — 2.624 Tasks, 10.144 Brain-Notes, 156 Knowledge, 33 AI-Agenten
 - Workers: APScheduler (Hintergrund-Jobs)
 - CI-Farbe: #FE9B7B (Coral) + Weiß
 
@@ -699,6 +711,15 @@ AVAILABLE_TOOLS = {
     # Selbstoptimierung
     "self_status": "Eigenen Status, Konfiguration und Performance abrufen",
     "update_config": "Eigene Konfiguration aktualisieren (key, value)",
+    # Oracle System (Supabase)
+    "oracle_dashboard": "Oracle-Gesamtstatus: Tasks, Queue, Agenten, Brain-Stats",
+    "oracle_search_brain": "Brain-Notes durchsuchen (query, limit)",
+    "oracle_search_knowledge": "Knowledge-Base durchsuchen (category, limit)",
+    "oracle_search_memory": "Memory-Entries durchsuchen (category, limit)",
+    "oracle_create_task": "Neuen Oracle-Task erstellen (title, description, priority, owner_agent, tags)",
+    "oracle_list_tasks": "Oracle-Tasks auflisten (status, limit)",
+    "oracle_create_brain_note": "Brain-Note speichern (title, content, note_type, tags)",
+    "oracle_invoke_deepseek_agent": "Fachagenten über DeepSeek aufrufen (agent_name, message, context)",
 }
 
 
@@ -1233,12 +1254,113 @@ async def execute_tool(body: ToolRequest, admin: dict = Depends(get_admin_from_t
             )
             return {"result": f"Config '{key}' aktualisiert", "tool": tool}
 
+        # ── Oracle System Tools (Supabase) ──
+        elif tool == "oracle_dashboard":
+            from services import supabase_client as supa
+            status = await supa.oracle_status()
+            context = await supa.oracle_context()
+            counts = {
+                "brain_notes": await supa.fetchval("SELECT count(*) FROM brain_notes"),
+                "knowledge": await supa.fetchval("SELECT count(*) FROM knowledge_base"),
+                "memory": await supa.fetchval("SELECT count(*) FROM memory_entries WHERE is_active=true"),
+                "ai_agents": await supa.fetchval("SELECT count(*) FROM ai_agents WHERE is_active=true"),
+                "oracle_tasks": await supa.fetchval("SELECT count(*) FROM oracle_tasks"),
+            }
+            return {"oracle_status": _supa_ser(status), "oracle_context": _supa_ser(context), "counts": counts, "tool": tool}
+
+        elif tool == "oracle_search_brain":
+            from services import supabase_client as supa
+            query = p.get("query", "")
+            limit = min(p.get("limit", 10), 30)
+            notes = await supa.brain_search(query, limit=limit) if query else await supa.fetch("SELECT id, title, note_type, tags, LEFT(content, 500) as content_preview FROM brain_notes ORDER BY created_at DESC LIMIT $1", limit)
+            return {"notes": [_supa_ser(n) for n in notes], "count": len(notes), "tool": tool}
+
+        elif tool == "oracle_search_knowledge":
+            from services import supabase_client as supa
+            category = p.get("category")
+            limit = min(p.get("limit", 20), 50)
+            entries = await supa.knowledge_search(category=category, limit=limit)
+            return {"entries": [_supa_ser(e) for e in entries], "count": len(entries), "tool": tool}
+
+        elif tool == "oracle_search_memory":
+            from services import supabase_client as supa
+            category = p.get("category")
+            limit = min(p.get("limit", 20), 50)
+            entries = await supa.memory_entries(category=category, limit=limit)
+            return {"entries": [_supa_ser(e) for e in entries], "count": len(entries), "tool": tool}
+
+        elif tool == "oracle_create_task":
+            from services import supabase_client as supa
+            title = p.get("title", "")
+            if not title:
+                return {"error": "Feld 'title' erforderlich", "tool": tool}
+            task_id = await supa.insert_oracle_task(
+                task_type=p.get("task_type", "ai_generated"),
+                title=title,
+                description=p.get("description", ""),
+                priority=p.get("priority", 5),
+                owner_agent=p.get("owner_agent", "nexify-ai-master"),
+                tags=p.get("tags", [])
+            )
+            return {"task_id": task_id, "status": "pending", "tool": tool}
+
+        elif tool == "oracle_list_tasks":
+            from services import supabase_client as supa
+            status_filter = p.get("status")
+            limit = min(p.get("limit", 20), 100)
+            tasks = await supa.oracle_tasks(status=status_filter, limit=limit)
+            return {"tasks": [_supa_ser(t) for t in tasks], "count": len(tasks), "tool": tool}
+
+        elif tool == "oracle_create_brain_note":
+            from services import supabase_client as supa
+            title = p.get("title", "")
+            content = p.get("content", "")
+            if not title or not content:
+                return {"error": "Felder 'title' und 'content' erforderlich", "tool": tool}
+            note_id = await supa.store_brain_note(
+                title=title, content=content,
+                note_type=p.get("note_type", "operational"),
+                tags=p.get("tags", [])
+            )
+            return {"note_id": note_id, "stored": True, "tool": tool}
+
+        elif tool == "oracle_invoke_deepseek_agent":
+            from services import deepseek_provider as deepseek
+            agent_name = p.get("agent_name", "")
+            message = p.get("message", "")
+            if not agent_name or not message:
+                return {"error": "Felder 'agent_name' und 'message' erforderlich", "tool": tool}
+            result = await deepseek.invoke_agent(
+                agent_name=agent_name,
+                agent_role=p.get("role", "Fachagent"),
+                system_prompt=p.get("context", ""),
+                user_message=message,
+                context=p.get("context", "")
+            )
+            return {**result, "tool": tool}
+
         else:
             return {"error": f"Unbekanntes Tool: {tool}", "available": list(AVAILABLE_TOOLS.keys()), "tool": tool}
 
     except Exception as e:
         logger.error(f"Tool execution error ({tool}): {e}")
         return {"error": str(e), "tool": tool}
+
+
+def _supa_ser(obj):
+    """Serialize Supabase asyncpg results for JSON."""
+    from datetime import datetime as dt
+    if obj is None:
+        return None
+    if isinstance(obj, dict):
+        return {k: _supa_ser(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_supa_ser(i) for i in obj]
+    if isinstance(obj, dt):
+        return obj.isoformat()
+    if hasattr(obj, '__str__') and not isinstance(obj, (str, int, float, bool)):
+        return str(obj)
+    return obj
 
 
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import OracleView from './OracleView';
 import './Admin.css';
 
 const API = process.env.REACT_APP_BACKEND_URL || '';
@@ -2907,7 +2908,7 @@ const Admin = () => {
   };
 
   const sendNxMessage = async (directMsg) => {
-    const msg = (directMsg || nxInput).trim();
+    const msg = (typeof directMsg === 'string' ? directMsg : nxInput).trim();
     if (!msg || nxStreaming) return;
     setNxInput('');
     setNxStreaming(true);
@@ -2923,6 +2924,11 @@ const Admin = () => {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: msg, conversation_id: nxActiveConvo, use_memory: nxUseMemory })
       });
+
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({ detail: `HTTP ${resp.status}` }));
+        throw new Error(errData.detail || `Server-Fehler (${resp.status})`);
+      }
 
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
@@ -3366,7 +3372,7 @@ curl ${API}/api/v1/docs`}
         <div className="nxai-input-area" data-testid="nxai-input-area">
           <div className="nxai-input-row">
             <textarea ref={nxTextareaRef} value={nxInput} onChange={e => setNxInput(e.target.value)} onKeyDown={handleNxKeyDown} placeholder="Nachricht an NeXify AI Master..." rows={1} disabled={nxStreaming} data-testid="nxai-input" />
-            <button className="nxai-send-btn" onClick={sendNxMessage} disabled={!nxInput.trim() || nxStreaming} data-testid="nxai-send"><I n="send" /></button>
+            <button className="nxai-send-btn" onClick={() => sendNxMessage()} disabled={!nxInput.trim() || nxStreaming} data-testid="nxai-send"><I n="send" /></button>
           </div>
           <div className="nxai-status-bar">
             <span>Arcee trinity-large-preview</span>
@@ -3455,6 +3461,7 @@ curl ${API}/api/v1/docs`}
 
   const navItems = [
     { id: 'nexify_ai', icon: 'psychology', label: 'NeXify AI' },
+    { id: 'oracle', icon: 'hub', label: 'Oracle System' },
     { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
     { id: 'projects', icon: 'folder_special', label: 'Projekte' },
     { id: 'contracts', icon: 'gavel', label: 'Verträge' },
@@ -3502,6 +3509,7 @@ curl ${API}/api/v1/docs`}
         </header>
         <div className={`adm-content ${view === 'nexify_ai' ? 'adm-content--fullbleed' : ''}`}>
           {view === 'nexify_ai' && <NeXifyAIView />}
+          {view === 'oracle' && <OracleView token={token} />}
           {view === 'dashboard' && <DashboardView />}
           {view === 'projects' && <ProjectsView />}
           {view === 'contracts' && <ContractsView />}
