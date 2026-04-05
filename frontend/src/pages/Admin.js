@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import './Admin.css';
 
 const API = process.env.REACT_APP_BACKEND_URL || '';
@@ -134,6 +134,17 @@ const Admin = () => {
   const [newApiKeyForm, setNewApiKeyForm] = useState({ name: '', scopes: 'all', rate_limit_per_hour: 1000, expires_in_days: '', description: '' });
   const [newApiKeyResult, setNewApiKeyResult] = useState(null);
   const [copiedKey, setCopiedKey] = useState(false);
+  /* NeXify AI Chat State */
+  const [nxConversations, setNxConversations] = useState([]);
+  const [nxActiveConvo, setNxActiveConvo] = useState(null);
+  const [nxMessages, setNxMessages] = useState([]);
+  const [nxInput, setNxInput] = useState('');
+  const [nxStreaming, setNxStreaming] = useState(false);
+  const [nxStreamText, setNxStreamText] = useState('');
+  const [nxUseMemory, setNxUseMemory] = useState(true);
+  const [nxStatus, setNxStatus] = useState(null);
+  const nxMessagesEndRef = useRef(null);
+  const nxTextareaRef = useRef(null);
   const [webhooksLoading, setWebhooksLoading] = useState(false);
   const [legalAudit, setLegalAudit] = useState([]);
   const [legalRisks, setLegalRisks] = useState([]);
@@ -556,6 +567,7 @@ const Admin = () => {
 
   useEffect(() => { if (token && view === 'monitoring') loadMonitoring(); }, [token, view]); // eslint-disable-line
   useEffect(() => { if (token && view === 'api_keys') loadApiKeys(); }, [token, view]); // eslint-disable-line
+  useEffect(() => { if (token && view === 'nexify_ai') { loadNxConversations(); loadNxStatus(); } }, [token, view]); // eslint-disable-line
 
   const logout = () => { setToken(''); localStorage.removeItem('nx_admin_token'); localStorage.removeItem('nx_auth'); };
 
@@ -2673,6 +2685,116 @@ const Admin = () => {
     setTimeout(() => setCopiedKey(false), 2000);
   };
 
+  /* ══════ NeXify AI Chat Functions ══════ */
+  const loadNxConversations = useCallback(async () => {
+    const d = await apiFetch('/api/admin/nexify-ai/conversations');
+    if (d?.conversations) setNxConversations(d.conversations);
+  }, [apiFetch]);
+
+  const loadNxConversation = useCallback(async (convoId) => {
+    const d = await apiFetch(`/api/admin/nexify-ai/conversations/${convoId}`);
+    if (d?.messages) {
+      setNxMessages(d.messages);
+      setNxActiveConvo(convoId);
+    }
+  }, [apiFetch]);
+
+  const deleteNxConversation = async (convoId) => {
+    await apiFetch(`/api/admin/nexify-ai/conversations/${convoId}`, { method: 'DELETE' });
+    if (nxActiveConvo === convoId) { setNxActiveConvo(null); setNxMessages([]); }
+    loadNxConversations();
+  };
+
+  const loadNxStatus = useCallback(async () => {
+    const d = await apiFetch('/api/admin/nexify-ai/status');
+    if (d) setNxStatus(d);
+  }, [apiFetch]);
+
+  const nxScrollToBottom = () => {
+    if (nxMessagesEndRef.current) nxMessagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const renderMarkdown = (text) => {
+    if (!text) return '';
+    let html = text
+      .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      .replace(/^- (.+)$/gm, '<li>$1</li>')
+      .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br/>');
+    if (!html.startsWith('<')) html = '<p>' + html + '</p>';
+    return html;
+  };
+
+  const sendNxMessage = async () => {
+    const msg = nxInput.trim();
+    if (!msg || nxStreaming) return;
+    setNxInput('');
+    setNxStreaming(true);
+    setNxStreamText('');
+
+    const userMsg = { role: 'user', content: msg, created_at: new Date().toISOString() };
+    setNxMessages(prev => [...prev, userMsg]);
+    setTimeout(nxScrollToBottom, 100);
+
+    try {
+      const resp = await fetch(`${API}/api/admin/nexify-ai/chat`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, conversation_id: nxActiveConvo, use_memory: nxUseMemory })
+      });
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+      let newConvoId = nxActiveConvo;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (data.content) {
+              fullText += data.content;
+              setNxStreamText(fullText);
+              nxScrollToBottom();
+            }
+            if (data.conversation_id) newConvoId = data.conversation_id;
+            if (data.done) {
+              setNxMessages(prev => [...prev, { role: 'assistant', content: fullText, created_at: new Date().toISOString() }]);
+              setNxStreamText('');
+              if (!nxActiveConvo && newConvoId) setNxActiveConvo(newConvoId);
+              loadNxConversations();
+            }
+            if (data.error) {
+              setNxMessages(prev => [...prev, { role: 'assistant', content: `Fehler: ${data.error}`, created_at: new Date().toISOString() }]);
+              setNxStreamText('');
+            }
+          } catch (e) { /* skip parse errors */ }
+        }
+      }
+    } catch (e) {
+      setNxMessages(prev => [...prev, { role: 'assistant', content: `Verbindungsfehler: ${e.message}`, created_at: new Date().toISOString() }]);
+    }
+    setNxStreaming(false);
+    setTimeout(nxScrollToBottom, 200);
+  };
+
+  const handleNxKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendNxMessage(); }
+  };
+
+  const startNewNxChat = () => { setNxActiveConvo(null); setNxMessages([]); setNxStreamText(''); setNxInput(''); };
+
   const UsersView = () => (
     <div data-testid="admin-users">
       <div className="adm-section-header">
@@ -2941,7 +3063,97 @@ curl ${API}/api/v1/docs`}
     </div>
   );
 
+  const NeXifyAIView = () => (
+    <div className="nxai-chat" data-testid="nexify-ai-chat">
+      <div className="nxai-sidebar">
+        <div className="nxai-sidebar-header">
+          <h3>Konversationen</h3>
+          <button className="nxai-new-btn" onClick={startNewNxChat} data-testid="nxai-new-chat"><I n="add" /> Neu</button>
+        </div>
+        <div className="nxai-convos" data-testid="nxai-conversations">
+          {nxConversations.map(c => (
+            <div key={c.conversation_id} className={`nxai-convo-item ${nxActiveConvo === c.conversation_id ? 'active' : ''}`} onClick={() => loadNxConversation(c.conversation_id)} data-testid={`nxai-convo-${c.conversation_id}`}>
+              <div style={{display:'flex',alignItems:'center',gap:4}}>
+                <span className="nxai-convo-title">{c.title || 'Neue Konversation'}</span>
+                <button className="nxai-del-btn" onClick={e => { e.stopPropagation(); deleteNxConversation(c.conversation_id); }} title="Löschen"><I n="close" /></button>
+              </div>
+              <div className="nxai-convo-meta"><span>{fmtTime(c.updated_at)}</span><span>{c.message_count || 0} Nachrichten</span></div>
+            </div>
+          ))}
+        </div>
+        {nxStatus && (
+          <div style={{padding:'12px 16px',borderTop:'1px solid rgba(255,255,255,0.04)',fontSize:'.6875rem',color:'#4a5568',display:'flex',flexDirection:'column',gap:4}}>
+            <div style={{display:'flex',alignItems:'center',gap:4}}><span style={{width:6,height:6,borderRadius:'50%',background:nxStatus.arcee?.configured?'#10b981':'#ef4444'}} />{nxStatus.arcee?.model}</div>
+            <div style={{display:'flex',alignItems:'center',gap:4}}><span style={{width:6,height:6,borderRadius:'50%',background:nxStatus.mem0?.configured?'#10b981':'#ef4444'}} />mem0 Brain</div>
+            <div>{nxStatus.stats?.conversations} Konv. / {nxStatus.stats?.messages} Msgs</div>
+          </div>
+        )}
+      </div>
+      <div className="nxai-main">
+        <div className="nxai-topbar">
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <div style={{width:28,height:28,borderRadius:6,background:'rgba(255,107,0,.12)',display:'flex',alignItems:'center',justifyContent:'center'}}><I n="psychology" /></div>
+            <span className="nxai-topbar-title">{nxActiveConvo ? (nxConversations.find(c => c.conversation_id === nxActiveConvo)?.title || 'Konversation') : 'NeXify AI Master'}</span>
+          </div>
+          <button className={`nxai-mem-badge ${nxUseMemory ? '' : 'off'}`} onClick={() => setNxUseMemory(!nxUseMemory)} data-testid="nxai-memory-toggle" title={nxUseMemory ? 'Brain aktiv — klicken zum Deaktivieren' : 'Brain inaktiv — klicken zum Aktivieren'}>
+            <I n={nxUseMemory ? 'psychology' : 'psychology_alt'} />{nxUseMemory ? 'Brain aktiv' : 'Brain aus'}
+          </button>
+        </div>
+        <div className="nxai-messages" data-testid="nxai-messages">
+          {nxMessages.length === 0 && !nxStreamText && (
+            <div className="nxai-empty">
+              <I n="psychology" />
+              <h3>NeXify AI Master</h3>
+              <p>Operatives Gehirn und zentrale Koordinationsinstanz. Brain-gestützt, kontextbewusst, handlungsfähig.</p>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap',justifyContent:'center',marginTop:8}}>
+                {['Projektstatus', 'Angebotsentwurf', 'Lead-Analyse', 'Systemstatus'].map(s => (
+                  <button key={s} style={{background:'rgba(255,107,0,.06)',border:'1px solid rgba(255,107,0,.12)',color:'#FF6B00',padding:'6px 14px',borderRadius:20,fontSize:'.75rem',cursor:'pointer',transition:'all 200ms'}} onClick={() => { setNxInput(s); }} data-testid={`nxai-quick-${s}`}>{s}</button>
+                ))}
+              </div>
+            </div>
+          )}
+          {nxMessages.map((m, i) => (
+            <div key={i} className={`nxai-msg ${m.role}`}>
+              <div className="nxai-msg-avatar">{m.role === 'assistant' ? 'NX' : 'PC'}</div>
+              <div>
+                <div className="nxai-msg-bubble" dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }} />
+                <div className="nxai-msg-time">{fmtTime(m.created_at)}</div>
+              </div>
+            </div>
+          ))}
+          {nxStreamText && (
+            <div className="nxai-msg assistant">
+              <div className="nxai-msg-avatar">NX</div>
+              <div>
+                <div className="nxai-msg-bubble" dangerouslySetInnerHTML={{ __html: renderMarkdown(nxStreamText) }} />
+              </div>
+            </div>
+          )}
+          {nxStreaming && !nxStreamText && (
+            <div className="nxai-msg assistant">
+              <div className="nxai-msg-avatar">NX</div>
+              <div className="nxai-msg-bubble"><div className="nxai-typing"><span /><span /><span /></div></div>
+            </div>
+          )}
+          <div ref={nxMessagesEndRef} />
+        </div>
+        <div className="nxai-input-area" data-testid="nxai-input-area">
+          <div className="nxai-input-row">
+            <textarea ref={nxTextareaRef} value={nxInput} onChange={e => setNxInput(e.target.value)} onKeyDown={handleNxKeyDown} placeholder="Nachricht an NeXify AI Master..." rows={1} disabled={nxStreaming} data-testid="nxai-input" />
+            <button className="nxai-send-btn" onClick={sendNxMessage} disabled={!nxInput.trim() || nxStreaming} data-testid="nxai-send"><I n="send" /></button>
+          </div>
+          <div className="nxai-status-bar">
+            <span>Arcee trinity-large-preview</span>
+            <span>|</span>
+            <span>{nxUseMemory ? 'mem0 Brain aktiv' : 'Ohne Brain'}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const navItems = [
+    { id: 'nexify_ai', icon: 'psychology', label: 'NeXify AI' },
     { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
     { id: 'projects', icon: 'folder_special', label: 'Projekte' },
     { id: 'contracts', icon: 'gavel', label: 'Verträge' },
@@ -2988,6 +3200,7 @@ curl ${API}/api/v1/docs`}
           <div className="adm-topbar-user"><I n="account_circle" /> Administration</div>
         </header>
         <div className="adm-content">
+          {view === 'nexify_ai' && <NeXifyAIView />}
           {view === 'dashboard' && <DashboardView />}
           {view === 'projects' && <ProjectsView />}
           {view === 'contracts' && <ContractsView />}
