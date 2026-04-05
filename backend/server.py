@@ -444,6 +444,7 @@ from routes.project_routes import router as project_router
 from routes.outbound_routes import router as outbound_router
 from routes.monitoring_routes import router as monitoring_router
 from routes.api_v1_routes import router as api_v1_router
+from routes.agent_routes import router as agent_router
 
 app.include_router(auth_router)
 app.include_router(public_router)
@@ -456,3 +457,4 @@ app.include_router(project_router)
 app.include_router(outbound_router)
 app.include_router(monitoring_router)
 app.include_router(api_v1_router)
+app.include_router(agent_router)

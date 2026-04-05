@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import AgentView from './AgentView';
 import './Admin.css';
+import './AgentView.css';
 
 const API = process.env.REACT_APP_BACKEND_URL || '';
 const I = ({ n }) => <span className="material-symbols-outlined">{n}</span>;
@@ -2962,6 +2964,7 @@ curl ${API}/api/v1/docs`}
     { id: 'webhooks', icon: 'webhook', label: 'Webhooks' },
     { id: 'audit', icon: 'verified', label: 'Audit' },
     { id: 'monitoring', icon: 'monitor_heart', label: 'Monitoring' },
+    { id: 'nexifyai', icon: 'psychology', label: 'NeXifyAI' },
   ];
 
   return (
@@ -3008,6 +3011,7 @@ curl ${API}/api/v1/docs`}
           {view === 'webhooks' && <WebhookEventsView />}
           {view === 'audit' && <AuditView />}
           {view === 'monitoring' && <MonitoringView />}
+          {view === 'nexifyai' && <AgentView headers={headers} apiFetch={apiFetch} />}
         </div>
       </main>
     </div>
