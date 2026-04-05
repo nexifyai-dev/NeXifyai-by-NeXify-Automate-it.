@@ -1827,6 +1827,14 @@ const Admin = () => {
   const [intelStatus, setIntelStatus] = useState(null);
   const [crawlResult, setCrawlResult] = useState(null);
   const [crawlUrl, setCrawlUrl] = useState('');
+  /* Trigger.dev Tasks State */
+  const [triggerTasks, setTriggerTasks] = useState({});
+  const [triggerRuns, setTriggerRuns] = useState([]);
+  const [triggerStatus, setTriggerStatus] = useState(null);
+  const [triggerSelectedTask, setTriggerSelectedTask] = useState(null);
+  const [triggerPayload, setTriggerPayload] = useState('{}');
+  const [triggerRunning, setTriggerRunning] = useState(false);
+  const [triggerRunResult, setTriggerRunResult] = useState(null);
 
   const loadNxAgents = useCallback(async () => {
     const d = await apiFetch('/api/admin/nexify-ai/agents');
@@ -1889,6 +1897,42 @@ const Admin = () => {
     });
     setCrawlResult(d);
   }, [apiFetch, crawlUrl]);
+
+  /* ── Trigger.dev Daten laden ── */
+  const loadTriggerData = useCallback(async () => {
+    const [tasks, runs, status] = await Promise.all([
+      apiFetch('/api/admin/trigger/tasks'),
+      apiFetch('/api/admin/trigger/runs?limit=30'),
+      apiFetch('/api/admin/trigger/status'),
+    ]);
+    if (tasks?.tasks) setTriggerTasks(tasks.tasks);
+    if (runs?.runs) setTriggerRuns(runs.runs);
+    if (status) setTriggerStatus(status);
+  }, [apiFetch]);
+
+  useEffect(() => {
+    if (token && view === 'tasks') {
+      loadTriggerData();
+      const interval = setInterval(loadTriggerData, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [token, view, loadTriggerData]);
+
+  const handleTriggerRun = useCallback(async () => {
+    if (!triggerSelectedTask) return;
+    setTriggerRunning(true);
+    setTriggerRunResult(null);
+    try {
+      let payload = {};
+      try { payload = JSON.parse(triggerPayload); } catch { payload = {}; }
+      const d = await apiFetch('/api/admin/trigger/run', {
+        method: 'POST',
+        body: JSON.stringify({ task_id: triggerSelectedTask, payload }),
+      });
+      setTriggerRunResult(d);
+      loadTriggerData();
+    } finally { setTriggerRunning(false); }
+  }, [apiFetch, triggerSelectedTask, triggerPayload, loadTriggerData]);
 
   const toggleProactive = async (enabled) => {
     await apiFetch('/api/admin/nexify-ai/proactive', {
@@ -3576,6 +3620,125 @@ curl ${API}/api/v1/docs`}
     </div>
   );
 
+  /* ══════════════════════════════════════════════════════════
+     TRIGGER.DEV TASKS VIEW
+     ══════════════════════════════════════════════════════════ */
+  const TASK_ICONS = {'deep-research':'science','generate-report':'summarize','generate-and-translate-copy':'translate','analyze-contract':'policy','competitor-monitor':'monitoring','generate-pdf-and-upload':'picture_as_pdf'};
+  const TASK_COLORS = {'deep-research':'#3b82f6','generate-report':'#10b981','generate-and-translate-copy':'#f59e0b','analyze-contract':'#ef4444','competitor-monitor':'#8b5cf6','generate-pdf-and-upload':'#06b6d4'};
+  const RUN_STATUS_MAP = {triggered:{l:'Gestartet',c:'#3b82f6',i:'play_circle'},running:{l:'Läuft',c:'#f59e0b',i:'sync'},completed:{l:'Abgeschlossen',c:'#10b981',i:'check_circle'},failed:{l:'Fehlgeschlagen',c:'#ef4444',i:'error'}};
+
+  const _defaultPayload = (tid) => {
+    const defaults = {
+      'deep-research': {initialQuery:'',depth:2,breadth:3,language:'de'},
+      'generate-report': {title:'',content:'',format:'html',language:'de'},
+      'generate-and-translate-copy': {brief:'',tone:'professional',targetLanguages:['en','nl'],maxLength:500},
+      'analyze-contract': {contractText:'',contractType:'service',jurisdiction:'DE'},
+      'competitor-monitor': {competitors:[{name:'',url:'',keywords:[]}],lookbackDays:7},
+      'generate-pdf-and-upload': {title:'',content:'',template:'report'},
+    };
+    return defaults[tid] || {};
+  };
+
+  const TasksView = () => {
+    const taskEntries = Object.entries(triggerTasks);
+    return (
+    <div data-testid="tasks-view">
+      <div className="adm-section-header">
+        <h2>Trigger.dev Tasks</h2>
+        <span style={{fontSize:'.8125rem',color:'#8a9bb0'}}>{taskEntries.length} verfügbare Tasks | {triggerStatus?.active_runs || 0} aktiv</span>
+      </div>
+
+      {/* Status-Banner */}
+      <div className="adm-form-card" style={{marginBottom:20,borderLeft:`3px solid ${triggerStatus?.configured ? '#10b981' : '#f59e0b'}`,display:'flex',alignItems:'center',gap:12}}>
+        <I n={triggerStatus?.configured ? 'cloud_done' : 'cloud_off'} />
+        <div>
+          <div style={{fontSize:'.8125rem',color:'#fff',fontWeight:600}}>{triggerStatus?.configured ? 'Trigger.dev Cloud verbunden' : 'Fallback-Modus (DeepSeek lokal)'}</div>
+          <div style={{fontSize:'.6875rem',color:'#8a9bb0'}}>{triggerStatus?.configured ? 'Tasks werden über Trigger.dev Cloud ausgeführt' : 'Kein TRIGGER_DEV_API_KEY — Tasks laufen lokal über DeepSeek'}</div>
+        </div>
+        <div style={{marginLeft:'auto',display:'flex',gap:16,fontSize:'.75rem',color:'#6b7b8d'}}>
+          <span data-testid="tasks-total-runs">{triggerStatus?.total_runs || 0} Runs gesamt</span>
+        </div>
+      </div>
+
+      {/* Task-Grid */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))',gap:16,marginBottom:24}}>
+        {taskEntries.map(([tid, t]) => (
+          <div key={tid} className="adm-form-card" style={{borderLeft:`3px solid ${TASK_COLORS[tid]||'#6b7b8d'}`,cursor:'pointer',transition:'border-color .15s',outline:triggerSelectedTask===tid?`2px solid ${TASK_COLORS[tid]||'#FE9B7B'}`:'none'}} onClick={() => { setTriggerSelectedTask(tid); setTriggerRunResult(null); setTriggerPayload(JSON.stringify(_defaultPayload(tid),null,2)); }} data-testid={`task-card-${tid}`}>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+              <I n={TASK_ICONS[tid]||'task'} />
+              <h3 style={{margin:0,fontSize:'.9375rem',color:'#fff'}}>{t.name}</h3>
+              <span style={{marginLeft:'auto',fontSize:'.5625rem',fontWeight:600,padding:'2px 8px',borderRadius:10,background:`${TASK_COLORS[tid]||'#6b7b8d'}22`,color:TASK_COLORS[tid]||'#6b7b8d'}}>{tid}</span>
+            </div>
+            <p style={{margin:0,fontSize:'.75rem',color:'#8a9bb0',lineHeight:1.5}}>{t.description}</p>
+            <div style={{marginTop:8,fontSize:'.6875rem',color:'#4a5568'}}>Max. Laufzeit: {t.max_duration}s</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Task Runner */}
+      {triggerSelectedTask && (
+        <div className="adm-form-card" style={{marginBottom:24,borderLeft:'3px solid #FE9B7B'}} data-testid="task-runner">
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
+            <I n={TASK_ICONS[triggerSelectedTask]||'task'} />
+            <h3 style={{margin:0,fontSize:'.9375rem',color:'#fff'}}>{triggerTasks[triggerSelectedTask]?.name} ausführen</h3>
+            <button style={{marginLeft:'auto',background:'none',border:'none',color:'#6b7b8d',cursor:'pointer',fontSize:'.75rem'}} onClick={() => setTriggerSelectedTask(null)}><I n="close" /></button>
+          </div>
+          <div style={{marginBottom:12}}>
+            <label style={{display:'block',fontSize:'.6875rem',color:'#8a9bb0',marginBottom:4}}>Payload (JSON)</label>
+            <textarea data-testid="task-payload-input" value={triggerPayload} onChange={e=>setTriggerPayload(e.target.value)} rows={6} style={{width:'100%',padding:'10px 12px',borderRadius:6,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(0,0,0,0.2)',color:'#c8d1dc',fontSize:'.75rem',fontFamily:'var(--f-mono)',resize:'vertical'}} />
+          </div>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            <button className="adm-btn adm-btn-primary" onClick={handleTriggerRun} disabled={triggerRunning} data-testid="task-run-btn">
+              <I n={triggerRunning?'sync':'play_arrow'} /> {triggerRunning?'Wird ausgeführt...':'Task starten'}
+            </button>
+            {triggerRunResult && (
+              <span style={{fontSize:'.75rem',color:triggerRunResult.success?'#10b981':'#ef4444',fontWeight:600}} data-testid="task-run-status">
+                {triggerRunResult.success ? `Erfolgreich (${triggerRunResult.run_id})` : `Fehler: ${triggerRunResult.error||'Unbekannt'}`}
+              </span>
+            )}
+          </div>
+          {triggerRunResult?.result && (
+            <div style={{marginTop:12,padding:12,borderRadius:6,background:'rgba(0,0,0,0.2)',border:'1px solid rgba(255,255,255,0.04)'}}>
+              <div style={{fontSize:'.6875rem',color:'#8a9bb0',marginBottom:4}}>Ergebnis{triggerRunResult.fallback ? ' (Fallback — lokal via DeepSeek)':''}</div>
+              <pre style={{margin:0,fontSize:'.6875rem',color:'#c8d1dc',lineHeight:1.5,maxHeight:300,overflow:'auto',whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{typeof triggerRunResult.result==='string'?triggerRunResult.result:JSON.stringify(triggerRunResult.result,null,2)}</pre>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Run-Historie */}
+      <div className="adm-section-header" style={{marginBottom:12}}>
+        <h2 style={{fontSize:'1rem'}}>Run-Historie</h2>
+        <span style={{fontSize:'.75rem',color:'#8a9bb0'}}>{triggerRuns.length} Einträge</span>
+      </div>
+      {triggerRuns.length > 0 ? (
+        <div className="adm-table-wrap">
+          <table className="adm-table" data-testid="trigger-runs-table">
+            <thead><tr><th>Task</th><th>Run-ID</th><th>Status</th><th>Ausgelöst</th><th>Von</th></tr></thead>
+            <tbody>
+              {triggerRuns.map((r,i) => {
+                const st = RUN_STATUS_MAP[r.status] || {l:r.status,c:'#6b7b8d',i:'help'};
+                return (
+                <tr key={r.run_id||i}>
+                  <td><span style={{display:'flex',alignItems:'center',gap:4}}><I n={TASK_ICONS[r.task_id]||'task'} /><span style={{color:TASK_COLORS[r.task_id]||'#c8d1dc'}}>{r.task_id}</span></span></td>
+                  <td style={{fontFamily:'var(--f-mono)',fontSize:'.6875rem'}}>{r.run_id?.slice(0,12)}...</td>
+                  <td><span style={{display:'inline-flex',alignItems:'center',gap:4,padding:'2px 8px',borderRadius:10,background:`${st.c}15`,color:st.c,fontSize:'.6875rem',fontWeight:600}}><I n={st.i} /> {st.l}</span>{r.fallback && <span style={{marginLeft:4,fontSize:'.5625rem',color:'#f59e0b'}}>(lokal)</span>}</td>
+                  <td style={{fontSize:'.75rem'}}>{fmtTime(r.triggered_at)}</td>
+                  <td style={{fontSize:'.75rem',color:'#8a9bb0'}}>{r.triggered_by||'-'}</td>
+                </tr>);
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="adm-form-card" style={{textAlign:'center',padding:32,color:'#4a5568'}}>
+          <I n="history" /><br/>Noch keine Runs vorhanden. Wähle einen Task und starte ihn.
+        </div>
+      )}
+    </div>
+    );
+  };
+
   const IntelligenceView = () => (
     <div data-testid="intelligence-view">
       <div className="adm-section-header">
@@ -3716,6 +3879,7 @@ curl ${API}/api/v1/docs`}
     { id: 'oracle', icon: 'hub', label: 'Oracle System' },
     { id: 'templates', icon: 'inventory_2', label: 'Boilerplates' },
     { id: 'intelligence', icon: 'travel_explore', label: 'Intelligence' },
+    { id: 'tasks', icon: 'bolt', label: 'Tasks' },
     { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
     { id: 'projects', icon: 'folder_special', label: 'Projekte' },
     { id: 'contracts', icon: 'gavel', label: 'Verträge' },
@@ -3766,6 +3930,7 @@ curl ${API}/api/v1/docs`}
           {view === 'oracle' && <OracleView token={token} />}
           {view === 'templates' && <ServiceTemplatesView />}
           {view === 'intelligence' && <IntelligenceView />}
+          {view === 'tasks' && <TasksView />}
           {view === 'dashboard' && <DashboardView />}
           {view === 'projects' && <ProjectsView />}
           {view === 'contracts' && <ContractsView />}

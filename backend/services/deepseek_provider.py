@@ -1,6 +1,6 @@
 """
 NeXifyAI — DeepSeek LLM Provider
-Alle Sub-Agenten nutzen DeepSeek. Der Master bleibt auf Arcee AI.
+DeepSeek = Primary Master + alle Sub-Agenten. Arcee AI = Fallback.
 """
 import os
 import json

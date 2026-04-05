@@ -1269,30 +1269,39 @@ async def execute_tool(body: ToolRequest, admin: dict = Depends(get_admin_from_t
             agent = await S.db.ai_agents.find_one({"agent_id": agent_id}, {"_id": 0})
             if not agent:
                 return {"error": "Agent nicht gefunden", "tool": tool}
-            # Call Arcee with the agent's system prompt
+            # DeepSeek primary, Arcee fallback (Agent Zero Hierarchie)
+            agent_sys = agent.get("system_prompt", f"Du bist {agent['name']}, ein Fachagent für {agent.get('role', 'general')}.")
+            agent_msgs = [{"role": "system", "content": agent_sys}, {"role": "user", "content": message}]
+            answer = ""
+            used_model = ""
             try:
-                async with httpx.AsyncClient(timeout=60) as client:
-                    resp = await client.post(
-                        ARCEE_API_URL,
-                        headers={"Authorization": f"Bearer {ARCEE_API_KEY}", "Content-Type": "application/json"},
-                        json={
-                            "model": agent.get("model", ARCEE_MODEL),
-                            "messages": [
-                                {"role": "system", "content": agent.get("system_prompt", f"Du bist {agent['name']}, ein Fachagent für {agent.get('role', 'general')}.")},
-                                {"role": "user", "content": message}
-                            ],
-                            "temperature": 0.7
-                        }
-                    )
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        answer = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-                        await S.db.ai_agents.update_one(
-                            {"agent_id": agent_id},
-                            {"$inc": {"stats.invocations": 1}, "$set": {"stats.last_invoked": utcnow().isoformat()}}
+                if DEEPSEEK_API_KEY:
+                    async with httpx.AsyncClient(timeout=60) as client:
+                        resp = await client.post(
+                            DEEPSEEK_CHAT_URL,
+                            headers={"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"},
+                            json={"model": DEEPSEEK_MODEL, "messages": agent_msgs, "temperature": 0.7, "max_tokens": 4000, "stream": False}
                         )
-                        return {"result": {"agent": agent["name"], "response": answer}, "tool": tool}
-                    return {"error": f"Agent-Aufruf fehlgeschlagen: {resp.status_code}", "tool": tool}
+                        if resp.status_code == 200:
+                            answer = resp.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+                            used_model = DEEPSEEK_MODEL
+                if not answer and ARCEE_API_KEY:
+                    async with httpx.AsyncClient(timeout=60) as client:
+                        resp = await client.post(
+                            ARCEE_API_URL,
+                            headers={"Authorization": f"Bearer {ARCEE_API_KEY}", "Content-Type": "application/json"},
+                            json={"model": agent.get("model", ARCEE_MODEL), "messages": agent_msgs, "temperature": 0.7}
+                        )
+                        if resp.status_code == 200:
+                            answer = resp.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+                            used_model = ARCEE_MODEL
+                if answer:
+                    await S.db.ai_agents.update_one(
+                        {"agent_id": agent_id},
+                        {"$inc": {"stats.invocations": 1}, "$set": {"stats.last_invoked": utcnow().isoformat()}}
+                    )
+                    return {"result": {"agent": agent["name"], "response": answer, "model": used_model}, "tool": tool}
+                return {"error": "Kein LLM-Provider verfügbar", "tool": tool}
             except Exception as e:
                 return {"error": str(e), "tool": tool}
 
