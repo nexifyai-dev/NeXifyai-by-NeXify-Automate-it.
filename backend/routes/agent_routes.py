@@ -86,7 +86,7 @@ class AgentCodeRequest(BaseModel):
 
 class AgentApiCallRequest(BaseModel):
     url: str
-    method: str = "GET"
+    method: str = Field(default="GET", pattern="^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)$")
     headers: Optional[dict] = None
     body: Optional[Any] = None
     timeout: int = Field(default=30, le=60)
