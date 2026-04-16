@@ -73,7 +73,10 @@ const AgentView = ({ headers, apiFetch }) => {
         body: JSON.stringify({ session_id: sessionId, message: msg, auto_brain: true }),
       });
       const d = await r.json();
-      if (d.message) {
+      if (!r.ok) {
+        const errorMsg = d.detail || d.error || `HTTP ${r.status}`;
+        setMessages(prev => [...prev, { role: 'assistant', content: `Fehler: ${errorMsg}`, ts: new Date().toISOString() }]);
+      } else if (d.message) {
         setMessages(prev => [...prev, {
           role: 'assistant',
           content: d.message,
