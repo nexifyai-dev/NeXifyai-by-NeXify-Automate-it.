@@ -140,6 +140,11 @@ const AgentView = ({ headers, apiFetch }) => {
         method: 'POST', headers,
         body: JSON.stringify({ content: brainStoreText, memory_layer: brainStoreLayer }),
       });
+      if (!r.ok) {
+        const d = await r.json();
+        setBrainStoreMsg(`Fehler: ${d.detail || d.error || 'Unbekannter Fehler'}`);
+        return;
+      }
       const d = await r.json();
       setBrainStoreMsg(d.error ? `Fehler: ${d.error}` : 'Erfolgreich gespeichert');
       setBrainStoreText('');
