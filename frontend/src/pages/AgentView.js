@@ -179,9 +179,18 @@ const AgentView = ({ headers, apiFetch }) => {
         body: JSON.stringify({ code: codeInput, language: codeLang, timeout: 30 }),
       });
       const d = await r.json();
-      setCodeResult(d);
+      if (!r.ok) {
+        setCodeResult({ 
+          stderr: d.detail || 'API-Fehler', 
+          returncode: r.status, 
+          duration_ms: 0,
+          language: codeLang,
+        });
+      } else {
+        setCodeResult(d);
+      }
     } catch (e) {
-      setCodeResult({ stderr: e.message, returncode: -1 });
+      setCodeResult({ stderr: e.message, returncode: -1, duration_ms: 0, language: codeLang });
     } finally {
       setCodeBusy(false);
     }
