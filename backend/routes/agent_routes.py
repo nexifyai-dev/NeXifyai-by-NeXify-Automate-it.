@@ -160,7 +160,7 @@ async def admin_agent_session_detail(session_id: str, user=Depends(get_current_a
             {
                 "role": m["role"],
                 "content": m["content"][:5000],
-                "timestamp": m.get("timestamp"),
+                "timestamp": m.get("ts"),
             }
             for m in messages
             if m["role"] != "system"
