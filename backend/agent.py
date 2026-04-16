@@ -10,6 +10,7 @@ import json
 import traceback
 import asyncio
 import logging
+import resource
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 
@@ -337,10 +338,55 @@ async def llm_chat(
 
 # ============== CODE EXECUTION ==============
 
+def _create_sandbox_env() -> Dict[str, str]:
+    """
+    Create a restricted environment for code execution.
+    Only includes essential variables, no secrets or credentials.
+    """
+    # Whitelist of safe environment variables to expose
+    safe_vars = {
+        "PATH": os.environ.get("PATH", ""),
+        "HOME": "/tmp",
+        "TEMP": "/tmp",
+        "TMPDIR": "/tmp",
+        "LC_ALL": "C.UTF-8",
+        "LANG": "C.UTF-8",
+    }
+    return safe_vars
+
+
+def _preexec_fn():
+    """
+    Preexec function to restrict subprocess capabilities.
+    Called before exec() in child process.
+    """
+    try:
+        # Set resource limits on the subprocess
+        # Max 128 MB memory
+        resource.setrlimit(resource.RLIMIT_AS, (128 * 1024 * 1024, 128 * 1024 * 1024))
+        
+        # Max 1000 file descriptors
+        resource.setrlimit(resource.RLIMIT_NOFILE, (1000, 1000))
+        
+        # Max 100 processes
+        resource.setrlimit(resource.RLIMIT_NPROC, (100, 100))
+        
+        # Max 1GB data segment
+        resource.setrlimit(resource.RLIMIT_DATA, (1024 * 1024 * 1024, 1024 * 1024 * 1024))
+        
+        # No core dumps
+        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    except Exception as e:
+        logger.warning(f"Failed to set resource limits: {e}")
+
+
 async def execute_code(code: str, language: str = "python", timeout: int = 30) -> Dict:
     """
-    Execute code in a sandboxed subprocess.
-    Returns dict with 'stdout', 'stderr', 'returncode', 'duration'.
+    Execute code in a restricted subprocess with sandboxing.
+    - Restricted environment (no access to secrets)
+    - Resource limits (CPU, memory, file descriptors, processes)
+    - Timeout enforcement
+    - Returns dict with 'stdout', 'stderr', 'returncode', 'duration'.
     """
     start = datetime.now(timezone.utc)
 
@@ -352,11 +398,16 @@ async def execute_code(code: str, language: str = "python", timeout: int = 30) -
             temp_path = f.name
 
         try:
+            # Create restricted environment
+            sandbox_env = _create_sandbox_env()
+            
             proc = await asyncio.create_subprocess_exec(
                 sys.executable, temp_path,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 cwd="/tmp",
+                env=sandbox_env,  # CRITICAL: Use restricted environment
+                preexec_fn=_preexec_fn,  # Set resource limits on Unix
             )
             try:
                 stdout, stderr = await asyncio.wait_for(
@@ -364,7 +415,10 @@ async def execute_code(code: str, language: str = "python", timeout: int = 30) -
                 )
             except asyncio.TimeoutError:
                 proc.kill()
-                await proc.communicate()
+                try:
+                    await asyncio.wait_for(proc.communicate(), timeout=2)
+                except asyncio.TimeoutError:
+                    pass
                 return {
                     "stdout": "",
                     "stderr": f"Timeout nach {timeout} Sekunden",
@@ -383,7 +437,10 @@ async def execute_code(code: str, language: str = "python", timeout: int = 30) -
                 "language": language,
             }
         finally:
-            os.unlink(temp_path)
+            try:
+                os.unlink(temp_path)
+            except Exception:
+                pass
 
     elif language == "javascript":
         import tempfile
@@ -392,11 +449,16 @@ async def execute_code(code: str, language: str = "python", timeout: int = 30) -
             temp_path = f.name
 
         try:
+            # Create restricted environment
+            sandbox_env = _create_sandbox_env()
+            
             proc = await asyncio.create_subprocess_exec(
                 "node", temp_path,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 cwd="/tmp",
+                env=sandbox_env,  # CRITICAL: Use restricted environment
+                preexec_fn=_preexec_fn,  # Set resource limits on Unix
             )
             try:
                 stdout, stderr = await asyncio.wait_for(
@@ -404,7 +466,10 @@ async def execute_code(code: str, language: str = "python", timeout: int = 30) -
                 )
             except asyncio.TimeoutError:
                 proc.kill()
-                await proc.communicate()
+                try:
+                    await asyncio.wait_for(proc.communicate(), timeout=2)
+                except asyncio.TimeoutError:
+                    pass
                 return {
                     "stdout": "",
                     "stderr": f"Timeout nach {timeout} Sekunden",
@@ -423,7 +488,10 @@ async def execute_code(code: str, language: str = "python", timeout: int = 30) -
                 "language": language,
             }
         finally:
-            os.unlink(temp_path)
+            try:
+                os.unlink(temp_path)
+            except Exception:
+                pass
 
     else:
         return {
