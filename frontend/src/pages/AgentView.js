@@ -293,7 +293,7 @@ const AgentView = ({ headers, apiFetch }) => {
               {sessions.map((s, i) => (
                 <div key={i} className="agent-session-item" onClick={() => loadSession(s.session_id)}>
                   <span className="agent-session-item-id">{s.session_id}</span>
-                  <span className="adm-muted">{s.messages?.[0]?.content?.slice(0, 60) || '...'}</span>
+                  <span className="adm-muted">{s.last_message?.slice(0, 60) || '...'}</span>
                 </div>
               ))}
             </div>
