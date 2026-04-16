@@ -219,6 +219,11 @@ const AgentView = ({ headers, apiFetch }) => {
         method: 'POST', headers,
         body: JSON.stringify({ url: apiUrl, method: apiMethod, headers: parsedHeaders, body: parsedBody }),
       });
+      if (!r.ok) {
+        const errorText = await r.text();
+        setApiResult({ error: `HTTP ${r.status}: ${errorText}`, status: r.status });
+        return;
+      }
       const d = await r.json();
       setApiResult(d);
     } catch (e) {
