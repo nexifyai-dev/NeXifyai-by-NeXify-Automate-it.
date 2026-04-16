@@ -4,68 +4,8 @@ from typing import Optional, Any
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from routes.shared import get_current_admin, log_audit, logger, S
-import ipaddress
 
 router = APIRouter(tags=["agent"])
-
-
-# ══════════════════════════════════════════════════════════════
-# HELPER FUNCTIONS
-# ══════════════════════════════════════════════════════════════
-
-def is_private_network(hostname: str) -> bool:
-    """
-    Check if hostname/IP is in a private or reserved range.
-    Blocks:
-    - Localhost: 127.0.0.1, ::1
-    - Default/special: 0.0.0.0, ::
-    - Private IPv4: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
-    - IPv6 private: fc00::/7 (ULA), fe80::/10 (link-local), ::1
-    - Multicast ranges
-    - Reserved ranges
-    """
-    blocked_hostnames = {"localhost", "127.0.0.1", "0.0.0.0", "::1", "::"}
-    
-    if hostname.lower() in blocked_hostnames:
-        return True
-    
-    try:
-        # Try to parse as IP address
-        ip = ipaddress.ip_address(hostname)
-        
-        # Check IPv4 ranges
-        if isinstance(ip, ipaddress.IPv4Address):
-            private_ranges = [
-                ipaddress.IPv4Network("10.0.0.0/8"),
-                ipaddress.IPv4Network("172.16.0.0/12"),
-                ipaddress.IPv4Network("192.168.0.0/16"),
-                ipaddress.IPv4Network("127.0.0.0/8"),  # loopback
-                ipaddress.IPv4Network("169.254.0.0/16"),  # link-local
-                ipaddress.IPv4Network("224.0.0.0/4"),  # multicast
-                ipaddress.IPv4Network("240.0.0.0/4"),  # reserved
-                ipaddress.IPv4Network("0.0.0.0/8"),  # this network
-            ]
-            for network in private_ranges:
-                if ip in network:
-                    return True
-        
-        # Check IPv6 ranges
-        elif isinstance(ip, ipaddress.IPv6Address):
-            if (ip.is_loopback or 
-                ip.is_private or 
-                ip.is_link_local or 
-                ip.is_multicast or 
-                ip.is_reserved):
-                return True
-    
-    except ValueError:
-        # Not a valid IP, might be a hostname
-        # For hostnames, we can't reliably check without DNS resolution
-        # which could introduce its own security issues (DNS rebinding)
-        # For now, allow hostnames but they should be validated by call_external_api
-        pass
-    
-    return False
 
 
 # ══════════════════════════════════════════════════════════════
@@ -250,9 +190,9 @@ async def admin_agent_execute(req: AgentCodeRequest, user=Depends(get_current_ad
 @router.post("/api/admin/agent/api-call")
 async def admin_agent_api_call(req: AgentApiCallRequest, user=Depends(get_current_admin)):
     """Proxy an external API call through the agent."""
-    from agent import call_external_api
+    from agent import call_external_api, is_private_network
 
-    # Private network blocking
+    # Private network blocking (pre-check at route level)
     from urllib.parse import urlparse
     parsed = urlparse(req.url)
     if parsed.hostname:

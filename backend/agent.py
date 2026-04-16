@@ -14,9 +14,14 @@ import resource
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 
+import ipaddress
+import socket
+
 import httpx
 
 logger = logging.getLogger("nexifyai.agent")
+
+MAX_REDIRECTS = 10
 
 # ============== CONFIGURATION ==============
 
@@ -503,6 +508,78 @@ async def execute_code(code: str, language: str = "python", timeout: int = 30) -
         }
 
 
+# ============== SSRF PROTECTION ==============
+
+def is_private_network(hostname: str) -> bool:
+    """
+    Check if hostname/IP is in a private or reserved range.
+    Blocks:
+    - Localhost: 127.0.0.1, ::1
+    - Default/special: 0.0.0.0, ::
+    - Private IPv4: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+    - IPv6 private: fc00::/7 (ULA), fe80::/10 (link-local), ::1
+    - Multicast ranges
+    - Reserved ranges
+    """
+    blocked_hostnames = {"localhost", "127.0.0.1", "0.0.0.0", "::1", "::"}
+
+    if hostname.lower() in blocked_hostnames:
+        return True
+
+    try:
+        ip = ipaddress.ip_address(hostname)
+
+        if isinstance(ip, ipaddress.IPv4Address):
+            private_ranges = [
+                ipaddress.IPv4Network("10.0.0.0/8"),
+                ipaddress.IPv4Network("172.16.0.0/12"),
+                ipaddress.IPv4Network("192.168.0.0/16"),
+                ipaddress.IPv4Network("127.0.0.0/8"),
+                ipaddress.IPv4Network("169.254.0.0/16"),
+                ipaddress.IPv4Network("224.0.0.0/4"),
+                ipaddress.IPv4Network("240.0.0.0/4"),
+                ipaddress.IPv4Network("0.0.0.0/8"),
+            ]
+            for network in private_ranges:
+                if ip in network:
+                    return True
+
+        elif isinstance(ip, ipaddress.IPv6Address):
+            if (ip.is_loopback or
+                ip.is_private or
+                ip.is_link_local or
+                ip.is_multicast or
+                ip.is_reserved):
+                return True
+
+    except ValueError:
+        # Not a valid IP — resolve hostname to check resolved IPs
+        try:
+            addrinfos = socket.getaddrinfo(hostname, None)
+            for family, _, _, _, sockaddr in addrinfos:
+                resolved_ip = sockaddr[0]
+                # Recurse with the resolved IP string
+                if is_private_network(resolved_ip):
+                    return True
+        except socket.gaierror:
+            pass
+
+    return False
+
+
+def _validate_url_ssrf(url: str) -> None:
+    """
+    Validate a URL against SSRF. Raises ValueError if the URL
+    targets a private/reserved network.
+    """
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    if not parsed.hostname:
+        raise ValueError("URL has no hostname")
+    if is_private_network(parsed.hostname):
+        raise ValueError(f"Blocked: {parsed.hostname} resolves to a private/reserved address")
+
+
 # ============== API PROXY ==============
 
 async def call_external_api(
@@ -513,33 +590,87 @@ async def call_external_api(
     timeout: int = 30,
 ) -> Dict:
     """
-    Call an external API endpoint.
+    Call an external API endpoint with SSRF-safe redirect handling.
+    Validates the initial URL and every redirect target against
+    private/reserved network ranges before following.
     Returns dict with 'status', 'headers', 'body', 'duration_ms'.
     """
     start = datetime.now(timezone.utc)
 
-    # Block internal/localhost calls for security
-    from urllib.parse import urlparse
-    parsed = urlparse(url)
-    blocked_hosts = {"localhost", "127.0.0.1", "0.0.0.0", "::1"}
-    if parsed.hostname in blocked_hosts:
+    # Validate initial URL against SSRF
+    try:
+        _validate_url_ssrf(url)
+    except ValueError as e:
         return {
             "status": 403,
             "headers": {},
             "body": "Interne Adressen sind nicht erlaubt",
             "duration_ms": 0,
-            "error": "Blocked: localhost/internal addresses not allowed",
+            "error": str(e),
         }
 
     try:
-        async with httpx.AsyncClient(timeout=float(timeout), follow_redirects=True) as client:
-            resp = await client.request(
-                method=method.upper(),
-                url=url,
-                headers=headers or {},
-                json=body if body and method.upper() in ("POST", "PUT", "PATCH") else None,
-                params=body if body and method.upper() == "GET" else None,
-            )
+        # Disable automatic redirect following so we can validate each hop
+        async with httpx.AsyncClient(timeout=float(timeout), follow_redirects=False) as client:
+            current_url = url
+            current_method = method.upper()
+            current_headers = headers or {}
+            current_body = body
+            redirects_followed = 0
+
+            while True:
+                resp = await client.request(
+                    method=current_method,
+                    url=current_url,
+                    headers=current_headers,
+                    json=current_body if current_body and current_method in ("POST", "PUT", "PATCH") else None,
+                    params=current_body if current_body and current_method == "GET" else None,
+                )
+
+                # If not a redirect, we're done
+                if resp.status_code not in (301, 302, 303, 307, 308):
+                    break
+
+                # Check redirect limit
+                redirects_followed += 1
+                if redirects_followed > MAX_REDIRECTS:
+                    return {
+                        "status": resp.status_code,
+                        "headers": dict(resp.headers),
+                        "body": f"Zu viele Weiterleitungen ({MAX_REDIRECTS})",
+                        "duration_ms": round((datetime.now(timezone.utc) - start).total_seconds() * 1000),
+                        "error": "Too many redirects",
+                    }
+
+                # Get redirect target
+                location = resp.headers.get("location")
+                if not location:
+                    break
+
+                # Resolve relative URLs
+                from urllib.parse import urljoin
+                current_url = urljoin(str(resp.url), location)
+
+                # Validate redirect target against SSRF
+                try:
+                    _validate_url_ssrf(current_url)
+                except ValueError as e:
+                    return {
+                        "status": 403,
+                        "headers": dict(resp.headers),
+                        "body": "Weiterleitung zu interner Adresse blockiert",
+                        "duration_ms": round((datetime.now(timezone.utc) - start).total_seconds() * 1000),
+                        "error": f"Redirect blocked: {e}",
+                    }
+
+                # Per HTTP spec: 303 always becomes GET, 301/302 become GET for non-GET/HEAD
+                if resp.status_code == 303:
+                    current_method = "GET"
+                    current_body = None
+                elif resp.status_code in (301, 302) and current_method not in ("GET", "HEAD"):
+                    current_method = "GET"
+                    current_body = None
+                # 307/308 preserve method and body
 
             duration = (datetime.now(timezone.utc) - start).total_seconds() * 1000
 
