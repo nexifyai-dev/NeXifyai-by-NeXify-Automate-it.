@@ -1,0 +1,27 @@
+name: LLM Code Review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  llm-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run LLM Review
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          chmod +x .github/scripts/llm-review.sh
+          .github/scripts/llm-review.sh
+      - name: Post Comment
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR=${{ github.event.pull_request.number }}
+          [ -f .llm-review/report.md ] && gh pr comment $PR --repo ${{ github.repository }} --body-file .llm-review/report.md || true
